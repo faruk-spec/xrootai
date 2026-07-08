@@ -10,6 +10,7 @@ use App\Services\AI\Providers\GeminiProvider;
 use App\Services\AI\Providers\ClaudeProvider;
 use App\Services\AI\Providers\DeepSeekProvider;
 use App\Services\AI\Providers\MockProvider;
+use App\Services\AI\Providers\OllamaProvider;
 use InvalidArgumentException;
 
 class AIProviderManager
@@ -34,6 +35,7 @@ class AIProviderManager
             'gemini' => new GeminiProvider($apiKey),
             'claude' => new ClaudeProvider($apiKey),
             'deepseek' => new DeepSeekProvider($apiKey),
+            'ollama' => new OllamaProvider($apiKey),
             'mock' => new MockProvider(),
             default => throw new InvalidArgumentException("Unsupported provider: {$providerName}"),
         };
@@ -58,6 +60,9 @@ class AIProviderManager
         if (str_starts_with($model, 'deepseek-')) {
             return 'deepseek';
         }
+        if (str_starts_with($model, 'ollama-')) {
+            return 'ollama';
+        }
 
         return 'mock';
     }
@@ -73,6 +78,7 @@ class AIProviderManager
             new GeminiProvider(),
             new ClaudeProvider(),
             new DeepSeekProvider(),
+            new OllamaProvider(),
         ];
 
         $allModels = [];

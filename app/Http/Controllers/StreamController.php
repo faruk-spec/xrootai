@@ -56,8 +56,8 @@ class StreamController extends Controller
                     // If it is a text-based file, read it and add to system/user context
                     if (str_starts_with($attachData['mime_type'], 'text/') || 
                         in_array($attachData['mime_type'], ['application/json', 'application/javascript', 'text/markdown'])) {
-                        if (Storage::exists($attachData['file_path'])) {
-                            $fileContent = Storage::get($attachData['file_path']);
+                        if (Storage::disk('public')->exists($attachData['file_path'])) {
+                            $fileContent = Storage::disk('public')->get($attachData['file_path']);
                             $attachmentsContext .= "\n\n[File Attachment: {$attachData['file_name']}]\n```\n{$fileContent}\n```\n";
                         }
                     } else {

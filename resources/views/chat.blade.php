@@ -244,6 +244,43 @@
             resize: none;
             max-height: 200px;
         }
+
+        /* Premium Table Styles */
+        .message-assistant table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 16px 0;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid var(--clay-card-border);
+            box-shadow: var(--clay-outer-shadow);
+        }
+        .message-assistant th, .message-assistant td {
+            padding: 12px 16px;
+            text-align: left;
+        }
+        .message-assistant th {
+            background: rgba(0, 0, 0, 0.03);
+            font-weight: 600;
+            border-bottom: 1px solid var(--clay-card-border);
+            color: var(--text-primary);
+        }
+        .dark-mode .message-assistant th {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .message-assistant td {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+        }
+        .dark-mode .message-assistant td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.1);
+        }
+        .message-assistant tr:last-child td {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body x-data="chatApp()" x-init="initApp()" :class="{ 'dark-mode': darkMode }">
@@ -279,25 +316,31 @@
             <!-- Search bar -->
             <input type="text" class="clay-inset clay-input" placeholder="Search conversations..." x-model="searchQuery" style="width:100%;">
 
-            <!-- Conversations list (Phase 5) -->
+            <!-- Conversations list (Grouped by date) -->
             <div style="flex-grow: 1; overflow-y: auto; margin-top: 10px; padding-right: 5px;">
-                <template x-for="chat in filteredConversations()" :key="chat.uuid">
-                    <div class="history-item" :class="{ 'active': activeUuid === chat.uuid }">
-                        <a :href="'/chats/' + chat.uuid" style="text-decoration:none; color:inherit; flex-grow:1; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-size:0.95rem; font-weight: 500;">
-                            <span x-show="chat.pinned_at">📌 </span>
-                            <span x-text="chat.title"></span>
-                        </a>
+                <template x-for="group in groupedConversations()" :key="group.label">
+                    <div style="margin-bottom: 20px;">
+                        <!-- Group Header divider -->
+                        <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; padding-left: 8px; letter-spacing: 0.05em;" x-text="group.label"></div>
                         
-                        <div style="display: flex; gap: 4px;">
-                            <!-- Pin toggle -->
-                            <button @click.prevent="togglePin(chat)" class="clay-btn" style="background:none; border:none; padding:4px; font-size:0.85rem; cursor:pointer;" :title="chat.pinned_at ? 'Unpin' : 'Pin'">
-                                📌
-                            </button>
-                            <!-- Delete button -->
-                            <button @click.prevent="deleteChat(chat)" class="clay-btn" style="background:none; border:none; padding:4px; font-size:0.85rem; cursor:pointer;" title="Delete">
-                                🗑️
-                            </button>
-                        </div>
+                        <template x-for="chat in group.items" :key="chat.uuid">
+                            <div class="history-item" :class="{ 'active': activeUuid === chat.uuid }">
+                                <a :href="'/chats/' + chat.uuid" style="text-decoration:none; color:inherit; flex-grow:1; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-size:0.95rem; font-weight: 500;">
+                                    <span x-text="chat.title"></span>
+                                </a>
+                                
+                                <div style="display: flex; gap: 4px;">
+                                    <!-- Pin toggle -->
+                                    <button @click.prevent="togglePin(chat)" class="clay-btn" style="background:none; border:none; padding:4px; font-size:0.85rem; cursor:pointer;" :title="chat.pinned_at ? 'Unpin' : 'Pin'">
+                                        <span x-text="chat.pinned_at ? '📌' : '📍'"></span>
+                                    </button>
+                                    <!-- Delete button -->
+                                    <button @click.prevent="deleteChat(chat)" class="clay-btn" style="background:none; border:none; padding:4px; font-size:0.85rem; cursor:pointer;" title="Delete">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </template>
             </div>
@@ -383,13 +426,19 @@
                 <!-- Render active messages list -->
                 <template x-for="(msg, index) in messages" :key="index">
                     <div class="clay-card message-bubble" :class="msg.role === 'user' ? 'message-user' : 'message-assistant'">
-                        <!-- Attachments preview row -->
+                        <!-- Attachments preview row with visual thumbnails -->
                         <template x-if="msg.attachments && msg.attachments.length > 0">
                             <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
                                 <template x-for="file in msg.attachments" :key="file.id">
-                                    <div class="attach-pill" style="opacity: 0.9;">
-                                        📎 <span x-text="file.file_name"></span>
-                                    </div>
+                                    <a :href="'/storage/' + file.file_path" target="_blank" class="attach-pill" style="opacity: 0.95; padding: 6px 12px; display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;">
+                                        <template x-if="file.mime_type && file.mime_type.startsWith('image/')">
+                                            <img :src="'/storage/' + file.file_path" style="width: 28px; height: 28px; object-fit: cover; border-radius: 6px;" />
+                                        </template>
+                                        <template x-if="!file.mime_type || !file.mime_type.startsWith('image/')">
+                                            <span style="font-size: 1rem;" x-text="getFileIcon(file.mime_type)"></span>
+                                        </template>
+                                        <span x-text="file.file_name" style="font-weight: 500; font-size: 0.82rem; text-decoration: underline;"></span>
+                                    </a>
                                 </template>
                             </div>
                         </template>
@@ -424,12 +473,18 @@
             <!-- Input Tray -->
             <footer class="chat-input-area">
                 
-                <!-- Upload status & preview bar -->
+                <!-- Upload status & preview bar with rich previews -->
                 <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;" x-show="attachments.length > 0 || isUploading">
                     <template x-for="(file, idx) in attachments" :key="idx">
-                        <div class="attach-pill">
-                            📎 <span x-text="file.file_name"></span>
-                            <button @click="removeAttachment(idx)" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:bold; margin-left:4px;">✕</button>
+                        <div class="attach-pill" style="padding: 6px 12px; display: flex; align-items: center; gap: 8px;">
+                            <template x-if="file.mime_type && file.mime_type.startsWith('image/')">
+                                <img :src="'/storage/' + file.file_path" style="width: 24px; height: 24px; object-fit: cover; border-radius: 4px;" />
+                            </template>
+                            <template x-if="!file.mime_type || !file.mime_type.startsWith('image/')">
+                                <span style="font-size: 0.95rem;" x-text="getFileIcon(file.mime_type)"></span>
+                            </template>
+                            <span x-text="file.file_name" style="font-weight: 500; font-size: 0.82rem;"></span>
+                            <button @click="removeAttachment(idx)" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:bold; margin-left:4px; font-size: 0.85rem;" title="Remove attachment">✕</button>
                         </div>
                     </template>
                     <div x-show="isUploading" class="attach-pill" style="border-style:dashed;">
@@ -526,22 +581,27 @@
                         
                         <div class="clay-input-group">
                             <label class="clay-input-label">OpenAI Key</label>
-                            <input type="password" name="keys[openai]" class="clay-inset clay-input" placeholder="sk-proj-...">
+                            <input type="password" name="keys[openai]" class="clay-inset clay-input" placeholder="{{ empty($apiKeys['openai']) ? 'sk-proj-...' : '•••••••• (Saved - enter new to change)' }}">
                         </div>
 
                         <div class="clay-input-group">
                             <label class="clay-input-label">Google Gemini Key</label>
-                            <input type="password" name="keys[gemini]" class="clay-inset clay-input" placeholder="AIzaSy...">
+                            <input type="password" name="keys[gemini]" class="clay-inset clay-input" placeholder="{{ empty($apiKeys['gemini']) ? 'AIzaSy...' : '•••••••• (Saved - enter new to change)' }}">
                         </div>
 
                         <div class="clay-input-group">
                             <label class="clay-input-label">Anthropic Claude Key</label>
-                            <input type="password" name="keys[claude]" class="clay-inset clay-input" placeholder="sk-ant-...">
+                            <input type="password" name="keys[claude]" class="clay-inset clay-input" placeholder="{{ empty($apiKeys['claude']) ? 'sk-ant-...' : '•••••••• (Saved - enter new to change)' }}">
                         </div>
 
                         <div class="clay-input-group">
                             <label class="clay-input-label">DeepSeek Key</label>
-                            <input type="password" name="keys[deepseek]" class="clay-inset clay-input" placeholder="sk-...">
+                            <input type="password" name="keys[deepseek]" class="clay-inset clay-input" placeholder="{{ empty($apiKeys['deepseek']) ? 'sk-...' : '•••••••• (Saved - enter new to change)' }}">
+                        </div>
+
+                        <div class="clay-input-group">
+                            <label class="clay-input-label">Ollama Host URL</label>
+                            <input type="text" name="keys[ollama]" class="clay-inset clay-input" placeholder="http://localhost:11434" value="{{ $apiKeys['ollama'] ?? '' }}">
                         </div>
 
                         <div style="display:flex; justify-content:flex-end; margin-top: 10px;">
@@ -628,6 +688,60 @@
                     return this.conversationsList.filter(chat => 
                         chat.title.toLowerCase().includes(this.searchQuery.toLowerCase())
                     );
+                },
+
+                groupedConversations() {
+                    const list = this.filteredConversations();
+                    const groups = {
+                        pinned: [],
+                        today: [],
+                        yesterday: [],
+                        week: [],
+                        older: []
+                    };
+
+                    const now = new Date();
+                    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    const startOfYesterday = new Date(startOfToday.getTime() - 24 * 60 * 60 * 1000);
+                    const startOfWeek = new Date(startOfToday.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+                    list.forEach(chat => {
+                        if (chat.pinned_at) {
+                            groups.pinned.push(chat);
+                            return;
+                        }
+
+                        const date = new Date(chat.updated_at);
+                        if (date >= startOfToday) {
+                            groups.today.push(chat);
+                        } else if (date >= startOfYesterday) {
+                            groups.yesterday.push(chat);
+                        } else if (date >= startOfWeek) {
+                            groups.week.push(chat);
+                        } else {
+                            groups.older.push(chat);
+                        }
+                    });
+
+                    return [
+                        { label: 'Pinned Chats', items: groups.pinned },
+                        { label: 'Today', items: groups.today },
+                        { label: 'Yesterday', items: groups.yesterday },
+                        { label: 'Previous 7 Days', items: groups.week },
+                        { label: 'Older', items: groups.older }
+                    ].filter(g => g.items.length > 0);
+                },
+
+                getFileIcon(mimeType) {
+                    if (!mimeType) return '📄';
+                    if (mimeType.includes('pdf')) return '📕';
+                    if (mimeType.includes('msword') || mimeType.includes('officedocument')) return '📘';
+                    if (mimeType.includes('excel') || mimeType.includes('sheet')) return '📗';
+                    if (mimeType.includes('zip') || mimeType.includes('compressed') || mimeType.includes('tar')) return '📦';
+                    if (mimeType.includes('text/') || mimeType.includes('json') || mimeType.includes('javascript') || mimeType.includes('markdown')) return '📝';
+                    if (mimeType.startsWith('audio/')) return '🎵';
+                    if (mimeType.startsWith('video/')) return '🎥';
+                    return '📄';
                 },
 
                 getModelName(modelId) {

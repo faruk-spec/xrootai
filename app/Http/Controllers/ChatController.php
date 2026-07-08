@@ -39,11 +39,13 @@ class ChatController extends Controller
             ->get();
 
         $models = $this->aiManager->getAllModels();
+        $apiKeys = $user->apiKeys()->pluck('encrypted_key', 'provider')->all();
 
         return view('chat', [
             'settings' => $settings,
             'conversations' => $conversations,
             'models' => $models,
+            'apiKeys' => $apiKeys,
             'activeConversation' => null,
             'messages' => [],
         ]);
@@ -87,6 +89,7 @@ class ChatController extends Controller
             ->get();
 
         $models = $this->aiManager->getAllModels();
+        $apiKeys = $user->apiKeys()->pluck('encrypted_key', 'provider')->all();
         
         $messages = $conversation->messages()
             ->with('attachments')
@@ -96,6 +99,7 @@ class ChatController extends Controller
             'settings' => $settings,
             'conversations' => $conversations,
             'models' => $models,
+            'apiKeys' => $apiKeys,
             'activeConversation' => $conversation,
             'messages' => $messages,
         ]);
@@ -154,8 +158,8 @@ class ChatController extends Controller
         $file = $request->file('file');
         $fileName = $file->getClientOriginalName();
         
-        // Save file in private/app storage so only authenticated downloads can access it
-        $path = $file->store('attachments');
+        // Save file in public disk so it is accessible via the storage symlink
+        $path = $file->store('attachments', 'public');
 
         return response()->json([
             'success' => true,

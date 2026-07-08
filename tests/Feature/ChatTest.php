@@ -148,7 +148,7 @@ class ChatTest extends TestCase
 
     public function test_user_can_upload_attachment(): void
     {
-        Storage::fake('local');
+        Storage::fake('public');
 
         $file = UploadedFile::fake()->create('document.txt', 100, 'text/plain');
 
@@ -164,7 +164,7 @@ class ChatTest extends TestCase
         ]);
 
         $filePath = $response->json('file_path');
-        Storage::disk('local')->assertExists($filePath);
+        Storage::disk('public')->assertExists($filePath);
     }
 
     public function test_user_can_stream_completions(): void
@@ -205,5 +205,13 @@ class ChatTest extends TestCase
         $assistantMessage = Message::where('conversation_id', $conversation->id)->where('role', 'assistant')->first();
         $this->assertNotNull($assistantMessage);
         $this->assertStringContainsString('simulated AI assistant', $assistantMessage->content);
+    }
+
+    public function test_ollama_provider_resolution(): void
+    {
+        $manager = app(\App\Services\AI\AIProviderManager::class);
+        $provider = $manager->make('ollama-llama3', $this->user);
+        
+        $this->assertInstanceOf(\App\Services\AI\Providers\OllamaProvider::class, $provider);
     }
 }
