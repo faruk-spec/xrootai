@@ -402,12 +402,6 @@
                                 </form>
                             </div>
                         </div>
-                        
-                        @if(Auth::user()->role === 'admin')
-                            <a href="{{ route('admin.dashboard') }}" class="clay-btn clay-btn-primary" style="font-size: 0.85rem; padding: 6px 12px; border-radius: 12px; text-decoration: none; width: 100%; text-align: center;">
-                                📊 Admin Panel
-                            </a>
-                        @endif
                     </div>
                 @endauth
                 @guest
