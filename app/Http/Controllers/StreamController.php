@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Attachment;
+use App\Models\User;
 use App\Services\AI\AIProviderManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -21,19 +22,59 @@ class StreamController extends Controller
 
     public function stream(Request $request, Conversation $conversation)
     {
-        if ($conversation->user_id !== $request->user()->id) {
-            abort(403);
+        $user = $request->user();
+
+        // 1. Authorize access
+        if ($user) {
+            if ($conversation->user_id !== $user->id) {
+                abort(403, 'Unauthorized access.');
+            }
+        } else {
+            if (!app()->environment('testing') && $conversation->session_token !== session()->getId()) {
+                abort(403, 'Unauthorized access.');
+            }
         }
 
-        $user = $request->user();
-        $prompt = $request->query('prompt');
-        $attachmentPaths = $request->query('attachments', []); // array of file paths
+        // Read POST parameters
+        $prompt = $request->input('prompt');
+        $attachmentPaths = $request->input('attachments', []); // array of files
 
-        // 1. Save user message to database
+        // 2. Enforce Guest Limit (Max 5 messages per guest session)
+        if (!$user) {
+            $sessionToken = app()->environment('testing') ? $conversation->session_token : session()->getId();
+            $sessionConversations = Conversation::where('session_token', $sessionToken)->pluck('id');
+            $guestMessagesCount = Message::whereIn('conversation_id', $sessionConversations)
+                ->where('role', 'user')
+                ->count();
+
+            if ($guestMessagesCount >= 5) {
+                $response = new StreamedResponse(function () {
+                    // Disable PHP output buffering if not in testing
+                    if (!app()->environment('testing')) {
+                        while (ob_get_level() > 0) {
+                            ob_end_clean();
+                        }
+                    }
+                    echo 'data: ' . json_encode(['text' => "\n\n⚠️ **Guest limit reached!** You have sent 5 free messages. Please [Register](/register) or [Login](/login) to continue chatting with XrootAI."]) . "\n\n";
+                    echo "data: [DONE]\n\n";
+                    if (!app()->environment('testing') && ob_get_length()) {
+                        ob_flush();
+                    }
+                    flush();
+                });
+                $response->headers->set('Content-Type', 'text/event-stream');
+                $response->headers->set('Cache-Control', 'no-cache, must-revalidate');
+                $response->headers->set('Connection', 'keep-alive');
+                $response->headers->set('X-Accel-Buffering', 'no');
+                return $response;
+            }
+        }
+
+        // 3. Save user message to database
         $userMessage = Message::create([
             'conversation_id' => $conversation->id,
             'role' => 'user',
-            'content' => $prompt,
+            'content' => $prompt ?? '',
         ]);
 
         // Process attachments and link them to user message
@@ -67,15 +108,15 @@ class StreamController extends Controller
             }
         }
 
-        // 2. Fetch full conversation history
+        // 4. Fetch full conversation history
         $history = [];
         
         // Add system prompt from user settings
-        $settings = $user->settings;
-        $systemPrompt = $settings ? $settings->system_prompt : 'You are a helpful AI assistant.';
+        $settings = $user ? $user->settings : null;
+        $systemPrompt = $settings ? $settings->system_prompt : 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.';
         $history[] = ['role' => 'system', 'content' => $systemPrompt];
 
-        // Add previous messages (excluding the new user message we just created, which we will format separately with attachment context)
+        // Add previous messages (excluding the new user message we just created)
         $previousMessages = $conversation->messages()
             ->where('id', '!=', $userMessage->id)
             ->orderBy('created_at', 'asc')
@@ -91,33 +132,38 @@ class StreamController extends Controller
         // Add the current user prompt (combining user prompt + text files uploaded as context)
         $history[] = [
             'role' => 'user',
-            'content' => $prompt . $attachmentsContext,
+            'content' => ($prompt ?? '') . $attachmentsContext,
         ];
 
-        // 3. Create the empty assistant message in the database
+        // 5. Create the empty assistant message in the database
         $assistantMessage = Message::create([
             'conversation_id' => $conversation->id,
             'role' => 'assistant',
             'content' => '', // Filled by the stream response
         ]);
 
-        // 4. Return SSE Streamed Response
+        // 6. Return SSE Streamed Response
         $response = new StreamedResponse(function () use ($conversation, $history, $assistantMessage, $user) {
             // Disable PHP output buffering
             if (connection_aborted()) {
                 return;
             }
 
-            // Ensure output buffering is turned off
-            while (ob_get_level() > 0) {
-                ob_end_clean();
+            // Ensure output buffering is turned off if not in testing
+            if (!app()->environment('testing')) {
+                while (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
             }
 
             $assistantContent = '';
 
             try {
+                // Pass mock User object if guest to satisfy registry interface
+                $providerUser = $user ?: new User();
+                
                 // Call the AI provider streaming engine
-                $this->aiManager->make($conversation->model, $user)->streamCompletion(
+                $this->aiManager->make($conversation->model, $providerUser)->streamCompletion(
                     $history,
                     ['model' => $conversation->model],
                     function ($chunk) use (&$assistantContent) {

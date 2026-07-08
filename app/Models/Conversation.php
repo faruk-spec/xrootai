@@ -12,6 +12,7 @@ class Conversation extends Model
 
     protected $fillable = [
         'user_id',
+        'session_token',
         'uuid',
         'title',
         'model',

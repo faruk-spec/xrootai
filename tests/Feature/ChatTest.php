@@ -177,10 +177,11 @@ class ChatTest extends TestCase
         ]);
 
         // Act as user, request SSE stream.
-        $response = $this->actingAs($this->user)->get(route('chats.stream', [
+        $response = $this->actingAs($this->user)->post(route('chats.stream', [
             'conversation' => $conversation->uuid,
+        ]), [
             'prompt' => 'Hello mock AI',
-        ]));
+        ]);
 
         $response->assertHeader('Content-Type', 'text/event-stream; charset=UTF-8');
 
@@ -213,5 +214,66 @@ class ChatTest extends TestCase
         $provider = $manager->make('ollama-llama3', $this->user);
         
         $this->assertInstanceOf(\App\Services\AI\Providers\OllamaProvider::class, $provider);
+    }
+
+    public function test_guest_can_access_chat_and_stream(): void
+    {
+        $response = $this->get(route('chat'));
+        $response->assertStatus(200);
+
+        $response = $this->post(route('chats.store'), [
+            'model' => 'mock-default',
+        ]);
+        $response->assertRedirect();
+        
+        $redirectUrl = $response->headers->get('Location');
+        $uuid = basename(parse_url($redirectUrl, PHP_URL_PATH));
+        $this->assertNotEmpty($uuid);
+
+        $conversation = Conversation::where('uuid', $uuid)->first();
+        $this->assertNotNull($conversation);
+        $this->assertNull($conversation->user_id);
+        $this->assertNotNull($conversation->session_token);
+
+        $response = $this->post(route('chats.stream', $conversation->uuid), [
+            'prompt' => 'Hello guest AI',
+        ]);
+        $response->assertHeader('Content-Type', 'text/event-stream; charset=UTF-8');
+    }
+
+    public function test_guest_is_limited_to_five_messages(): void
+    {
+        $response = $this->get(route('chat'));
+        $response->assertStatus(200);
+
+        $response = $this->post(route('chats.store'), [
+            'model' => 'mock-default',
+        ]);
+        $response->assertRedirect();
+
+        $redirectUrl = $response->headers->get('Location');
+        $uuid = basename(parse_url($redirectUrl, PHP_URL_PATH));
+        
+        $conversation = Conversation::where('uuid', $uuid)->first();
+        $this->assertNotNull($conversation);
+
+        for ($i = 0; $i < 5; $i++) {
+            Message::create([
+                'conversation_id' => $conversation->id,
+                'role' => 'user',
+                'content' => 'msg ' . $i,
+            ]);
+        }
+
+        $response = $this->post(route('chats.stream', $conversation->uuid), [
+            'prompt' => '6th message',
+        ]);
+
+        ob_start();
+        $callback = $response->baseResponse->getCallback();
+        $callback();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('Guest limit reached!', $output);
     }
 }

@@ -39,6 +39,35 @@
             background: rgba(168, 224, 99, 0.25);
         }
 
+        /* Custom Scrollbar Styles for a premium UI */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        .dark-mode ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .dark-mode ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+        }
+        .dark-mode * {
+            scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+        }
+
         /* Responsive Layout grid */
         .workspace {
             display: grid;
@@ -60,7 +89,8 @@
                 bottom: 0;
                 z-index: 50;
                 transform: translateX(-100%);
-                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                width: 280px; /* Explicit width on mobile */
             }
             .sidebar.open {
                 transform: translateX(0);
@@ -290,7 +320,7 @@
     <div class="workspace">
         
         <!-- Sidebar overlay for Mobile view -->
-        <div class="sidebar-overlay" x-show="sidebarOpen" @click="sidebarOpen = false" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.3); z-index:40; backdrop-filter:blur(3px);"></div>
+        <div class="sidebar-overlay" x-show="sidebarOpen" @click="sidebarOpen = false" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.45); z-index:40;"></div>
 
         <!-- Sidebar Container (Phase 2 Component) -->
         <aside class="sidebar" :class="{ 'open': sidebarOpen }">
@@ -346,29 +376,49 @@
             </div>
 
             <!-- User footer menu -->
-            <div class="clay-card" style="padding: 12px 16px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; margin-top: auto;">
-                <div style="display: flex; align-items: center; gap: 10px; overflow:hidden;">
-                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #4a88ff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">
-                        {{ substr(Auth::user()->name, 0, 1) }}
+            <div class="clay-card" style="padding: 12px 16px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; margin-top: auto; flex-shrink: 0; box-shadow: var(--clay-outer-shadow);">
+                @auth
+                    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; overflow:hidden;">
+                            <div style="display: flex; align-items: center; gap: 10px; overflow:hidden; flex-grow: 1;">
+                                <div style="width: 36px; height: 36px; border-radius: 50%; background: #4a88ff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">
+                                    {{ substr(Auth::user()->name, 0, 1) }}
+                                </div>
+                                <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.9rem; flex-grow: 1;">
+                                    <div style="font-weight: 600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{{ Auth::user()->name }}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{{ Auth::user()->email }}</div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                                <button @click="settingsModalOpen = true" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center;" title="Settings">
+                                    ⚙️
+                                </button>
+                                <form action="{{ route('logout') }}" method="POST" style="margin: 0; display: inline-flex;">
+                                    @csrf
+                                    <button type="submit" class="clay-btn" style="background:none; border:none; padding:4px; font-size:1.1rem; cursor:pointer;" title="Logout">
+                                        🚪
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        @if(Auth::user()->role === 'admin')
+                            <a href="{{ route('admin.dashboard') }}" class="clay-btn clay-btn-primary" style="font-size: 0.85rem; padding: 6px 12px; border-radius: 12px; text-decoration: none; width: 100%; text-align: center;">
+                                📊 Admin Panel
+                            </a>
+                        @endif
                     </div>
-                    <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.9rem;">
-                        <div style="font-weight: 600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{{ Auth::user()->name }}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{{ Auth::user()->email }}</div>
+                @endauth
+                @guest
+                    <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                        <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; font-weight: 600;">Guest Mode (5 messages limit)</div>
+                        <div style="display: flex; gap: 8px;">
+                            <a href="{{ route('login') }}" class="clay-btn clay-btn-secondary" style="flex: 1; font-size: 0.82rem; padding: 8px 10px; border-radius: 12px; text-decoration: none; text-align: center;">Login</a>
+                            <a href="{{ route('register') }}" class="clay-btn clay-btn-primary" style="flex: 1; font-size: 0.82rem; padding: 8px 10px; border-radius: 12px; text-decoration: none; text-align: center;">Register</a>
+                        </div>
                     </div>
-                </div>
-                
-                <div style="display: flex; gap: 4px;">
-                    <button @click="settingsModalOpen = true" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;" title="Settings">
-                        ⚙️
-                    </button>
-                    
-                    <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
-                        @csrf
-                        <button type="submit" class="clay-btn clay-btn-danger" style="border-radius: 50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center;" title="Log Out">
-                            🚪
-                        </button>
-                    </form>
-                </div>
+                @endguest
             </div>
         </aside>
 
@@ -870,49 +920,76 @@
                     this.activeStreamText = '';
                     this.scrollToBottom();
 
-                    // Establish Server-Sent Events stream connection
-                    const attachQuery = currentAttachments.map(f => 'attachments[]=' + encodeURIComponent(JSON.stringify(f))).join('&');
-                    const url = `/chats/${this.activeUuid}/stream?prompt=${encodeURIComponent(currentPrompt)}&${attachQuery}`;
+                    // Establish POST fetch body stream connection
+                    try {
+                        const response = await fetch(`/chats/${this.activeUuid}/stream`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({
+                                prompt: currentPrompt,
+                                attachments: currentAttachments
+                            })
+                        });
 
-                    const eventSource = new EventSource(url);
+                        if (!response.ok) {
+                            throw new Error('Server returned error ' + response.status);
+                        }
 
-                    eventSource.onmessage = (event) => {
-                        if (event.data === '[DONE]') {
-                            eventSource.close();
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder();
+                        let buffer = '';
+
+                        while (true) {
+                            const { value, done } = await reader.read();
+                            if (done) break;
+
+                            buffer += decoder.decode(value, { stream: true });
                             
-                            // Save streamed response fully to messages stack
-                            this.messages.push({
-                                role: 'assistant',
-                                content: this.activeStreamText
-                            });
-                            this.isStreaming = false;
-                            this.activeStreamText = '';
-                            
-                            // Update sidebar conversation list time / refresh items
-                            this.refreshConversationsList();
-                        } else {
-                            try {
-                                const parsed = JSON.parse(event.data);
-                                this.activeStreamText += parsed.text;
-                                this.scrollToBottom();
-                            } catch (e) {
-                                console.error('Parse error stream:', e);
+                            // Process SSE line format
+                            const lines = buffer.split('\n');
+                            // Keep the last line if it is incomplete
+                            buffer = lines.pop();
+
+                            for (const line of lines) {
+                                const trimmed = line.trim();
+                                if (trimmed.startsWith('data: ')) {
+                                    const dataStr = trimmed.substring(6);
+                                    if (dataStr === '[DONE]') {
+                                        break;
+                                    } else {
+                                        try {
+                                            const parsed = JSON.parse(dataStr);
+                                            this.activeStreamText += parsed.text;
+                                            this.scrollToBottom();
+                                        } catch (e) {}
+                                    }
+                                }
                             }
                         }
-                    };
 
-                    eventSource.onerror = (err) => {
-                        console.error('SSE connection error:', err);
-                        eventSource.close();
+                        // Save streamed response fully to messages stack
+                        this.messages.push({
+                            role: 'assistant',
+                            content: this.activeStreamText
+                        });
+                        this.isStreaming = false;
+                        this.activeStreamText = '';
                         
+                        // Update sidebar conversation list time / refresh items
+                        this.refreshConversationsList();
+
+                    } catch (err) {
+                        console.error('SSE streaming error:', err);
                         this.messages.push({
                             role: 'assistant',
                             content: this.activeStreamText + '\n\n[Error: Connection lost or stream timed out.]'
                         });
-                        
                         this.isStreaming = false;
                         this.activeStreamText = '';
-                    };
+                    }
                 },
 
                 async togglePin(chat) {

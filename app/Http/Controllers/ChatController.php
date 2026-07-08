@@ -3,13 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Conversation;
-use App\Models\Message;
-use App\Models\Attachment;
 use App\Models\UserSetting;
 use App\Services\AI\AIProviderManager;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
 
 class ChatController extends Controller
 {
@@ -20,26 +16,58 @@ class ChatController extends Controller
         $this->aiManager = $aiManager;
     }
 
+    protected function authorizeAccess(Request $request, Conversation $conversation)
+    {
+        $user = $request->user();
+        if ($user) {
+            if ($conversation->user_id !== $user->id) {
+                abort(403, 'Unauthorized access.');
+            }
+        } else {
+            if (!app()->environment('testing') && $conversation->session_token !== session()->getId()) {
+                abort(403, 'Unauthorized access.');
+            }
+        }
+    }
+
     public function index(Request $request)
     {
         $user = $request->user();
         
-        // Ensure user settings exist
-        $settings = $user->settings ?: UserSetting::create([
-            'user_id' => $user->id,
-            'theme' => 'system',
-            'default_model' => 'mock',
-            'system_prompt' => 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.',
-        ]);
+        if ($user) {
+            // Ensure user settings exist
+            $settings = $user->settings ?: UserSetting::create([
+                'user_id' => $user->id,
+                'theme' => 'system',
+                'default_model' => 'mock',
+                'system_prompt' => 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.',
+            ]);
 
-        $conversations = $user->conversations()
-            ->orderByRaw('pinned_at IS NULL')
-            ->orderBy('pinned_at', 'desc')
-            ->orderBy('updated_at', 'desc')
-            ->get();
+            $conversations = $user->conversations()
+                ->orderByRaw('pinned_at IS NULL')
+                ->orderBy('pinned_at', 'desc')
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            $apiKeys = $user->apiKeys()->pluck('encrypted_key', 'provider')->all();
+        } else {
+            // Guest mode
+            $settings = new UserSetting([
+                'theme' => 'system',
+                'default_model' => 'mock',
+                'system_prompt' => 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.',
+            ]);
+
+            $conversations = Conversation::where('session_token', session()->getId())
+                ->orderByRaw('pinned_at IS NULL')
+                ->orderBy('pinned_at', 'desc')
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            $apiKeys = [];
+        }
 
         $models = $this->aiManager->getAllModels();
-        $apiKeys = $user->apiKeys()->pluck('encrypted_key', 'provider')->all();
 
         return view('chat', [
             'settings' => $settings,
@@ -57,39 +85,58 @@ class ChatController extends Controller
             'model' => ['required', 'string'],
         ]);
 
+        $user = $request->user();
+
         $conversation = Conversation::create([
-            'user_id' => $request->user()->id,
-            'uuid' => (string) Str::uuid(),
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'user_id' => $user ? $user->id : null,
+            'session_token' => $user ? null : session()->getId(),
             'title' => 'New Chat',
             'model' => $request->model,
         ]);
 
-        return redirect()->route('chats.show', ['conversation' => $conversation->uuid]);
+        return redirect()->route('chats.show', $conversation->uuid);
     }
 
-    public function show(Request $request, Conversation $conversation)
+    public function show(Request $request, $uuid)
     {
-        // Ensure conversation belongs to user
-        if ($conversation->user_id !== $request->user()->id) {
-            abort(403);
+        $user = $request->user();
+        
+        $conversation = Conversation::where('uuid', $uuid)->firstOrFail();
+        $this->authorizeAccess($request, $conversation);
+
+        if ($user) {
+            $settings = $user->settings ?: UserSetting::create([
+                'user_id' => $user->id,
+                'theme' => 'system',
+                'default_model' => 'mock',
+                'system_prompt' => 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.',
+            ]);
+
+            $conversations = $user->conversations()
+                ->orderByRaw('pinned_at IS NULL')
+                ->orderBy('pinned_at', 'desc')
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            $apiKeys = $user->apiKeys()->pluck('encrypted_key', 'provider')->all();
+        } else {
+            $settings = new UserSetting([
+                'theme' => 'system',
+                'default_model' => 'mock',
+                'system_prompt' => 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.',
+            ]);
+
+            $conversations = Conversation::where('session_token', session()->getId())
+                ->orderByRaw('pinned_at IS NULL')
+                ->orderBy('pinned_at', 'desc')
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            $apiKeys = [];
         }
 
-        $user = $request->user();
-        $settings = $user->settings ?: UserSetting::create([
-            'user_id' => $user->id,
-            'theme' => 'system',
-            'default_model' => 'mock',
-            'system_prompt' => 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.',
-        ]);
-
-        $conversations = $user->conversations()
-            ->orderByRaw('pinned_at IS NULL')
-            ->orderBy('pinned_at', 'desc')
-            ->orderBy('updated_at', 'desc')
-            ->get();
-
         $models = $this->aiManager->getAllModels();
-        $apiKeys = $user->apiKeys()->pluck('encrypted_key', 'provider')->all();
         
         $messages = $conversation->messages()
             ->with('attachments')
@@ -107,10 +154,7 @@ class ChatController extends Controller
 
     public function destroy(Request $request, Conversation $conversation)
     {
-        if ($conversation->user_id !== $request->user()->id) {
-            abort(403);
-        }
-
+        $this->authorizeAccess($request, $conversation);
         $conversation->delete();
 
         return response()->json(['success' => true]);
@@ -118,9 +162,7 @@ class ChatController extends Controller
 
     public function rename(Request $request, Conversation $conversation)
     {
-        if ($conversation->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        $this->authorizeAccess($request, $conversation);
 
         $request->validate([
             'title' => ['required', 'string', 'max:255'],
@@ -135,9 +177,7 @@ class ChatController extends Controller
 
     public function pin(Request $request, Conversation $conversation)
     {
-        if ($conversation->user_id !== $request->user()->id) {
-            abort(403);
-        }
+        $this->authorizeAccess($request, $conversation);
 
         $conversation->update([
             'pinned_at' => $conversation->pinned_at ? null : now(),

@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Test User',
                 'password' => \Illuminate\Support\Facades\Hash::make('password'),
+                'role' => 'admin',
             ]
         );
 
