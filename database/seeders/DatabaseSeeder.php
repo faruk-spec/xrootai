@@ -15,11 +15,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $user = User::updateOrCreate(
+            ['email' => 'test@example.com'],
+            [
+                'name' => 'Test User',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        \App\Models\UserSetting::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'theme' => 'system',
+                'default_model' => 'mock',
+                'system_prompt' => 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.',
+            ]
+        );
     }
 }
