@@ -32,6 +32,9 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
     Route::post('/users/{user}/role', [AdminController::class, 'updateRole'])->name('admin.users.role');
     Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
+    
+    Route::get('/settings', [AdminController::class, 'settings'])->name('admin.settings');
+    Route::post('/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
 });
 
 // Open Chat Interface Routes (Access allowed for both guests and authenticated users)

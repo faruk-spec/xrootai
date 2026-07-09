@@ -107,6 +107,9 @@
                 <a href="{{ route('admin.users') }}" class="menu-link active">
                     👥 <span>Users List</span>
                 </a>
+                <a href="{{ route('admin.settings') }}" class="menu-link">
+                    ⚙️ <span>System Settings</span>
+                </a>
                 <a href="{{ route('chat') }}" class="menu-link">
                     💬 <span>Go to Chat</span>
                 </a>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>XrootAI Chat</title>
+    <title>{{ \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI') }} Chat</title>
     
     <!-- Stylesheets -->
     <link rel="stylesheet" href="{{ asset('css/claymorphism.css') }}">
@@ -601,8 +601,8 @@
             <!-- Sidebar header: logo + collapse + close buttons -->
             <div :style="sidebarCollapsed ? 'display:flex; flex-direction:column; align-items:center; gap:12px; width:100%;' : 'display: flex; align-items: center; justify-content: space-between;'" style="flex-shrink:0;">
                 <a href="{{ route('chat') }}" class="app-brand" style="overflow:hidden; white-space:nowrap; padding:0; margin:0;">
-                    <div class="app-brand-icon">X</div>
-                    <span class="sidebar-text">XrootAI</span>
+                    <div class="app-brand-icon">{{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI'), 0, 1) }}</div>
+                    <span class="sidebar-text">{{ \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI') }}</span>
                 </a>
                 <div :style="sidebarCollapsed ? 'display:flex; justify-content:center;' : 'display:flex; gap:4px;'" style="flex-shrink:0;">
                     <!-- Collapse toggle (desktop only) -->
@@ -763,10 +763,10 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
 
-                    <!-- Mobile: XrootAI logo instead of model name -->
+                    <!-- Mobile: logo instead of model name -->
                     <div class="header-mobile-logo">
-                        <div style="width:28px; height:28px; border-radius:10px; background:linear-gradient(135deg,#4a88ff,#56ab2f); display:flex; align-items:center; justify-content:center; color:white; font-weight:800; font-size:0.85rem;">X</div>
-                        <span>XrootAI</span>
+                        <div style="width:28px; height:28px; border-radius:10px; background:linear-gradient(135deg,#4a88ff,#56ab2f); display:flex; align-items:center; justify-content:center; color:white; font-weight:800; font-size:0.85rem;">{{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI'), 0, 1) }}</div>
+                        <span>{{ \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI') }}</span>
                     </div>
 
                     <!-- Desktop: active model indicator -->
@@ -813,15 +813,17 @@
                         <div style="width:72px; height:72px; border-radius:24px; background:linear-gradient(135deg,#4a88ff,#56ab2f); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 32px rgba(74,136,255,0.3);">
                             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2z"/><path d="M3 20a9 9 0 0 1 18 0"/><circle cx="12" cy="12" r="10" opacity=".15" fill="white"/></svg>
                         </div>
-                        <h2 style="font-weight: 700; font-size: 1.8rem; background: linear-gradient(135deg, #4a88ff 0%, #56ab2f 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">What can I help you build today?</h2>
+                        <h2 style="font-weight: 700; font-size: 1.8rem; background: linear-gradient(135deg, #4a88ff 0%, #56ab2f 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">{{ \App\Models\SystemSetting::get('general_welcome_message', 'What can I help you build today?') }}</h2>
                         
                         <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px;">
-                            <button @click="prompt = 'Write a classic binary search algorithm in PHP'; $nextTick(() => sendMessage())" class="clay-btn clay-btn-secondary" style="border-radius:16px; font-size:0.85rem;">
-                                "PHP Binary Search"
-                            </button>
-                            <button @click="prompt = 'Explain how Server-Sent Events (SSE) stream text to the browser'; $nextTick(() => sendMessage())" class="clay-btn clay-btn-secondary" style="border-radius:16px; font-size:0.85rem;">
-                                "Explain SSE streams"
-                            </button>
+                            @php
+                                $suggestedQs = array_filter(array_map('trim', explode("\n", \App\Models\SystemSetting::get('ux_suggested_questions', ''))));
+                            @endphp
+                            @foreach($suggestedQs as $q)
+                                <button @click="prompt = '{{ addslashes($q) }}'; $nextTick(() => sendMessage())" class="clay-btn clay-btn-secondary" style="border-radius:16px; font-size:0.85rem;">
+                                    "{{ $q }}"
+                                </button>
+                            @endforeach
                         </div>
                     </div>
                 </template>
@@ -1010,17 +1012,19 @@
                 <div class="clay-card" style="padding: 10px 16px; border-radius: 24px; display: flex; align-items: flex-end; gap: 12px;">
                     
                     <!-- Paperclip upload button -->
+                    @if(\App\Models\SystemSetting::get('toggle_file_upload', true) && (Auth::check() ? \App\Models\SystemSetting::get('plans_pro_file_upload', true) : \App\Models\SystemSetting::get('plans_guest_file_upload', true)))
                     <div style="position: relative;">
                         <button @click="$refs.fileInput.click()" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width: 44px; height: 44px; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;" title="Attach File">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                         </button>
                         <input type="file" x-ref="fileInput" @change="handleFileUpload($event)" style="display: none;">
                     </div>
+                    @endif
 
                     <!-- Main auto-expanding text input -->
                     <textarea 
                         class="clay-inset chat-textarea" 
-                        placeholder="Ask XrootAI anything… (Shift+Enter for new line)"
+                        placeholder="Ask {{ \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI') }} anything… (Shift+Enter for new line)"
                         x-model="prompt"
                         @keydown="handleTextareaKeydown($event)"
                         x-ref="promptInput"

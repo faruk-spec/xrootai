@@ -32,6 +32,11 @@ class ChatController extends Controller
 
     public function index(Request $request)
     {
+        $availabilityResponse = $this->checkChatbotAvailability($request);
+        if ($availabilityResponse) {
+            return $availabilityResponse;
+        }
+
         $user = $request->user();
         
         if ($user) {
@@ -39,8 +44,8 @@ class ChatController extends Controller
             $settings = $user->settings ?: UserSetting::create([
                 'user_id' => $user->id,
                 'theme' => 'system',
-                'default_model' => 'mock',
-                'system_prompt' => 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.',
+                'default_model' => \App\Models\SystemSetting::get('model_default', 'mock'),
+                'system_prompt' => \App\Models\SystemSetting::get('prompt_default', 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.'),
             ]);
 
             $conversations = $user->conversations()
@@ -54,8 +59,8 @@ class ChatController extends Controller
             // Guest mode
             $settings = new UserSetting([
                 'theme' => 'system',
-                'default_model' => 'mock',
-                'system_prompt' => 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.',
+                'default_model' => \App\Models\SystemSetting::get('model_default', 'mock'),
+                'system_prompt' => \App\Models\SystemSetting::get('prompt_default', 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.'),
             ]);
 
             $conversations = Conversation::where('session_token', session()->getId())
@@ -67,7 +72,10 @@ class ChatController extends Controller
             $apiKeys = [];
         }
 
-        $models = $this->aiManager->getAllModels();
+        $allowedModels = \App\Models\SystemSetting::get('model_available', ['mock']);
+        $models = array_values(array_filter($this->aiManager->getAllModels(), function ($model) use ($allowedModels) {
+            return in_array($model['id'], $allowedModels);
+        }));
 
         return view('chat', [
             'settings' => $settings,
@@ -81,6 +89,11 @@ class ChatController extends Controller
 
     public function store(Request $request)
     {
+        $availabilityResponse = $this->checkChatbotAvailability($request);
+        if ($availabilityResponse) {
+            return $availabilityResponse;
+        }
+
         $request->validate([
             'model' => ['required', 'string'],
         ]);
@@ -109,6 +122,11 @@ class ChatController extends Controller
 
     public function show(Request $request, $uuid)
     {
+        $availabilityResponse = $this->checkChatbotAvailability($request);
+        if ($availabilityResponse) {
+            return $availabilityResponse;
+        }
+
         $user = $request->user();
         
         $conversation = Conversation::where('uuid', $uuid)->firstOrFail();
@@ -118,8 +136,8 @@ class ChatController extends Controller
             $settings = $user->settings ?: UserSetting::create([
                 'user_id' => $user->id,
                 'theme' => 'system',
-                'default_model' => 'mock',
-                'system_prompt' => 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.',
+                'default_model' => \App\Models\SystemSetting::get('model_default', 'mock'),
+                'system_prompt' => \App\Models\SystemSetting::get('prompt_default', 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.'),
             ]);
 
             $conversations = $user->conversations()
@@ -132,8 +150,8 @@ class ChatController extends Controller
         } else {
             $settings = new UserSetting([
                 'theme' => 'system',
-                'default_model' => 'mock',
-                'system_prompt' => 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.',
+                'default_model' => \App\Models\SystemSetting::get('model_default', 'mock'),
+                'system_prompt' => \App\Models\SystemSetting::get('prompt_default', 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.'),
             ]);
 
             $conversations = Conversation::where('session_token', session()->getId())
@@ -145,7 +163,10 @@ class ChatController extends Controller
             $apiKeys = [];
         }
 
-        $models = $this->aiManager->getAllModels();
+        $allowedModels = \App\Models\SystemSetting::get('model_available', ['mock']);
+        $models = array_values(array_filter($this->aiManager->getAllModels(), function ($model) use ($allowedModels) {
+            return in_array($model['id'], $allowedModels);
+        }));
         
         $messages = $conversation->messages()
             ->with('attachments')
@@ -159,6 +180,24 @@ class ChatController extends Controller
             'activeConversation' => $conversation,
             'messages' => $messages,
         ]);
+    }
+
+    protected function checkChatbotAvailability(Request $request)
+    {
+        $user = $request->user();
+        if ($user && $user->role === 'admin') {
+            return null;
+        }
+
+        if (\App\Models\SystemSetting::get('general_maintenance_mode', false)) {
+            return response()->view('errors.maintenance', [], 503);
+        }
+
+        if (!\App\Models\SystemSetting::get('general_enable_chatbot', true)) {
+            abort(503, \App\Models\SystemSetting::get('general_error_message', 'Chatbot is currently disabled.'));
+        }
+
+        return null;
     }
 
     public function destroy(Request $request, Conversation $conversation)

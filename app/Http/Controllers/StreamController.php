@@ -24,14 +24,28 @@ class StreamController extends Controller
     {
         $user = $request->user();
 
-        // 1. Authorize access
-        if ($user) {
-            if ($conversation->user_id !== $user->id) {
-                abort(403, 'Unauthorized access.');
+        // Check availability
+        if (\App\Models\SystemSetting::get('general_maintenance_mode', false)) {
+            if (!$user || $user->role !== 'admin') {
+                $response = new StreamedResponse(function() {
+                    echo 'data: ' . json_encode(['text' => "\n\n⚠️ **System under maintenance.** " . \App\Models\SystemSetting::get('general_maintenance_message', 'XrootAI is currently undergoing scheduled maintenance. Please check back later.')]) . "\n\n";
+                    echo "data: [DONE]\n\n";
+                    flush();
+                });
+                $response->headers->set('Content-Type', 'text/event-stream');
+                return $response;
             }
-        } else {
-            if (!app()->environment('testing') && $conversation->session_token !== session()->getId()) {
-                abort(403, 'Unauthorized access.');
+        }
+
+        if (!\App\Models\SystemSetting::get('general_enable_chatbot', true)) {
+            if (!$user || $user->role !== 'admin') {
+                $response = new StreamedResponse(function() {
+                    echo 'data: ' . json_encode(['text' => "\n\n⚠️ " . \App\Models\SystemSetting::get('general_error_message', 'Chatbot is currently disabled.')]) . "\n\n";
+                    echo "data: [DONE]\n\n";
+                    flush();
+                });
+                $response->headers->set('Content-Type', 'text/event-stream');
+                return $response;
             }
         }
 
@@ -39,7 +53,26 @@ class StreamController extends Controller
         $prompt = $request->input('prompt');
         $attachmentPaths = $request->input('attachments', []); // array of files
 
-        // 2. Enforce Guest Limit (Max 5 messages per guest session)
+        // Check if file upload is enabled
+        $fileUploadAllowed = \App\Models\SystemSetting::get('toggle_file_upload', true);
+        if ($fileUploadAllowed && !$user) {
+            $fileUploadAllowed = \App\Models\SystemSetting::get('plans_guest_file_upload', true);
+        } elseif ($fileUploadAllowed && $user && $user->role === 'user') {
+            // Free user inherits Pro/general uploads or plan restrictions
+            $fileUploadAllowed = \App\Models\SystemSetting::get('plans_pro_file_upload', true);
+        }
+
+        if (!$fileUploadAllowed && !empty($attachmentPaths)) {
+            $response = new StreamedResponse(function() {
+                echo 'data: ' . json_encode(['text' => "\n\n⚠️ **File upload permission denied.** File uploads are disabled for your account plan."]) . "\n\n";
+                echo "data: [DONE]\n\n";
+                flush();
+            });
+            $response->headers->set('Content-Type', 'text/event-stream');
+            return $response;
+        }
+
+        // 2. Enforce Guest Limit (Dynamic)
         if (!$user) {
             $sessionToken = app()->environment('testing') ? $conversation->session_token : session()->getId();
             $sessionConversations = Conversation::where('session_token', $sessionToken)->pluck('id');
@@ -47,15 +80,16 @@ class StreamController extends Controller
                 ->where('role', 'user')
                 ->count();
 
-            if ($guestMessagesCount >= 5) {
-                $response = new StreamedResponse(function () {
+            $guestLimit = (int) \App\Models\SystemSetting::get('plans_guest_messages_per_session', 5);
+            if ($guestMessagesCount >= $guestLimit) {
+                $response = new StreamedResponse(function () use ($guestLimit) {
                     // Disable PHP output buffering if not in testing
                     if (!app()->environment('testing')) {
                         while (ob_get_level() > 0) {
                             ob_end_clean();
                         }
                     }
-                    echo 'data: ' . json_encode(['text' => "\n\n⚠️ **Guest limit reached!** You have sent 5 free messages. Please [Register](/register) or [Login](/login) to continue chatting with XrootAI."]) . "\n\n";
+                    echo 'data: ' . json_encode(['text' => "\n\n⚠️ **Guest limit reached!** You have sent {$guestLimit} free messages. Please [Register](/register) or [Login](/login) to continue chatting."]) . "\n\n";
                     echo "data: [DONE]\n\n";
                     if (!app()->environment('testing') && ob_get_length()) {
                         ob_flush();
@@ -67,6 +101,38 @@ class StreamController extends Controller
                 $response->headers->set('Connection', 'keep-alive');
                 $response->headers->set('X-Accel-Buffering', 'no');
                 return $response;
+            }
+        } else if ($user->role === 'user') {
+            // Free user daily message limit check
+            $freeLimit = (int) \App\Models\SystemSetting::get('plans_free_message_limit', 50);
+            if ($freeLimit > 0) {
+                $userMessagesCount = Message::whereHas('conversation', function ($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    })
+                    ->where('role', 'user')
+                    ->where('created_at', '>=', now()->startOfDay())
+                    ->count();
+
+                if ($userMessagesCount >= $freeLimit) {
+                    $response = new StreamedResponse(function () use ($freeLimit) {
+                        if (!app()->environment('testing')) {
+                            while (ob_get_level() > 0) {
+                                ob_end_clean();
+                            }
+                        }
+                        echo 'data: ' . json_encode(['text' => "\n\n⚠️ **Daily message limit reached!** You have sent {$freeLimit} messages today on your Free plan. Please upgrade to Pro for unlimited usage."]) . "\n\n";
+                        echo "data: [DONE]\n\n";
+                        if (!app()->environment('testing') && ob_get_length()) {
+                            ob_flush();
+                        }
+                        flush();
+                    });
+                    $response->headers->set('Content-Type', 'text/event-stream');
+                    $response->headers->set('Cache-Control', 'no-cache, must-revalidate');
+                    $response->headers->set('Connection', 'keep-alive');
+                    $response->headers->set('X-Accel-Buffering', 'no');
+                    return $response;
+                }
             }
         }
 
@@ -113,7 +179,19 @@ class StreamController extends Controller
         
         // Add system prompt from user settings
         $settings = $user ? $user->settings : null;
-        $systemPrompt = $settings ? $settings->system_prompt : 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.';
+        $systemPrompt = $settings ? $settings->system_prompt : \App\Models\SystemSetting::get('prompt_default', 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.');
+        
+        // Enrich prompt with AI behavior settings
+        $personality = \App\Models\SystemSetting::get('behavior_personality', 'Friendly');
+        $style = \App\Models\SystemSetting::get('behavior_response_style', 'Detailed');
+        $customRules = \App\Models\SystemSetting::get('behavior_custom_memory_rules', '');
+        
+        $behaviorGuidelines = "\n\n[System Guidelines]\n- Personality Tone: {$personality}\n- Response Layout/Style: {$style}";
+        if (!empty($customRules)) {
+            $behaviorGuidelines .= "\n- Additional Behavior Directives: {$customRules}";
+        }
+        
+        $systemPrompt .= $behaviorGuidelines;
         $history[] = ['role' => 'system', 'content' => $systemPrompt];
 
         // Add previous messages (excluding the new user message we just created)
