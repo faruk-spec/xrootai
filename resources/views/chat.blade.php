@@ -78,6 +78,15 @@
             position: relative;
         }
 
+        /* Mobile hamburger button - hidden on desktop, shown on mobile */
+        .mobile-menu-btn {
+            display: none;
+        }
+        /* Sidebar close button - hidden on desktop, shown on mobile */
+        .sidebar-close-btn {
+            display: none;
+        }
+
         @media (max-width: 768px) {
             .workspace {
                 grid-template-columns: 1fr;
@@ -97,6 +106,13 @@
             }
             .sidebar-overlay {
                 display: block !important;
+            }
+            /* Show mobile-only controls */
+            .mobile-menu-btn {
+                display: flex;
+            }
+            .sidebar-close-btn {
+                display: flex;
             }
         }
 
@@ -119,6 +135,7 @@
             height: 100%;
             overflow: hidden;
             position: relative;
+            min-height: 0;
         }
 
         .chat-header {
@@ -133,7 +150,8 @@
         }
 
         .chat-messages {
-            flex-grow: 1;
+            flex: 1 1 0;
+            min-height: 0;
             overflow-y: auto;
             padding: 24px;
             display: flex;
@@ -153,6 +171,56 @@
             max-width: 80%;
             margin-bottom: 4px;
             line-height: 1.6;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            /* Ensure text inside is selectable and visible */
+            min-width: 0;
+        }
+        .message-bubble .msg-content {
+            padding: 14px 18px;
+        }
+        /* Collapsible long message */
+        .msg-body {
+            position: relative;
+        }
+        .msg-body.collapsed {
+            max-height: 300px;
+            overflow: hidden;
+        }
+        .msg-body.collapsed::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(transparent, var(--clay-card-bg));
+            pointer-events: none;
+        }
+        .message-user .msg-body.collapsed::after {
+            background: linear-gradient(transparent, var(--accent-blue));
+        }
+        .expand-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px 18px 10px;
+            width: 100%;
+            justify-content: center;
+            transition: color 0.15s;
+        }
+        .expand-btn:hover {
+            color: var(--text-primary);
+        }
+        /* Fix overlay pointer-events when hidden */
+        .sidebar-overlay[style*="display: none"] {
+            pointer-events: none !important;
         }
 
         .message-user {
@@ -272,7 +340,22 @@
         /* Auto-expandable textarea logic helper */
         .chat-textarea {
             resize: none;
-            max-height: 200px;
+            overflow-y: hidden; /* hidden until content exceeds max-height */
+            max-height: 160px;  /* ~6 lines — switches to scroll after */
+            line-height: 1.6;
+            scrollbar-width: none; /* Firefox: hide scrollbar */
+        }
+        .chat-textarea::-webkit-scrollbar {
+            display: none; /* Chrome/Safari/Edge: hide scrollbar */
+        }
+        /* Once auto-grow hits the cap, enable invisible scroll */
+        .chat-textarea.overflowed {
+            overflow-y: scroll;
+        }
+        /* Spin animation for upload spinner */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
         }
 
         /* Premium Table Styles */
@@ -320,7 +403,18 @@
     <div class="workspace">
         
         <!-- Sidebar overlay for Mobile view -->
-        <div class="sidebar-overlay" x-show="sidebarOpen" @click="sidebarOpen = false" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.45); z-index:40;"></div>
+        <div
+            class="sidebar-overlay"
+            x-show="sidebarOpen"
+            @click="sidebarOpen = false"
+            style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:40; cursor:pointer;"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0"
+            x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+        ></div>
 
         <!-- Sidebar Container (Phase 2 Component) -->
         <aside class="sidebar" :class="{ 'open': sidebarOpen }">
@@ -329,8 +423,9 @@
                     <div class="app-brand-icon">X</div>
                     <span>XrootAI</span>
                 </a>
-                <button @click="sidebarOpen = false" class="clay-btn clay-btn-secondary" style="border-radius:50%; width:36px; height:36px; padding:0; display: flex; align-items: center; justify-content: center; @media(min-width:769px){display:none;}">
-                    ✕
+                <!-- Close button: only visible on mobile via CSS class -->
+                <button @click="sidebarOpen = false" class="clay-btn clay-btn-secondary sidebar-close-btn" style="border-radius:50%; width:36px; height:36px; padding:0; align-items: center; justify-content: center;" title="Close sidebar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
             </div>
 
@@ -347,7 +442,7 @@
             <input type="text" class="clay-inset clay-input" placeholder="Search conversations..." x-model="searchQuery" style="width:100%;">
 
             <!-- Conversations list (Grouped by date) -->
-            <div style="flex-grow: 1; overflow-y: auto; margin-top: 10px; padding-right: 5px;">
+            <div style="flex: 1 1 0; min-height: 0; overflow-y: auto; margin-top: 10px; padding-right: 5px;">
                 <template x-for="group in groupedConversations()" :key="group.label">
                     <div style="margin-bottom: 20px;">
                         <!-- Group Header divider -->
@@ -361,12 +456,19 @@
                                 
                                 <div style="display: flex; gap: 4px;">
                                     <!-- Pin toggle -->
-                                    <button @click.prevent="togglePin(chat)" class="clay-btn" style="background:none; border:none; padding:4px; font-size:0.85rem; cursor:pointer;" :title="chat.pinned_at ? 'Unpin' : 'Pin'">
-                                        <span x-text="chat.pinned_at ? '📌' : '📍'"></span>
+                                    <button @click.prevent="togglePin(chat)" class="clay-btn" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px;" :title="chat.pinned_at ? 'Unpin' : 'Pin'">
+                                        <!-- Pinned: filled pin -->
+                                        <template x-if="chat.pinned_at">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 3a1 1 0 0 1 .707 1.707L15.414 6l1.293 5.172 2.586 1.121A1 1 0 0 1 20 13.28V14a1 1 0 0 1-1 1h-6v6a1 1 0 0 1-2 0v-6H5a1 1 0 0 1-1-1v-.72a1 1 0 0 1 .707-.987l2.586-1.121L8.586 6 7.293 4.707A1 1 0 0 1 8 3h8z"/></svg>
+                                        </template>
+                                        <!-- Unpinned: outline pin -->
+                                        <template x-if="!chat.pinned_at">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17z"/></svg>
+                                        </template>
                                     </button>
                                     <!-- Delete button -->
-                                    <button @click.prevent="deleteChat(chat)" class="clay-btn" style="background:none; border:none; padding:4px; font-size:0.85rem; cursor:pointer;" title="Delete">
-                                        🗑️
+                                    <button @click.prevent="deleteChat(chat)" class="clay-btn" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px;" title="Delete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                                     </button>
                                 </div>
                             </div>
@@ -391,13 +493,13 @@
                             </div>
                             
                             <div style="display: flex; gap: 4px; flex-shrink: 0;">
-                                <button @click="settingsModalOpen = true" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center;" title="Settings">
-                                    ⚙️
+                                <button @click="openSettings()" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center;" title="Settings">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                                 </button>
                                 <form action="{{ route('logout') }}" method="POST" style="margin: 0; display: inline-flex;">
                                     @csrf
-                                    <button type="submit" class="clay-btn" style="background:none; border:none; padding:4px; font-size:1.1rem; cursor:pointer;" title="Logout">
-                                        🚪
+                                    <button type="submit" class="clay-btn" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px;" title="Logout">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                                     </button>
                                 </form>
                             </div>
@@ -422,8 +524,9 @@
             <!-- Header -->
             <header class="chat-header">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <button @click="sidebarOpen = true" class="clay-btn clay-btn-secondary" style="border-radius: 12px; height:40px; padding: 0 12px; @media(min-width:769px){display:none;}">
-                        ☰
+                    <!-- Hamburger button: only visible on mobile via CSS class -->
+                    <button @click="sidebarOpen = true" class="clay-btn clay-btn-secondary mobile-menu-btn" style="border-radius: 12px; height:40px; padding: 0 14px; align-items: center; justify-content: center; gap:4px;" aria-label="Open sidebar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
                     
                     <!-- Active model indicator -->
@@ -440,9 +543,12 @@
                         </template>
                     </select>
 
-                    <button @click="settingsModalOpen = true" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:40px; height:40px; padding:0; display:flex; align-items:center; justify-content:center;">
-                        ⚙️
+                    @auth
+                    {{-- Settings button: only shown to authenticated users --}}
+                    <button @click="openSettings()" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:40px; height:40px; padding:0; display:flex; align-items:center; justify-content:center;" title="Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                     </button>
+                    @endauth
                 </div>
             </header>
 
@@ -452,7 +558,9 @@
                 <!-- If no conversation is active -->
                 <template x-if="messages.length === 0">
                     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; max-width: 500px; margin: 0 auto; gap: 20px;">
-                        <div style="font-size: 4rem;">🔮</div>
+                        <div style="width:72px; height:72px; border-radius:24px; background:linear-gradient(135deg,#4a88ff,#56ab2f); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 32px rgba(74,136,255,0.3);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2z"/><path d="M3 20a9 9 0 0 1 18 0"/><circle cx="12" cy="12" r="10" opacity=".15" fill="white"/></svg>
+                        </div>
                         <h2 style="font-weight: 700; font-size: 1.8rem; background: linear-gradient(135deg, #4a88ff 0%, #56ab2f 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">What can I help you build today?</h2>
                         <p style="color: var(--text-muted); line-height: 1.6;">XrootAI handles multiple AI providers, code block syntax highlighting, file attachments, and complete chat persistence in a soft clay design.</p>
                         
@@ -472,14 +580,14 @@
                     <div class="clay-card message-bubble" :class="msg.role === 'user' ? 'message-user' : 'message-assistant'">
                         <!-- Attachments preview row with visual thumbnails -->
                         <template x-if="msg.attachments && msg.attachments.length > 0">
-                            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 18px 0;">
                                 <template x-for="file in msg.attachments" :key="file.id">
                                     <a :href="'/storage/' + file.file_path" target="_blank" class="attach-pill" style="opacity: 0.95; padding: 6px 12px; display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;">
                                         <template x-if="file.mime_type && file.mime_type.startsWith('image/')">
                                             <img :src="'/storage/' + file.file_path" style="width: 28px; height: 28px; object-fit: cover; border-radius: 6px;" />
                                         </template>
                                         <template x-if="!file.mime_type || !file.mime_type.startsWith('image/')">
-                                            <span style="font-size: 1rem;" x-text="getFileIcon(file.mime_type)"></span>
+                                            <span style="display:flex; align-items:center; color:var(--text-muted);" x-html="getFileIcon(file.mime_type)"></span>
                                         </template>
                                         <span x-text="file.file_name" style="font-weight: 500; font-size: 0.82rem; text-decoration: underline;"></span>
                                     </a>
@@ -487,15 +595,43 @@
                             </div>
                         </template>
 
-                        <!-- Body text (markdown parsed) -->
-                        <div x-html="renderMessageContent(msg.content)"></div>
+                        <!-- Body text: collapsible if tall -->
+                        <div
+                            class="msg-body"
+                            :class="{ 'collapsed': !msg._expanded && isLongMessage(msg.content) }"
+                            x-data="{ ready: false }"
+                            x-init="$nextTick(() => ready = true)"
+                        >
+                            <div class="msg-content" x-html="renderMessageContent(msg.content)"></div>
+                        </div>
+
+                        <!-- Expand / Collapse toggle -->
+                        <template x-if="isLongMessage(msg.content)">
+                            <button
+                                class="expand-btn"
+                                @click="msg._expanded = !msg._expanded"
+                            >
+                                <template x-if="!msg._expanded">
+                                    <span style="display:flex;align-items:center;gap:5px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                        Show more
+                                    </span>
+                                </template>
+                                <template x-if="msg._expanded">
+                                    <span style="display:flex;align-items:center;gap:5px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                                        Show less
+                                    </span>
+                                </template>
+                            </button>
+                        </template>
                     </div>
                 </template>
 
                 <!-- Streaming active assistant bubble -->
                 <template x-if="isStreaming && activeStreamText.length > 0">
                     <div class="clay-card message-bubble message-assistant">
-                        <div x-html="renderMessageContent(activeStreamText)"></div>
+                        <div class="msg-content" x-html="renderMessageContent(activeStreamText)"></div>
                     </div>
                 </template>
 
@@ -525,14 +661,17 @@
                                 <img :src="'/storage/' + file.file_path" style="width: 24px; height: 24px; object-fit: cover; border-radius: 4px;" />
                             </template>
                             <template x-if="!file.mime_type || !file.mime_type.startsWith('image/')">
-                                <span style="font-size: 0.95rem;" x-text="getFileIcon(file.mime_type)"></span>
+                                <span style="display:flex; align-items:center; color:var(--text-muted);" x-html="getFileIcon(file.mime_type)"></span>
                             </template>
                             <span x-text="file.file_name" style="font-weight: 500; font-size: 0.82rem;"></span>
-                            <button @click="removeAttachment(idx)" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-weight:bold; margin-left:4px; font-size: 0.85rem;" title="Remove attachment">✕</button>
+                            <button @click="removeAttachment(idx)" style="background:none; border:none; color:var(--text-muted); cursor:pointer; margin-left:4px; display:flex; align-items:center; justify-content:center; padding:2px;" title="Remove attachment">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
                         </div>
                     </template>
-                    <div x-show="isUploading" class="attach-pill" style="border-style:dashed;">
-                        ⏳ Uploading...
+                    <div x-show="isUploading" class="attach-pill" style="border-style:dashed; display:flex; align-items:center; gap:6px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite;"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                        Uploading...
                     </div>
                 </div>
 
@@ -541,8 +680,8 @@
                     
                     <!-- Paperclip upload button -->
                     <div style="position: relative;">
-                        <button @click="$refs.fileInput.click()" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width: 42px; height: 42px; padding:0; display:flex; align-items:center; justify-content:center;" title="Attach File">
-                            📎
+                        <button @click="$refs.fileInput.click()" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width: 42px; height: 42px; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;" title="Attach File">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                         </button>
                         <input type="file" x-ref="fileInput" @change="handleFileUpload($event)" style="display: none;">
                     </div>
@@ -550,9 +689,9 @@
                     <!-- Main auto-expanding text input -->
                     <textarea 
                         class="clay-inset chat-textarea" 
-                        placeholder="Ask XrootAI anything..." 
+                        placeholder="Ask XrootAI anything… (Shift+Enter for new line)"
                         x-model="prompt"
-                        @keydown.enter.prevent="if(!isStreaming) sendMessage()"
+                        @keydown="handleTextareaKeydown($event)"
                         x-ref="promptInput"
                         rows="1"
                         style="flex-grow: 1; border: none; background: transparent; box-shadow: none; padding: 10px 0; font-size: 1.05rem;"
@@ -564,20 +703,23 @@
                         class="clay-btn clay-btn-primary" 
                         style="border-radius: 50%; width: 44px; height: 44px; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink: 0;"
                         :disabled="isStreaming || (!prompt.trim() && attachments.length === 0)"
+                        title="Send (Enter)"
                     >
-                        ➔
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                     </button>
                 </div>
             </footer>
         </main>
 
         <!-- Settings Modal (Frosted Clay style) -->
+        {{-- Only rendered/opened for authenticated users; guests cannot reach this --}}
+        @auth
         <div class="modal-overlay" x-show="settingsModalOpen" x-transition.opacity style="display: none;">
             <div class="clay-card modal-card" @click.away="settingsModalOpen = false">
                 <div style="display:flex; justify-content:between; align-items:center; margin-bottom: 24px; border-bottom: 1px solid var(--clay-card-border); padding-bottom:12px;">
                     <h2 style="font-weight: 700; font-size: 1.4rem;">App Settings</h2>
-                    <button @click="settingsModalOpen = false" class="clay-btn clay-btn-secondary" style="border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; margin-left:auto;">
-                        ✕
+                    <button @click="settingsModalOpen = false" class="clay-btn clay-btn-secondary" style="border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; margin-left:auto;" title="Close">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </div>
 
@@ -657,6 +799,33 @@
                 </div>
             </div>
         </div>
+        @endauth
+
+        <!-- Delete Confirmation Modal -->
+        <div class="modal-overlay" x-show="deleteConfirmOpen" x-transition.opacity style="display:none; z-index:200;">
+            <div class="clay-card" style="width:100%; max-width:420px; padding:32px;" @click.away="deleteConfirmOpen = false">
+                <!-- Icon -->
+                <div style="display:flex; justify-content:center; margin-bottom:20px;">
+                    <div style="width:56px; height:56px; border-radius:18px; background:rgba(239,68,68,0.1); display:flex; align-items:center; justify-content:center;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    </div>
+                </div>
+                <h3 style="font-weight:700; font-size:1.2rem; text-align:center; margin-bottom:8px;">Delete Conversation?</h3>
+                <p style="color:var(--text-muted); font-size:0.9rem; text-align:center; line-height:1.6; margin-bottom:28px;">
+                    This will permanently delete
+                    <strong x-text="chatToDelete ? '&quot;' + chatToDelete.title + '&quot;' : 'this conversation'"></strong>.
+                    This action cannot be undone.
+                </p>
+                <div style="display:flex; gap:12px;">
+                    <button @click="deleteConfirmOpen = false" class="clay-btn clay-btn-secondary" style="flex:1; padding:10px;">
+                        Cancel
+                    </button>
+                    <button @click="confirmDelete()" class="clay-btn" style="flex:1; padding:10px; background:linear-gradient(135deg,#ef4444,#dc2626); color:white; border:none; box-shadow:0 4px 12px rgba(239,68,68,0.3);">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
 
     </div>
 
@@ -667,6 +836,10 @@
                 darkMode: localStorage.getItem('darkMode') === 'true',
                 sidebarOpen: false,
                 settingsModalOpen: false,
+                deleteConfirmOpen: false,
+                chatToDelete: null,
+                // Auth flag injected from server — guests cannot open settings
+                isAuthenticated: @json(auth()->check()),
                 
                 // Active chat states
                 activeUuid: @json($activeConversation ? $activeConversation->uuid : null),
@@ -691,13 +864,22 @@
                     // Automatically scroll to bottom on start if we have messages
                     this.scrollToBottom();
 
-                    // Auto-adjust height of textarea input
+                    // Auto-adjust height of textarea — grows until max-height, then scrolls
                     const textarea = this.$refs.promptInput;
                     if (textarea) {
-                        textarea.addEventListener('input', () => {
+                        const MAX_HEIGHT = 160; // matches .chat-textarea max-height
+                        const autoGrow = () => {
                             textarea.style.height = 'auto';
-                            textarea.style.height = (textarea.scrollHeight) + 'px';
-                        });
+                            const newH = Math.min(textarea.scrollHeight, MAX_HEIGHT);
+                            textarea.style.height = newH + 'px';
+                            // Toggle scroll visibility class
+                            if (textarea.scrollHeight > MAX_HEIGHT) {
+                                textarea.classList.add('overflowed');
+                            } else {
+                                textarea.classList.remove('overflowed');
+                            }
+                        };
+                        textarea.addEventListener('input', autoGrow);
                     }
 
                     // Toggle system theme if system option is picked
@@ -777,20 +959,37 @@
                 },
 
                 getFileIcon(mimeType) {
-                    if (!mimeType) return '📄';
-                    if (mimeType.includes('pdf')) return '📕';
-                    if (mimeType.includes('msword') || mimeType.includes('officedocument')) return '📘';
-                    if (mimeType.includes('excel') || mimeType.includes('sheet')) return '📗';
-                    if (mimeType.includes('zip') || mimeType.includes('compressed') || mimeType.includes('tar')) return '📦';
-                    if (mimeType.includes('text/') || mimeType.includes('json') || mimeType.includes('javascript') || mimeType.includes('markdown')) return '📝';
-                    if (mimeType.startsWith('audio/')) return '🎵';
-                    if (mimeType.startsWith('video/')) return '🎥';
-                    return '📄';
+                    // Returns inline SVG string for file-type icon
+                    const icon = (path) => `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+                    if (!mimeType) return icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>');
+                    if (mimeType.includes('pdf'))           return icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>');
+                    if (mimeType.includes('msword') || mimeType.includes('officedocument')) return icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>');
+                    if (mimeType.includes('excel') || mimeType.includes('sheet')) return icon('<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>');
+                    if (mimeType.includes('zip') || mimeType.includes('compressed') || mimeType.includes('tar')) return icon('<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>');
+                    if (mimeType.includes('text/') || mimeType.includes('json') || mimeType.includes('javascript') || mimeType.includes('markdown')) return icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>');
+                    if (mimeType.startsWith('audio/')) return icon('<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>');
+                    if (mimeType.startsWith('video/')) return icon('<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>');
+                    return icon('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>');
                 },
 
                 getModelName(modelId) {
                     const model = this.availableModels.find(m => m.id === modelId);
                     return model ? model.name : modelId;
+                },
+
+                // Open settings — guards against unauthenticated access
+                openSettings() {
+                    if (!this.isAuthenticated) {
+                        window.location.href = '{{ route("login") }}';
+                        return;
+                    }
+                    this.settingsModalOpen = true;
+                },
+
+                isLongMessage(content) {
+                    // Treat as long if content exceeds ~800 chars or 12 newlines
+                    if (!content) return false;
+                    return content.length > 800 || (content.match(/\n/g) || []).length > 12;
                 },
 
                 renderMessageContent(content) {
@@ -1006,7 +1205,16 @@
                 },
 
                 async deleteChat(chat) {
-                    if (!confirm('Are you sure you want to delete this conversation?')) return;
+                    // Open custom confirmation modal instead of browser confirm()
+                    this.chatToDelete = chat;
+                    this.deleteConfirmOpen = true;
+                },
+
+                async confirmDelete() {
+                    const chat = this.chatToDelete;
+                    if (!chat) return;
+                    this.deleteConfirmOpen = false;
+                    this.chatToDelete = null;
 
                     try {
                         const response = await fetch(`/chats/${chat.uuid}`, {
@@ -1039,6 +1247,26 @@
                         }
                         return new Date(b.updated_at) - new Date(a.updated_at);
                     });
+                },
+
+                handleTextareaKeydown(event) {
+                    // Shift+Enter → insert a real newline (default browser behaviour)
+                    // Plain Enter → send message
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        if (!this.isStreaming) {
+                            this.sendMessage();
+                            // Reset textarea height after send
+                            this.$nextTick(() => {
+                                const ta = this.$refs.promptInput;
+                                if (ta) {
+                                    ta.style.height = 'auto';
+                                    ta.classList.remove('overflowed');
+                                }
+                            });
+                        }
+                    }
+                    // Shift+Enter: do nothing special — let browser insert \n naturally
                 },
 
                 async refreshConversationsList() {
