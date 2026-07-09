@@ -98,6 +98,10 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::get('/logs', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('admin.logs.index');
 });
 
+// Legal & Privacy Pages
+Route::view('/privacy', 'privacy')->name('privacy');
+Route::view('/terms', 'terms')->name('terms');
+
 // Open Chat Interface Routes (Access allowed for both guests and authenticated users)
 Route::get('/', [ChatController::class, 'index'])->name('chat');
 Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');

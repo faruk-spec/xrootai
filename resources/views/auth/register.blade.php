@@ -153,6 +153,10 @@
                 <a href="{{ route('login') }}" class="auth-link">Log In</a>
             </div>
 
+            <div class="text-center mt-3" style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+                By signing up, you agree to our <a href="{{ route('terms') }}" style="color: #4a88ff; text-decoration: none; font-weight: 500;">Terms of Service</a> & <a href="{{ route('privacy') }}" style="color: #4a88ff; text-decoration: none; font-weight: 500;">Privacy Policy</a>.
+            </div>
+
             <!-- Floating Theme Toggle -->
             <div style="position: absolute; top: 15px; right: 15px;">
                 <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;">

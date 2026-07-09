@@ -1058,6 +1058,11 @@
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                     </button>
                 </div>
+
+                <!-- Legal & Disclaimer Notice -->
+                <div style="text-align: center; margin-top: 8px; font-size: 0.76rem; color: var(--text-muted);">
+                    <span>AI completions can make mistakes. Verify important info. &bull; <a href="{{ route('privacy') }}" target="_blank" style="color: inherit; text-decoration: underline;">Privacy</a> &bull; <a href="{{ route('terms') }}" target="_blank" style="color: inherit; text-decoration: underline;">Terms</a></span>
+                </div>
             </footer>
         </main>
 
