@@ -87,6 +87,47 @@
             z-index: -1;
             pointer-events: none;
         }
+
+        @media (max-width: 768px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+                overflow: visible;
+            }
+            .admin-sidebar {
+                padding: 12px 16px;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                border-right: none;
+                border-bottom: 1px solid var(--clay-card-border);
+                position: sticky;
+                top: 0;
+                background: var(--bg-sidebar);
+                z-index: 100;
+                height: auto;
+                gap: 10px;
+            }
+            .admin-sidebar .app-brand {
+                margin-bottom: 0 !important;
+            }
+            .admin-sidebar nav {
+                flex-direction: row !important;
+                gap: 8px !important;
+            }
+            .admin-sidebar nav a span {
+                display: none;
+            }
+            .admin-sidebar div[style*="margin-top: auto"] {
+                margin-top: 0 !important;
+                gap: 8px;
+            }
+            .admin-main {
+                padding: 16px;
+                height: auto;
+                overflow: visible;
+            }
+        }
     </style>
 </head>
 <body x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' }" :class="{ 'dark-mode': darkMode }">
@@ -102,16 +143,20 @@
 
             <nav style="display: flex; flex-direction: column; gap: 8px;">
                 <a href="{{ route('admin.dashboard') }}" class="menu-link">
-                    📊 <span>Dashboard</span>
+                    <svg style="width:20px; height:20px; opacity:0.85;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.003 9.003 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+                    <span>Dashboard</span>
                 </a>
                 <a href="{{ route('admin.users') }}" class="menu-link active">
-                    👥 <span>Users List</span>
+                    <svg style="width:20px; height:20px; opacity:0.85;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>Users List</span>
                 </a>
                 <a href="{{ route('admin.settings') }}" class="menu-link">
-                    ⚙️ <span>System Settings</span>
+                    <svg style="width:20px; height:20px; opacity:0.85;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <span>System Settings</span>
                 </a>
                 <a href="{{ route('chat') }}" class="menu-link">
-                    💬 <span>Go to Chat</span>
+                    <svg style="width:20px; height:20px; opacity:0.85;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                    <span>Go to Chat</span>
                 </a>
             </nav>
 

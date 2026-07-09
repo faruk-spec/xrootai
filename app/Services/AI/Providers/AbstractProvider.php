@@ -16,6 +16,11 @@ abstract class AbstractProvider implements ProviderInterface
         $this->config = $config;
     }
 
+    public function getApiKey(): ?string
+    {
+        return $this->apiKey;
+    }
+
     /**
      * Resolves the request parameters.
      */

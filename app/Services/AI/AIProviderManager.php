@@ -22,13 +22,28 @@ class AIProviderManager
     {
         $providerName = $this->resolveProviderName($model);
         
-        // Fetch decrypted key from DB if exists
-        $apiKeyRecord = ApiKey::where('user_id', $user->id)
-            ->where('provider', $providerName)
-            ->where('is_active', true)
-            ->first();
+        $apiKey = null;
+        if ($user && $user->exists) {
+            // Fetch decrypted key from DB if exists
+            $apiKeyRecord = ApiKey::where('user_id', $user->id)
+                ->where('provider', $providerName)
+                ->where('is_active', true)
+                ->first();
+                
+            $apiKey = $apiKeyRecord ? $apiKeyRecord->encrypted_key : null;
+        }
             
-        $apiKey = $apiKeyRecord ? $apiKeyRecord->encrypted_key : null;
+        // Fallback to global admin settings keys if user has not set their own key
+        if (!$apiKey) {
+            $apiKey = match ($providerName) {
+                'openai' => \App\Models\SystemSetting::get('model_openai_key'),
+                'gemini' => \App\Models\SystemSetting::get('model_gemini_key'),
+                'claude' => \App\Models\SystemSetting::get('model_claude_key'),
+                'deepseek' => \App\Models\SystemSetting::get('model_deepseek_key'),
+                'ollama' => \App\Models\SystemSetting::get('model_ollama_url'),
+                default => null,
+            };
+        }
 
         return match ($providerName) {
             'openai' => new OpenAIProvider($apiKey),

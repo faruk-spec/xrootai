@@ -89,4 +89,15 @@ class SystemSettingsTest extends TestCase
         $response = $this->actingAs($this->admin)->get(route('chat'));
         $response->assertStatus(200);
     }
+
+    public function test_ai_provider_manager_falls_back_to_global_keys(): void
+    {
+        SystemSetting::set('model_openai_key', 'global-openai-key-test', 'model', 'string');
+
+        $manager = app(\App\Services\AI\AIProviderManager::class);
+        $provider = $manager->make('gpt-4o', $this->user);
+
+        $this->assertInstanceOf(\App\Services\AI\Providers\OpenAIProvider::class, $provider);
+        $this->assertEquals('global-openai-key-test', $provider->getApiKey());
+    }
 }
