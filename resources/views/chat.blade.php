@@ -227,9 +227,10 @@
             gap: 16px;
             width: 300px;
             min-width: 300px;
-            transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
-                        padding 0.25s ease,
-                        min-width 0.25s ease;
+            transition: width 0.22s cubic-bezier(0.2, 0, 0, 1),
+                        min-width 0.22s cubic-bezier(0.2, 0, 0, 1),
+                        padding 0.22s ease;
+            will-change: width, min-width;
         }
         /* Collapsed desktop sidebar — icon strip only */
         .sidebar.collapsed {
@@ -248,6 +249,78 @@
         }
         .sidebar.collapsed .app-brand {
             justify-content: center;
+        }
+
+        /* Custom Puffed Gradient + New Chat Button */
+        .btn-new-chat {
+            background: linear-gradient(135deg, #4a88ff 0%, #3b5bdb 50%, #6b52ff 100%);
+            color: #ffffff !important;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 18px;
+            padding: 12px 18px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 6px 18px rgba(74, 136, 255, 0.35), inset 2px 2px 4px rgba(255, 255, 255, 0.3);
+            transition: all 0.22s cubic-bezier(0.2, 0, 0, 1) !important;
+            cursor: pointer;
+            text-decoration: none;
+            width: 100%;
+        }
+        .btn-new-chat:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(74, 136, 255, 0.45), inset 2px 2px 6px rgba(255, 255, 255, 0.4);
+        }
+        .btn-new-chat:active {
+            transform: translateY(1px);
+            box-shadow: 0 3px 10px rgba(74, 136, 255, 0.3), inset 1px 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        .sidebar.collapsed .btn-new-chat {
+            width: 44px !important;
+            height: 44px !important;
+            padding: 0 !important;
+            border-radius: 14px;
+        }
+        .sidebar.collapsed .btn-new-chat span.new-chat-text {
+            display: none !important;
+        }
+
+        /* History Item Actions (Pin, Rename, Delete) */
+        .history-item-actions {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            opacity: 0.8;
+            transition: opacity 0.2s ease;
+        }
+        .history-item:hover .history-item-actions {
+            opacity: 1;
+        }
+        .action-icon-btn {
+            background: none;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+        }
+        .action-icon-btn:hover {
+            background-color: rgba(74, 136, 255, 0.15);
+            color: #4a88ff;
+            transform: scale(1.08);
+        }
+        .action-icon-btn.btn-delete:hover {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
         }
         /* Header mobile logo (hidden on desktop, shown on mobile) */
         .header-mobile-logo {
@@ -632,24 +705,15 @@
                 </div>
             </div>
 
-            <!-- New Chat Puffed Button -->
-            <form action="{{ route('chats.store') }}" method="POST" class="sidebar-text" style="display:block;">
+            <!-- New Chat Puffed Gradient Button -->
+            <form action="{{ route('chats.store') }}" method="POST" style="display:block; width:100%; flex-shrink:0;">
                 @csrf
                 <input type="hidden" name="model" :value="activeModel">
-                <button type="submit" class="clay-btn clay-btn-primary" style="width: 100%;">
-                    <span>+ New Chat</span>
+                <button type="submit" class="btn-new-chat" :title="sidebarCollapsed ? 'New Chat' : ''">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <span class="new-chat-text">New Chat</span>
                 </button>
             </form>
-            <!-- Collapsed: just a + icon -->
-            <template x-if="sidebarCollapsed">
-                <form action="{{ route('chats.store') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="model" :value="activeModel">
-                    <button type="submit" class="clay-btn clay-btn-primary" style="width:44px; height:44px; border-radius:50%; padding:0; display:flex; align-items:center; justify-content:center;" title="New Chat">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    </button>
-                </form>
-            </template>
 
             <!-- Search + Conversations: only visible to logged-in users -->
             @auth
@@ -665,13 +729,36 @@
                         
                         <template x-for="chat in group.items" :key="chat.uuid">
                             <div class="history-item" :class="{ 'active': activeUuid === chat.uuid }">
-                                <a :href="'/chats/' + chat.uuid" style="text-decoration:none; color:inherit; flex-grow:1; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-size:0.95rem; font-weight: 500;">
-                                    <span x-text="chat.title"></span>
-                                </a>
+                                <!-- Normal Mode: Title Link -->
+                                <template x-if="renamingUuid !== chat.uuid">
+                                    <a :href="'/chats/' + chat.uuid" style="text-decoration:none; color:inherit; flex-grow:1; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; font-size:0.95rem; font-weight: 500; display:block; margin-right:6px;">
+                                        <span x-text="chat.title"></span>
+                                    </a>
+                                </template>
+
+                                <!-- Rename Mode: Inline Input -->
+                                <template x-if="renamingUuid === chat.uuid">
+                                    <div style="display:flex; align-items:center; gap:6px; flex-grow:1; margin-right:6px;" @click.stop>
+                                        <input 
+                                            :id="'rename-input-' + chat.uuid"
+                                            type="text" 
+                                            x-model="chat._editTitle" 
+                                            @keydown.enter.prevent="saveRename(chat)" 
+                                            @keydown.escape.prevent="cancelRename(chat)"
+                                            @blur="saveRename(chat)"
+                                            class="clay-inset" 
+                                            style="width:100%; padding:4px 8px; font-size:0.88rem; border-radius:8px;"
+                                        />
+                                    </div>
+                                </template>
                                 
-                                <div style="display: flex; gap: 4px;">
+                                <div class="history-item-actions" x-show="renamingUuid !== chat.uuid">
+                                    <!-- Rename toggle -->
+                                    <button @click.prevent.stop="renameChat(chat)" class="action-icon-btn" title="Rename Chat">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                                    </button>
                                     <!-- Pin toggle -->
-                                    <button @click.prevent="togglePin(chat)" class="clay-btn" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px;" :title="chat.pinned_at ? 'Unpin' : 'Pin'">
+                                    <button @click.prevent.stop="togglePin(chat)" class="action-icon-btn" :title="chat.pinned_at ? 'Unpin' : 'Pin'">
                                         <!-- Pinned: filled pin -->
                                         <template x-if="chat.pinned_at">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16 3a1 1 0 0 1 .707 1.707L15.414 6l1.293 5.172 2.586 1.121A1 1 0 0 1 20 13.28V14a1 1 0 0 1-1 1h-6v6a1 1 0 0 1-2 0v-6H5a1 1 0 0 1-1-1v-.72a1 1 0 0 1 .707-.987l2.586-1.121L8.586 6 7.293 4.707A1 1 0 0 1 8 3h8z"/></svg>
@@ -682,7 +769,7 @@
                                         </template>
                                     </button>
                                     <!-- Delete button -->
-                                    <button @click.prevent="deleteChat(chat)" class="clay-btn" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px;" title="Delete">
+                                    <button @click.prevent.stop="deleteChat(chat)" class="action-icon-btn btn-delete" title="Delete">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                                     </button>
                                 </div>
@@ -1155,6 +1242,7 @@
                 settingsModalOpen: false,
                 deleteConfirmOpen: false,
                 chatToDelete: null,
+                renamingUuid: null,
                 // Auth flag injected from server — guests cannot open settings
                 isAuthenticated: @json(auth()->check()),
                 
@@ -1180,6 +1268,7 @@
                 initApp() {
                     // Initialize expansion properties on loaded messages
                     this.messages = this.messages.map(m => ({ ...m, _expanded: false }));
+                    this.conversationsList = (this.conversationsList || []).map(c => ({ ...c, _editTitle: c.title }));
 
                     // Automatically scroll to bottom on start if we have messages
                     this.scrollToBottom();
@@ -1350,7 +1439,9 @@
                 },
 
                 scrollToBottom() {
-                    this.$nextTick(() => {
+                    if (this._scrollRAF) return;
+                    this._scrollRAF = requestAnimationFrame(() => {
+                        this._scrollRAF = null;
                         const container = this.$refs.messageContainer;
                         if (container) {
                             container.scrollTop = container.scrollHeight;
@@ -1572,6 +1663,56 @@
                     } catch (e) {
                         console.error('Pin failed:', e);
                     }
+                },
+
+                renameChat(chat) {
+                    chat._editTitle = chat.title;
+                    this.renamingUuid = chat.uuid;
+                    this.$nextTick(() => {
+                        const input = document.getElementById('rename-input-' + chat.uuid);
+                        if (input) {
+                            input.focus();
+                            input.select();
+                        }
+                    });
+                },
+
+                async saveRename(chat) {
+                    if (!chat._editTitle || !chat._editTitle.trim()) {
+                        this.cancelRename(chat);
+                        return;
+                    }
+                    const newTitle = chat._editTitle.trim();
+                    if (newTitle === chat.title) {
+                        this.cancelRename(chat);
+                        return;
+                    }
+                    this.renamingUuid = null;
+                    const oldTitle = chat.title;
+                    chat.title = newTitle; // optimistic update
+                    try {
+                        const res = await fetch(`/chats/${chat.uuid}/rename`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({ title: newTitle })
+                        });
+                        const data = await res.json();
+                        if (data.success) {
+                            chat.title = data.title;
+                        } else {
+                            chat.title = oldTitle;
+                        }
+                    } catch (err) {
+                        console.error('Rename failed:', err);
+                        chat.title = oldTitle;
+                    }
+                },
+
+                cancelRename(chat) {
+                    this.renamingUuid = null;
                 },
 
                 async deleteChat(chat) {

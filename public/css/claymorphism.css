@@ -57,7 +57,10 @@
     margin: 0;
     padding: 0;
     font-family: var(--font-sans);
-    transition: background-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+}
+
+a, button, input, textarea, select, .clay-card, .clay-btn, .clay-inset, .message-bubble, .attach-pill, .history-item {
+    transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease, border-color 0.25s ease;
 }
 
 body {
