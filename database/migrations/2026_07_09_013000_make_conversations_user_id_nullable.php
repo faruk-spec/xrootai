@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::table('conversations', function (Blueprint $table) {
             $table->foreignId('user_id')->nullable()->change();
-            $table->string('session_token')->nullable()->after('user_id');
+            if (!Schema::hasColumn('conversations', 'session_token')) {
+                $table->string('session_token')->nullable()->after('user_id');
+            }
         });
     }
 
