@@ -114,6 +114,10 @@ class ChatController extends Controller
         $userRole = $user ? $user->role : 'guest';
         $models = $this->getAvailableModels($userRole);
 
+        if (!empty($models) && !in_array($settings->default_model, array_column($models, 'id'))) {
+            $settings->default_model = $models[0]['id'];
+        }
+
         return view('chat', [
             'settings' => $settings,
             'conversations' => $conversations,
@@ -136,13 +140,19 @@ class ChatController extends Controller
         ]);
 
         $user = $request->user();
+        $userRole = $user ? $user->role : 'guest';
+        $models = $this->getAvailableModels($userRole);
+        $modelToSave = $request->model;
+        if (!empty($models) && !in_array($modelToSave, array_column($models, 'id'))) {
+            $modelToSave = $models[0]['id'];
+        }
 
         $conversation = Conversation::create([
             'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'user_id' => $user ? $user->id : null,
             'session_token' => $user ? null : session()->getId(),
             'title' => 'New Chat',
-            'model' => $request->model,
+            'model' => $modelToSave,
         ]);
 
         if ($request->wantsJson() || $request->ajax()) {
@@ -203,6 +213,13 @@ class ChatController extends Controller
         $userRole = $user ? $user->role : 'guest';
         $models = $this->getAvailableModels($userRole);
         
+        if (!empty($models) && !in_array($settings->default_model, array_column($models, 'id'))) {
+            $settings->default_model = $models[0]['id'];
+        }
+        if (!empty($models) && !in_array($conversation->model, array_column($models, 'id'))) {
+            $conversation->model = $models[0]['id'];
+        }
+
         $messages = $conversation->messages()
             ->with('attachments')
             ->get();

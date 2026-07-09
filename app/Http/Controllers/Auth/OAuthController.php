@@ -123,9 +123,9 @@ class OAuthController extends Controller
         // Dynamic configs binding
         config([
             "services.{$slug}" => [
-                'client_id' => $provider->client_id,
-                'client_secret' => $provider->client_secret,
-                'redirect' => $provider->redirect_url ?: url("/auth/{$slug}/callback"),
+                'client_id' => trim((string) $provider->client_id),
+                'client_secret' => trim((string) $provider->client_secret),
+                'redirect' => trim((string) ($provider->redirect_url ?: url("/auth/{$slug}/callback"))),
             ]
         ]);
 

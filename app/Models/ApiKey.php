@@ -17,9 +17,34 @@ class ApiKey extends Model
     ];
 
     protected $casts = [
-        'encrypted_key' => 'encrypted',
         'is_active' => 'boolean',
     ];
+
+    public function getEncryptedKeyAttribute($value)
+    {
+        if (empty($value)) {
+            return $value;
+        }
+        try {
+            return \Illuminate\Support\Facades\Crypt::decryptString($value);
+        } catch (\Exception $e) {
+            return $value;
+        }
+    }
+
+    public function setEncryptedKeyAttribute($value)
+    {
+        if (empty($value)) {
+            $this->attributes['encrypted_key'] = $value;
+            return;
+        }
+        try {
+            \Illuminate\Support\Facades\Crypt::decryptString($value);
+            $this->attributes['encrypted_key'] = $value;
+        } catch (\Exception $e) {
+            $this->attributes['encrypted_key'] = \Illuminate\Support\Facades\Crypt::encryptString($value);
+        }
+    }
 
     public function user()
     {

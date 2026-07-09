@@ -31,7 +31,7 @@ class OAuthProviderController extends Controller
         ]);
 
         $updateData = [
-            'client_id' => $validated['client_id'],
+            'client_id' => trim($validated['client_id']),
             'is_active' => $request->has('is_active'),
         ];
 
@@ -44,14 +44,14 @@ class OAuthProviderController extends Controller
 
         // Custom endpoints
         if ($provider->provider_slug === 'custom') {
-            $updateData['auth_url'] = $validated['auth_url'];
-            $updateData['token_url'] = $validated['token_url'];
-            $updateData['user_info_url'] = $validated['user_info_url'];
+            $updateData['auth_url'] = trim((string) $validated['auth_url']);
+            $updateData['token_url'] = trim((string) $validated['token_url']);
+            $updateData['user_info_url'] = trim((string) $validated['user_info_url']);
         }
 
         // Handle Client Secret securely
         if ($request->filled('client_secret')) {
-            $updateData['client_secret'] = $validated['client_secret'];
+            $updateData['client_secret'] = trim($validated['client_secret']);
         }
 
         // Validate and decode additional parameters JSON

@@ -42,6 +42,24 @@ class AIProviderManager
             $dbModel = \App\Models\AIModel::with('provider')
                 ->where('model_identifier', $targetModelIdentifier)
                 ->first();
+
+            // Check if target model is disabled, OR if target is 'mock' when mock model is disabled in DB
+            $isMockDisabled = \App\Models\AIModel::where('model_identifier', 'mock')->where('is_active', false)->exists();
+            if (($dbModel && (!$dbModel->is_active || ($dbModel->provider && !$dbModel->provider->is_active))) || ($targetModelIdentifier === 'mock' && $isMockDisabled)) {
+                $fallbackModel = \App\Models\AIModel::with('provider')
+                    ->where('is_active', true)
+                    ->whereHas('provider', function ($query) {
+                        $query->where('is_active', true);
+                    })
+                    ->orderBy('id', 'asc')
+                    ->first();
+
+                if ($fallbackModel) {
+                    $dbModel = $fallbackModel;
+                    $targetModelIdentifier = $fallbackModel->model_identifier;
+                }
+            }
+
             if ($dbModel && $dbModel->provider) {
                 $providerName = $dbModel->provider->slug;
             }

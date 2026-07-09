@@ -19,10 +19,35 @@ class AIProvider extends Model
     ];
 
     protected $casts = [
-        'api_key' => 'encrypted',
         'config' => 'array',
         'is_active' => 'boolean',
     ];
+
+    public function getApiKeyAttribute($value)
+    {
+        if (empty($value)) {
+            return $value;
+        }
+        try {
+            return \Illuminate\Support\Facades\Crypt::decryptString($value);
+        } catch (\Exception $e) {
+            return $value;
+        }
+    }
+
+    public function setApiKeyAttribute($value)
+    {
+        if (empty($value)) {
+            $this->attributes['api_key'] = $value;
+            return;
+        }
+        try {
+            \Illuminate\Support\Facades\Crypt::decryptString($value);
+            $this->attributes['api_key'] = $value;
+        } catch (\Exception $e) {
+            $this->attributes['api_key'] = \Illuminate\Support\Facades\Crypt::encryptString($value);
+        }
+    }
 
     /**
      * Get models belonging to this provider.
