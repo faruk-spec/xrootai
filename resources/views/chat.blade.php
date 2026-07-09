@@ -88,7 +88,7 @@
         }
         .workspace {
             display: grid;
-            grid-template-columns: 300px 1fr;
+            grid-template-columns: auto 1fr;
             height: 100vh;
             height: 100dvh;
             width: 100%;
@@ -222,6 +222,8 @@
             overflow: hidden;
             padding: 20px;
             gap: 16px;
+            width: 300px;
+            min-width: 300px;
             transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
                         padding 0.25s ease,
                         min-width 0.25s ease;
@@ -229,7 +231,7 @@
         /* Collapsed desktop sidebar — icon strip only */
         .sidebar.collapsed {
             width: 72px !important;
-            min-width: 72px;
+            min-width: 72px !important;
             padding: 20px 14px;
         }
         .sidebar.collapsed .sidebar-text,
@@ -341,11 +343,19 @@
             left: 0;
             right: 0;
             height: 60px;
-            background: linear-gradient(transparent, var(--clay-card-bg));
             pointer-events: none;
         }
+        .message-assistant .msg-body.collapsed::after {
+            background: linear-gradient(transparent, #ffffff) !important;
+        }
+        .dark-mode .message-assistant .msg-body.collapsed::after {
+            background: linear-gradient(transparent, #1e293b) !important;
+        }
         .message-user .msg-body.collapsed::after {
-            background: linear-gradient(transparent, var(--accent-blue));
+            background: linear-gradient(transparent, #2563eb) !important;
+        }
+        .dark-mode .message-user .msg-body.collapsed::after {
+            background: linear-gradient(transparent, #1d4ed8) !important;
         }
         .expand-btn {
             display: flex;
@@ -376,24 +386,36 @@
 
         .message-user {
             align-self: flex-end;
-            background: var(--accent-blue);
-            color: white;
-            box-shadow: var(--accent-blue-shadow);
-            border-radius: 20px 20px 4px 20px; /* Reduced border radius */
-            padding: 10px 14px !important; /* Reduced padding */
-            margin-bottom: 8px; /* Reduced vertical spacing */
+            background: #2563eb;
+            color: #ffffff;
+            border-radius: 18px 18px 4px 18px;
+            padding: 12px 18px !important;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            max-width: 85%;
+        }
+        .dark-mode .message-user {
+            background: #1d4ed8;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
         }
 
         .message-assistant {
             align-self: flex-start;
-            background: transparent;
+            background: rgba(255, 255, 255, 0.9) !important;
             color: var(--text-primary);
-            box-shadow: none;
-            border: none;
-            border-radius: 0;
-            padding: 4px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(0, 0, 0, 0.06) !important;
+            border-radius: 18px 18px 18px 4px;
+            padding: 12px 18px !important;
+            margin-bottom: 16px;
             width: 100%;
-            margin-bottom: 12px; /* Reduced vertical spacing */
+            max-width: 85%;
+        }
+        .dark-mode .message-assistant {
+            background: rgba(30, 41, 59, 0.7) !important;
+            border: 1px solid rgba(255, 255, 255, 0.05) !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         }
 
         /* Markdown lists & paragraphs spacing */
@@ -806,7 +828,7 @@
 
                 <!-- Render active messages list -->
                 <template x-for="(msg, index) in messages" :key="index">
-                    <div class="message-bubble" :class="msg.role === 'user' ? 'clay-card message-user' : 'message-assistant'">
+                    <div class="message-bubble" :class="msg.role === 'user' ? 'message-user' : 'message-assistant'">
                         <template x-if="msg.role !== 'user'">
                             <div style="display: flex; gap: 14px; width: 100%; align-items: flex-start;">
                                 <!-- AI Avatar -->
@@ -867,7 +889,7 @@
                         </template>
 
                         <template x-if="msg.role === 'user'">
-                            <div>
+                            <div style="width: 100%;">
                                 <!-- Attachments preview row with visual thumbnails -->
                                 <template x-if="msg.attachments && msg.attachments.length > 0">
                                     <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0 8px;">
@@ -886,9 +908,36 @@
                                 </template>
 
                                 <!-- Body text -->
-                                <div class="msg-body">
-                                    <div class="msg-content" style="padding:0;" x-text="msg.content"></div>
+                                <div
+                                    class="msg-body"
+                                    :class="{ 'collapsed': !msg._expanded && isLongMessage(msg.content) }"
+                                    x-data="{ ready: false }"
+                                    x-init="$nextTick(() => ready = true)"
+                                >
+                                    <div class="msg-content" style="padding:0; white-space: pre-wrap;" x-text="msg.content"></div>
                                 </div>
+
+                                <!-- Expand / Collapse toggle -->
+                                <template x-if="isLongMessage(msg.content)">
+                                    <button
+                                        class="expand-btn"
+                                        @click="msg._expanded = !msg._expanded"
+                                        style="justify-content: flex-end; padding: 8px 0 0; color: rgba(255,255,255,0.85);"
+                                    >
+                                        <template x-if="!msg._expanded">
+                                            <span style="display:flex;align-items:center;gap:5px;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                                Show more
+                                            </span>
+                                        </template>
+                                        <template x-if="msg._expanded">
+                                            <span style="display:flex;align-items:center;gap:5px;">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                                                Show less
+                                            </span>
+                                        </template>
+                                    </button>
+                                </template>
                             </div>
                         </template>
                     </div>
@@ -1317,32 +1366,63 @@
                     if (!cleanPrompt && this.attachments.length === 0) return;
                     if (this.isStreaming) return;
 
-                    // If no conversation exists yet, first create one
+                    // If no conversation exists yet, first create one dynamically via AJAX to avoid page reload
                     if (!this.activeUuid) {
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = '{{ route("chats.store") }}';
-                        
-                        const csrfInput = document.createElement('input');
-                        csrfInput.type = 'hidden';
-                        csrfInput.name = '_token';
-                        csrfInput.value = '{{ csrf_token() }}';
-                        form.appendChild(csrfInput);
+                        try {
+                            const res = await fetch('{{ route("chats.store") }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({
+                                    model: this.activeModel
+                                })
+                            });
+                            if (!res.ok) throw new Error('Create failed');
+                            const data = await res.json();
+                            if (data.success && data.uuid) {
+                                this.activeUuid = data.uuid;
+                                // Update URL history dynamically without a page refresh
+                                window.history.pushState({}, '', `/chats/${data.uuid}`);
+                                // Add to conversations list dynamically so the leftbar updates without refresh
+                                this.conversationsList.unshift({
+                                    uuid: data.uuid,
+                                    title: cleanPrompt.length > 25 ? cleanPrompt.substring(0, 25) + '...' : cleanPrompt,
+                                    model: this.activeModel,
+                                    updated_at: new Date().toISOString(),
+                                    pinned_at: null
+                                });
+                            } else {
+                                throw new Error('No UUID returned');
+                            }
+                        } catch (err) {
+                            console.error('AJAX chat creation failed, using form redirect fallback:', err);
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = '{{ route("chats.store") }}';
+                            
+                            const csrfInput = document.createElement('input');
+                            csrfInput.type = 'hidden';
+                            csrfInput.name = '_token';
+                            csrfInput.value = '{{ csrf_token() }}';
+                            form.appendChild(csrfInput);
 
-                        const modelInput = document.createElement('input');
-                        modelInput.type = 'hidden';
-                        modelInput.name = 'model';
-                        modelInput.value = this.activeModel;
-                        form.appendChild(modelInput);
+                            const modelInput = document.createElement('input');
+                            modelInput.type = 'hidden';
+                            modelInput.name = 'model';
+                            modelInput.value = this.activeModel;
+                            form.appendChild(modelInput);
 
-                        document.body.appendChild(form);
-                        
-                        // Capture prompt and attachments to local session before redirecting
-                        sessionStorage.setItem('pending_prompt', this.prompt);
-                        sessionStorage.setItem('pending_attachments', JSON.stringify(this.attachments));
-                        
-                        form.submit();
-                        return;
+                            document.body.appendChild(form);
+                            
+                            sessionStorage.setItem('pending_prompt', this.prompt);
+                            sessionStorage.setItem('pending_attachments', JSON.stringify(this.attachments));
+                            
+                            form.submit();
+                            return;
+                        }
                     }
 
                     // Append user message to active state instantly
@@ -1507,8 +1587,15 @@
 
                 handleTextareaKeydown(event) {
                     // Shift+Enter → insert a real newline (default browser behaviour)
-                    // Plain Enter → send message
+                    // Plain Enter → send message (on desktop only, disabled in responsive mode)
                     if (event.key === 'Enter' && !event.shiftKey) {
+                        const isMobile = window.innerWidth <= 768;
+                        if (isMobile) {
+                            // On mobile/responsive mode, Enter key acts as a regular line break
+                            // So let it propagate normally without preventing default
+                            return;
+                        }
+
                         event.preventDefault();
                         if (!this.isStreaming) {
                             this.sendMessage();

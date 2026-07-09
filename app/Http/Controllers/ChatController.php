@@ -95,6 +95,15 @@ class ChatController extends Controller
             'model' => $request->model,
         ]);
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'uuid' => $conversation->uuid,
+                'title' => $conversation->title,
+                'model' => $conversation->model,
+            ]);
+        }
+
         return redirect()->route('chats.show', $conversation->uuid);
     }
 
