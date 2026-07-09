@@ -37,7 +37,19 @@ class AIProviderManager
             }
         }
 
-        $providerName = $this->resolveProviderName($targetModelIdentifier);
+        $providerName = null;
+        if (\Illuminate\Support\Facades\Schema::hasTable('ai_models')) {
+            $dbModel = \App\Models\AIModel::with('provider')
+                ->where('model_identifier', $targetModelIdentifier)
+                ->first();
+            if ($dbModel && $dbModel->provider) {
+                $providerName = $dbModel->provider->slug;
+            }
+        }
+
+        if (!$providerName) {
+            $providerName = $this->resolveProviderName($targetModelIdentifier);
+        }
         
         $apiKey = null;
         if ($user && $user->exists) {
@@ -98,7 +110,7 @@ class AIProviderManager
     {
         $model = strtolower($model);
 
-        if (str_starts_with($model, 'gpt-') || str_starts_with($model, 'o1-')) {
+        if (str_starts_with($model, 'gpt-') || str_starts_with($model, 'gpt') || str_starts_with($model, 'o1-') || str_starts_with($model, 'o1')) {
             return 'openai';
         }
         if (str_starts_with($model, 'gemini-')) {

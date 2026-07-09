@@ -35,7 +35,7 @@ class ModelController extends Controller
         $roles = ['guest', 'user', 'pro', 'admin', 'Super Admin'];
         if (\Illuminate\Support\Facades\Schema::hasTable('roles')) {
             $dbRoles = \App\Models\Role::pluck('name')->toArray();
-            $roles = array_values(array_unique(array_merge(['guest'], $dbRoles)));
+            $roles = array_values(array_unique(array_merge(['guest', 'user', 'pro'], $dbRoles)));
         }
         return view('admin.models.create', compact('providers', 'roles'));
     }
@@ -78,7 +78,7 @@ class ModelController extends Controller
         $roles = ['guest', 'user', 'pro', 'admin', 'Super Admin'];
         if (\Illuminate\Support\Facades\Schema::hasTable('roles')) {
             $dbRoles = \App\Models\Role::pluck('name')->toArray();
-            $roles = array_values(array_unique(array_merge(['guest'], $dbRoles)));
+            $roles = array_values(array_unique(array_merge(['guest', 'user', 'pro'], $dbRoles)));
         }
         return view('admin.models.edit', compact('model', 'providers', 'roles'));
     }
