@@ -1,0 +1,121 @@
+<?php
+
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+use App\Models\OAuthProvider;
+use App\Models\User;
+use App\Models\Role;
+use App\Services\OAuth\DynamicCustomProvider;
+use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Http\Request;
+
+class OAuthController extends Controller
+{
+    /**
+     * Redirect the user to the provider's authentication screen.
+     */
+    public function redirect(Request $request, string $providerSlug)
+    {
+        $provider = OAuthProvider::where('provider_slug', $providerSlug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $this->bootSocialiteDriver($provider);
+
+        $driver = Socialite::driver($providerSlug);
+
+        // Append custom scopes
+        if (!empty($provider->scopes)) {
+            $driver->scopes($provider->scopes);
+        }
+
+        // Append additional parameters
+        if (!empty($provider->additional_params)) {
+            $driver->with($provider->additional_params);
+        }
+
+        return $driver->redirect();
+    }
+
+    /**
+     * Obtain the user information from the OAuth provider and log the user in.
+     */
+    public function callback(Request $request, string $providerSlug)
+    {
+        $provider = OAuthProvider::where('provider_slug', $providerSlug)
+            ->where('is_active', true)
+            ->firstOrFail();
+
+        $this->bootSocialiteDriver($provider);
+
+        try {
+            $socialiteUser = Socialite::driver($providerSlug)->user();
+        } catch (\Exception $e) {
+            return redirect()->route('login')->with('error', "Authentication failed: " . $e->getMessage());
+        }
+
+        $email = $socialiteUser->getEmail() ?: ($socialiteUser->getId() . "@{$providerSlug}.social");
+        
+        // Find existing user or register a new user
+        $user = User::where('email', $email)->first();
+
+        if (!$user) {
+            $user = User::create([
+                'name' => $socialiteUser->getName() ?: ($socialiteUser->getNickname() ?: 'OAuth User'),
+                'email' => $email,
+                'password' => Hash::make(Str::random(24)),
+                'role' => 'user',
+            ]);
+
+            // Sync database default user role pivots
+            if (Schema::hasTable('roles')) {
+                $roleRecord = Role::where('name', 'user')->first();
+                if ($roleRecord) {
+                    $user->roles()->sync([$roleRecord->id]);
+                }
+            }
+        }
+
+        auth()->login($user);
+
+        return redirect()->route('chat')->with('success', "Authenticated successfully via {$provider->provider_name}.");
+    }
+
+    /**
+     * Bootstrap the Socialite driver configuration dynamically.
+     */
+    protected function bootSocialiteDriver(OAuthProvider $provider): void
+    {
+        $slug = $provider->provider_slug;
+
+        // Dynamic configs binding
+        config([
+            "services.{$slug}" => [
+                'client_id' => $provider->client_id,
+                'client_secret' => $provider->client_secret,
+                'redirect' => $provider->redirect_url ?: url("/auth/{$slug}/callback"),
+            ]
+        ]);
+
+        // Register custom driver configuration dynamically
+        if ($slug === 'custom') {
+            $socialite = resolve(\Laravel\Socialite\Contracts\Factory::class);
+            $socialite->extend('custom', function ($app) use ($provider) {
+                return new DynamicCustomProvider(
+                    $app['request'],
+                    $provider->client_id,
+                    $provider->client_secret,
+                    $provider->redirect_url,
+                    $provider->auth_url ?: '',
+                    $provider->token_url ?: '',
+                    $provider->user_info_url ?: '',
+                    $provider->scopes ?: []
+                );
+            });
+        }
+    }
+}

@@ -370,9 +370,10 @@
                 <span class="nav-text">User Directory</span>
                 <i class="bi bi-chevron-down ms-auto nav-text fs-7"></i>
             </a>
-            <div class="collapse {{ Request::is('admin/users*') || Request::is('admin/settings/plans*') || Request::is('admin/settings/roles*') || Request::is('admin/settings/privacy*') ? 'show' : '' }}" id="usersMenu">
+            <div class="collapse {{ Request::is('admin/users*') || Request::is('admin/oauth*') || Request::is('admin/settings/plans*') || Request::is('admin/settings/roles*') || Request::is('admin/settings/privacy*') ? 'show' : '' }}" id="usersMenu">
                 <div class="submenu">
                     <a href="{{ route('admin.users') }}" class="submenu-link {{ Route::is('admin.users') ? 'active' : '' }}">Users List</a>
+                    <a href="{{ route('admin.oauth.index') }}" class="submenu-link {{ Request::is('admin/oauth*') ? 'active' : '' }}">Social Login & OAuth</a>
                     <a href="{{ route('admin.settings') }}?tab=plans" class="submenu-link">Plans & Limits</a>
                     <a href="{{ route('admin.settings') }}?tab=roles" class="submenu-link">Roles & Permissions</a>
                     <a href="{{ route('admin.settings') }}?tab=privacy" class="submenu-link">Data & Privacy</a>

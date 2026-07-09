@@ -27,7 +27,7 @@ class ProviderController extends Controller
             'name' => 'required|string|max:255',
             'base_url' => 'nullable|string|max:255',
             'api_key' => 'nullable|string',
-            'is_active' => 'sometimes|boolean',
+            'is_active' => 'sometimes',
             'config' => 'nullable|array',
         ]);
 

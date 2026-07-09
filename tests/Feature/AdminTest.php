@@ -103,4 +103,32 @@ class AdminTest extends TestCase
         $this->assertNotNull($model);
         $this->assertEquals(['pro', 'admin'], $model->allowed_roles);
     }
+
+    public function test_admin_can_update_provider_details(): void
+    {
+        $provider = \App\Models\AIProvider::firstOrCreate(
+            ['slug' => 'openai'],
+            [
+                'name' => 'OpenAI',
+                'base_url' => 'https://api.openai.com/v1',
+                'is_active' => true,
+            ]
+        );
+
+        $response = $this->actingAs($this->admin)->put(route('admin.providers.update', $provider->id), [
+            'name' => 'OpenAI Updated',
+            'base_url' => 'https://api.openai.com/v2',
+            'api_key' => 'new-secret-api-key',
+            'is_active' => 'on',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+        
+        $provider = $provider->fresh();
+        $this->assertEquals('OpenAI Updated', $provider->name);
+        $this->assertEquals('https://api.openai.com/v2', $provider->base_url);
+        $this->assertEquals('new-secret-api-key', $provider->api_key);
+        $this->assertTrue($provider->is_active);
+    }
 }

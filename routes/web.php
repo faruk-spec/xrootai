@@ -91,6 +91,12 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::get('/conversations/{conversation}', [App\Http\Controllers\Admin\ConversationController::class, 'show'])->name('admin.conversations.show');
     Route::delete('/conversations/{conversation}', [App\Http\Controllers\Admin\ConversationController::class, 'destroy'])->name('admin.conversations.delete');
 
+    // OAuth Configurations CRUD
+    Route::get('/oauth', [App\Http\Controllers\Admin\OAuthProviderController::class, 'index'])->name('admin.oauth.index');
+    Route::put('/oauth/{provider}', [App\Http\Controllers\Admin\OAuthProviderController::class, 'update'])->name('admin.oauth.update');
+    Route::post('/oauth/{provider}/reset', [App\Http\Controllers\Admin\OAuthProviderController::class, 'reset'])->name('admin.oauth.reset');
+    Route::post('/oauth/{provider}/test', [App\Http\Controllers\Admin\OAuthProviderController::class, 'testConnection'])->name('admin.oauth.test');
+
     // Audit Logs
     Route::get('/logs', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('admin.logs.index');
 });
@@ -108,3 +114,7 @@ Route::post('/chats/{conversation:uuid}/stream', [StreamController::class, 'stre
 
 // Attachments Upload (open to allow quick guest attachments)
 Route::post('/attachments/upload', [ChatController::class, 'uploadAttachment'])->name('attachments.upload');
+
+// Social Authentication redirect and callback routes
+Route::get('/auth/{provider}/redirect', [App\Http\Controllers\Auth\OAuthController::class, 'redirect'])->name('auth.redirect');
+Route::get('/auth/{provider}/callback', [App\Http\Controllers\Auth\OAuthController::class, 'callback'])->name('auth.callback');
