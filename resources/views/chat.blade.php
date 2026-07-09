@@ -182,10 +182,41 @@
                 bottom: 0;
                 z-index: 50;
                 transform: translateX(-100%);
-                width: 80vw;
-                max-width: 300px;
+                width: 80vw !important;
+                min-width: 80vw !important;
+                max-width: 320px !important;
+                padding: 20px !important;
                 transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
                 will-change: transform;
+            }
+            .sidebar.collapsed {
+                width: 80vw !important;
+                min-width: 80vw !important;
+                padding: 20px !important;
+            }
+            .sidebar.collapsed .sidebar-text,
+            .sidebar.collapsed .sidebar-search,
+            .sidebar.collapsed .sidebar-history,
+            .sidebar.collapsed .sidebar-footer-text,
+            .sidebar.collapsed .btn-new-chat span.new-chat-text {
+                display: block !important;
+            }
+            .sidebar.collapsed .btn-new-chat {
+                width: 100% !important;
+                height: auto !important;
+                padding: 12px 18px !important;
+                border-radius: 18px !important;
+            }
+            .sidebar.collapsed .app-brand span {
+                display: inline !important;
+            }
+            .sidebar.collapsed .app-brand {
+                justify-content: flex-start !important;
+            }
+            /* Remove sidebar collapse button and close button in responsive mode */
+            .desktop-collapse-btn,
+            .sidebar-close-btn {
+                display: none !important;
             }
         }
 
@@ -205,6 +236,56 @@
             .chat-input-area {
                 padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
             }
+        }
+
+        /* AI Fast Loading Card Animation */
+        .ai-fast-loading-card {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 100%;
+            padding: 18px 22px !important;
+            background: var(--clay-card-bg) !important;
+            border: 1px solid rgba(74, 136, 255, 0.28) !important;
+            box-shadow: 0 8px 32px rgba(74, 136, 255, 0.12), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+            border-radius: 20px 20px 20px 6px;
+            animation: cardPulse 2s infinite ease-in-out;
+        }
+        @keyframes cardPulse {
+            0%, 100% { border-color: rgba(74, 136, 255, 0.28); box-shadow: 0 8px 32px rgba(74, 136, 255, 0.12); }
+            50% { border-color: rgba(74, 136, 255, 0.58); box-shadow: 0 8px 32px rgba(74, 136, 255, 0.26); }
+        }
+        .ai-spinner-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4a88ff, #6b52ff, #22c55e);
+            background-size: 200% 200%;
+            animation: gradientSpin 3s infinite linear;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 0.8rem;
+            box-shadow: 0 4px 14px rgba(74, 136, 255, 0.4);
+            flex-shrink: 0;
+        }
+        @keyframes gradientSpin {
+            0% { background-position: 0% 50%; transform: rotate(0deg); }
+            50% { background-position: 100% 50%; transform: rotate(180deg); }
+            100% { background-position: 0% 50%; transform: rotate(360deg); }
+        }
+        .ai-shimmer-line {
+            height: 11px;
+            border-radius: 6px;
+            background: linear-gradient(90deg, rgba(74, 136, 255, 0.08) 25%, rgba(74, 136, 255, 0.28) 50%, rgba(74, 136, 255, 0.08) 75%);
+            background-size: 200% 100%;
+            animation: shimmerWave 1.5s infinite linear;
+        }
+        @keyframes shimmerWave {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
         }
 
         /* Responsive scaling using clamp() for typography and spacing */
@@ -690,7 +771,7 @@
                 </a>
                 <div :style="sidebarCollapsed ? 'display:flex; justify-content:center;' : 'display:flex; gap:4px;'" style="flex-shrink:0;">
                     <!-- Collapse toggle (desktop only) -->
-                    <button @click="sidebarCollapsed = !sidebarCollapsed; localStorage.setItem('sidebarCollapsed', sidebarCollapsed)" class="clay-btn clay-btn-secondary" style="border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;" :title="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+                    <button @click="sidebarCollapsed = !sidebarCollapsed; localStorage.setItem('sidebarCollapsed', sidebarCollapsed)" class="clay-btn clay-btn-secondary desktop-collapse-btn" style="border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;" :title="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
                         <template x-if="!sidebarCollapsed">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                         </template>
@@ -1062,22 +1143,20 @@
                     </div>
                 </template>
 
-                <!-- Typing indicator -->
+                <!-- AI Fast Loading Card Animation before reply -->
                 <template x-if="isStreaming && activeStreamText.length === 0">
-                    <div class="message-bubble message-assistant">
-                        <div style="display: flex; gap: 14px; align-items: center; width: 100%;">
-                            <!-- AI Avatar -->
-                            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #4a88ff, #56ab2f); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(74,136,255,0.2);">
-                                AI
+                    <div class="ai-fast-loading-card">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div class="ai-spinner-avatar">AI</div>
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <div style="font-weight: 700; font-size: 0.95rem; background: linear-gradient(135deg, #4a88ff, #6b52ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Synthesizing response...</div>
+                                <div style="font-size: 0.78rem; color: var(--text-muted);" x-text="'Powered by ' + getModelName(activeModel)"></div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 6px; padding: 4px 0;">
-                                <span style="font-size:0.9rem; color:var(--text-muted);">Thinking</span>
-                                <div style="display:flex; gap:4px; margin-top:2px;">
-                                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--text-muted); animation: bounce 1.4s infinite ease-in-out both;"></span>
-                                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--text-muted); animation: bounce 1.4s infinite ease-in-out both; animation-delay: 0.2s;"></span>
-                                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--text-muted); animation: bounce 1.4s infinite ease-in-out both; animation-delay: 0.4s;"></span>
-                                </div>
-                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; padding-left: 46px;">
+                            <div class="ai-shimmer-line" style="width: 85%;"></div>
+                            <div class="ai-shimmer-line" style="width: 65%;"></div>
+                            <div class="ai-shimmer-line" style="width: 40%;"></div>
                         </div>
                     </div>
                 </template>
@@ -1230,6 +1309,44 @@
             </div>
         </div>
 
+        <!-- Professional Claymorphic Alert / Notification Modal -->
+        <div class="modal-overlay" x-show="proAlertModalOpen" x-transition.opacity style="display:none; z-index:300;">
+            <div class="clay-card" style="width:100%; max-width:440px; padding:32px; border-radius:24px;" @click.away="proAlertModalOpen = false">
+                <!-- Icon based on type -->
+                <div style="display:flex; justify-content:center; margin-bottom:20px;">
+                    <template x-if="proAlertType === 'warning' || proAlertType === 'upgrade'">
+                        <div style="width:60px; height:60px; border-radius:20px; background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.25)); border:1px solid rgba(245,158,11,0.3); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(245,158,11,0.2);">
+                            <span style="font-size:1.8rem;">🔒</span>
+                        </div>
+                    </template>
+                    <template x-if="proAlertType === 'error'">
+                        <div style="width:60px; height:60px; border-radius:20px; background:linear-gradient(135deg, rgba(239,68,68,0.15), rgba(220,38,38,0.25)); border:1px solid rgba(239,68,68,0.3); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(239,68,68,0.2);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        </div>
+                    </template>
+                    <template x-if="proAlertType !== 'warning' && proAlertType !== 'upgrade' && proAlertType !== 'error'">
+                        <div style="width:60px; height:60px; border-radius:20px; background:linear-gradient(135deg, rgba(74,136,255,0.15), rgba(99,102,241,0.25)); border:1px solid rgba(74,136,255,0.3); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(74,136,255,0.2);">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4a88ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </div>
+                    </template>
+                </div>
+
+                <h3 style="font-weight:800; font-size:1.3rem; text-align:center; margin-bottom:12px; letter-spacing:-0.01em;" x-text="proAlertTitle"></h3>
+                <div style="color:var(--text-muted); font-size:0.92rem; text-align:center; line-height:1.6; margin-bottom:28px;" x-html="proAlertMessage"></div>
+
+                <div style="display:flex; gap:12px;">
+                    <button @click="proAlertModalOpen = false" class="clay-btn clay-btn-secondary" style="flex:1; padding:12px; font-weight:600;">
+                        Dismiss
+                    </button>
+                    <template x-if="proAlertType === 'upgrade'">
+                        <a href="{{ route('register') }}" class="clay-btn clay-btn-primary" style="flex:1.2; padding:12px; font-weight:700; text-align:center; text-decoration:none; background:linear-gradient(135deg, #4a88ff, #6b52ff); color:white;">
+                            Upgrade Now
+                        </a>
+                    </template>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Script variables mapped from Blade to client Alpine logic -->
@@ -1243,6 +1360,10 @@
                 deleteConfirmOpen: false,
                 chatToDelete: null,
                 renamingUuid: null,
+                proAlertModalOpen: false,
+                proAlertTitle: '',
+                proAlertMessage: '',
+                proAlertType: 'info',
                 // Auth flag injected from server — guests cannot open settings
                 isAuthenticated: @json(auth()->check()),
                 
@@ -1386,10 +1507,22 @@
                     return model ? model.name.replace(' 🔒 (Upgrade Plan)', '') : modelId;
                 },
 
+                showProAlert(title, message, type = 'info') {
+                    this.proAlertTitle = title;
+                    this.proAlertMessage = message;
+                    this.proAlertType = type;
+                    this.proAlertModalOpen = true;
+                },
+
                 checkModelAccess(event) {
                     const selected = this.availableModels.find(m => m.id === this.activeModel);
                     if (selected && selected.is_allowed === false) {
-                        alert('🔒 PLAN UPGRADE REQUIRED\n\nYou do not have permission to select "' + selected.name.replace(' 🔒 (Upgrade Plan)', '') + '" under your current tier (' + (this.isAuthenticated ? 'Free/Basic Plan' : 'Guest Mode') + ').\n\nPlease upgrade your membership plan or sign in with a higher tier account to unlock this AI model.');
+                        const cleanName = selected.name.replace(' 🔒 (Upgrade Plan)', '');
+                        this.showProAlert(
+                            'Plan Upgrade Required',
+                            `You currently do not have permission to select <strong>"${cleanName}"</strong> under your current membership tier (${this.isAuthenticated ? 'Free/Basic Plan' : 'Guest Mode'}).<br><br>Please upgrade your membership plan or sign in with a higher tier account to unlock this AI model.`,
+                            'upgrade'
+                        );
                         const allowed = this.availableModels.find(m => m.is_allowed !== false);
                         this.activeModel = allowed ? allowed.id : 'mock';
                     }
@@ -1472,9 +1605,12 @@
                                 mime_type: result.mime_type,
                                 file_size: result.file_size
                             });
+                        } else {
+                            this.showProAlert('Upload Failed', result.message || 'The file could not be uploaded. Please verify file format and size restrictions.', 'error');
                         }
                     } catch (error) {
                         console.error('Upload failed:', error);
+                        this.showProAlert('Upload Failed', 'An unexpected server error occurred while processing your attachment.', 'error');
                     } finally {
                         this.isUploading = false;
                         event.target.value = ''; // Reset input
@@ -1637,9 +1773,10 @@
 
                     } catch (err) {
                         console.error('SSE streaming error:', err);
+                        this.showProAlert('Streaming Error', 'Connection to the AI completion stream dropped or timed out. Please verify your connection or switch to another model.', 'error');
                         this.messages.push({
                             role: 'assistant',
-                            content: this.activeStreamText + '\n\n[Error: Connection lost or stream timed out.]'
+                            content: (this.activeStreamText ? this.activeStreamText + '\n\n' : '') + '[Error: Connection lost or stream timed out.]'
                         });
                         this.isStreaming = false;
                         this.activeStreamText = '';

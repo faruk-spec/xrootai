@@ -642,7 +642,65 @@
             document.documentElement.setAttribute('data-bs-theme', 'light');
             themeIcon.className = 'bi bi-moon-stars-fill';
         }
+
+        // Universal Professional Admin Confirmation Modal System
+        let adminConfirmCallback = null;
+        function showAdminConfirmModal(message, onConfirm) {
+            adminConfirmCallback = onConfirm;
+            const modalEl = document.getElementById('globalAdminConfirmModal');
+            document.getElementById('globalAdminConfirmMessage').innerText = message;
+            const bsModal = new bootstrap.Modal(modalEl);
+            bsModal.show();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Automatically upgrade all forms with onsubmit="return confirm('...')" across admin views
+            document.querySelectorAll('form[onsubmit*="confirm("]').forEach(form => {
+                const attr = form.getAttribute('onsubmit');
+                const match = attr.match(/confirm\(['"`](.*?)['"`]\)/);
+                if (match) {
+                    const msg = match[1];
+                    form.removeAttribute('onsubmit');
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        showAdminConfirmModal(msg, () => form.submit());
+                    });
+                }
+            });
+
+            // Handle confirmation click inside modal
+            document.getElementById('globalAdminConfirmBtn').addEventListener('click', function() {
+                if (adminConfirmCallback) {
+                    adminConfirmCallback();
+                }
+                const modalEl = document.getElementById('globalAdminConfirmModal');
+                const bsModal = bootstrap.Modal.getInstance(modalEl);
+                if (bsModal) bsModal.hide();
+            });
+        });
     </script>
+
+    <!-- Global Professional Admin Confirmation Modal -->
+    <div class="modal fade" id="globalAdminConfirmModal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 440px;">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden; background: var(--card-bg, #ffffff);">
+                <div class="modal-body p-4 text-center">
+                    <div class="d-flex justify-content-center mb-3">
+                        <div style="width: 64px; height: 64px; border-radius: 20px; background: rgba(239, 68, 68, 0.12); color: #ef4444; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(239, 68, 68, 0.18);">
+                            <i class="bi bi-exclamation-triangle-fill fs-2"></i>
+                        </div>
+                    </div>
+                    <h4 class="fw-bold mb-2" style="font-size: 1.25rem;">Are you sure?</h4>
+                    <p class="text-muted mb-4" id="globalAdminConfirmMessage" style="font-size: 0.95rem; line-height: 1.6;"></p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="button" class="btn btn-secondary px-4 py-2 rounded-3 fw-medium flex-fill" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger px-4 py-2 rounded-3 fw-bold flex-fill shadow-sm" id="globalAdminConfirmBtn" style="background: linear-gradient(135deg, #ef4444, #dc2626); border: none;">Confirm Action</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @yield('scripts')
 </body>
 </html>

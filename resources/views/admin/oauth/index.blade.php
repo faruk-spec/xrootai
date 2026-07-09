@@ -246,11 +246,11 @@
     }
 
     function resetOAuthConnection(providerId, name) {
-        if (confirm(`Are you sure you want to completely reset and disable credentials for ${name}? this action is irreversible.`)) {
+        showAdminConfirmModal(`Are you sure you want to completely reset and disable credentials for ${name}? This action is irreversible.`, function() {
             const form = document.getElementById('resetForm');
             form.action = `{{ url('admin/oauth') }}/${providerId}/reset`;
             form.submit();
-        }
+        });
     }
 </script>
 @endsection
