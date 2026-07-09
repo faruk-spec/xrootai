@@ -333,12 +333,20 @@ class SystemSetting extends Model
     public static function get(string $key, $default = null)
     {
         return Cache::rememberForever("sys_setting_{$key}", function () use ($key, $default) {
-            $setting = self::where('key', $key)->first();
-            if (!$setting) {
+            try {
+                if (!\Illuminate\Support\Facades\Schema::hasTable('system_settings')) {
+                    return $default ?? (self::$defaults[$key] ?? null);
+                }
+
+                $setting = self::where('key', $key)->first();
+                if (!$setting) {
+                    return $default ?? (self::$defaults[$key] ?? null);
+                }
+
+                return self::castValue($setting->value, $setting->type);
+            } catch (\Exception $e) {
                 return $default ?? (self::$defaults[$key] ?? null);
             }
-
-            return self::castValue($setting->value, $setting->type);
         });
     }
 
