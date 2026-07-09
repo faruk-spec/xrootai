@@ -7,6 +7,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\StreamController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\EmailConfigurationController;
 use Illuminate\Support\Facades\Route;
 
 // Guest-only authentication routes
@@ -96,6 +97,14 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
 
     // Audit Logs
     Route::get('/logs', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('admin.logs.index');
+
+    // Email Configuration Module
+    Route::get('/email-config', [EmailConfigurationController::class, 'index'])->name('admin.email-config.index');
+    Route::get('/email-config/{email_configuration}/edit', [EmailConfigurationController::class, 'edit'])->name('admin.email-config.edit');
+    Route::put('/email-config/{email_configuration}', [EmailConfigurationController::class, 'update'])->name('admin.email-config.update');
+    Route::post('/email-config/{email_configuration}/test', [EmailConfigurationController::class, 'testConnection'])->name('admin.email-config.test');
+    Route::post('/email-config/{email_configuration}/send-test', [EmailConfigurationController::class, 'sendTestEmail'])->name('admin.email-config.send-test');
+    Route::post('/email-config/{email_configuration}/reset', [EmailConfigurationController::class, 'reset'])->name('admin.email-config.reset');
 });
 
 // Legal & Privacy Pages

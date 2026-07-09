@@ -487,9 +487,10 @@
                 <span class="nav-text">System Configurations</span>
                 <i class="bi bi-chevron-down ms-auto nav-text fs-7"></i>
             </a>
-            <div class="collapse {{ Request::is('admin/settings*') && !Request::is('admin/settings/plans*') ? 'show' : '' }}" id="opsMenu">
+            <div class="collapse {{ Request::is('admin/settings*') && !Request::is('admin/settings/plans*') || Request::is('admin/email-config*') ? 'show' : '' }}" id="opsMenu">
                 <div class="submenu">
                     <a href="{{ route('admin.settings') }}?tab=general" class="submenu-link">General Settings</a>
+                    <a href="{{ route('admin.email-config.index') }}" class="submenu-link {{ Request::is('admin/email-config*') ? 'active' : '' }}">Email Configuration</a>
                     <a href="{{ route('admin.settings') }}?tab=lang" class="submenu-link">Language Settings</a>
                     <a href="{{ route('admin.settings') }}?tab=notif" class="submenu-link">Alerts & Notifications</a>
                     <a href="{{ route('admin.settings') }}?tab=security" class="submenu-link">Security & Moderation</a>
