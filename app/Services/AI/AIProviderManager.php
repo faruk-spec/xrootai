@@ -20,7 +20,24 @@ class AIProviderManager
      */
     public function make(string $model, User $user): ProviderInterface
     {
-        $providerName = $this->resolveProviderName($model);
+        // 1. Check AI routing rules in DB first
+        $targetModelIdentifier = $model;
+        if (\Illuminate\Support\Facades\Schema::hasTable('ai_routing_rules')) {
+            $routingRule = \App\Models\AIRoutingRule::with('targetModel')->where('is_active', true)
+                ->where('trigger_type', 'pattern')
+                ->orderBy('priority', 'desc')
+                ->get()
+                ->first(function ($rule) use ($model) {
+                    if (empty($rule->pattern)) return false;
+                    return @preg_match('/' . preg_quote($rule->pattern, '/') . '/i', $model) || stripos($model, $rule->pattern) !== false;
+                });
+
+            if ($routingRule && $routingRule->targetModel) {
+                $targetModelIdentifier = $routingRule->targetModel->model_identifier;
+            }
+        }
+
+        $providerName = $this->resolveProviderName($targetModelIdentifier);
         
         $apiKey = null;
         if ($user && $user->exists) {
@@ -33,6 +50,16 @@ class AIProviderManager
             $apiKey = $apiKeyRecord ? $apiKeyRecord->encrypted_key : null;
         }
             
+        // Fallback to dynamic DB providers config
+        $providerRecord = null;
+        if (\Illuminate\Support\Facades\Schema::hasTable('ai_providers')) {
+            $providerRecord = \App\Models\AIProvider::where('slug', $providerName)->first();
+        }
+
+        if (!$apiKey && $providerRecord) {
+            $apiKey = $providerRecord->api_key;
+        }
+
         // Fallback to global admin settings keys if user has not set their own key
         if (!$apiKey) {
             $apiKey = match ($providerName) {
@@ -45,15 +72,23 @@ class AIProviderManager
             };
         }
 
-        return match ($providerName) {
+        $customBaseUrl = $providerRecord && $providerRecord->base_url ? $providerRecord->base_url : null;
+
+        $providerInstance = match ($providerName) {
             'openai' => new OpenAIProvider($apiKey),
             'gemini' => new GeminiProvider($apiKey),
             'claude' => new ClaudeProvider($apiKey),
             'deepseek' => new DeepSeekProvider($apiKey),
-            'ollama' => new OllamaProvider($apiKey),
+            'ollama' => new OllamaProvider($apiKey ?: ($customBaseUrl ?: 'http://localhost:11434')),
             'mock' => new MockProvider(),
             default => throw new InvalidArgumentException("Unsupported provider: {$providerName}"),
         };
+
+        if ($customBaseUrl && method_exists($providerInstance, 'setBaseUrl')) {
+            $providerInstance->setBaseUrl($customBaseUrl);
+        }
+
+        return $providerInstance;
     }
 
     /**
@@ -87,6 +122,22 @@ class AIProviderManager
      */
     public function getAllModels(): array
     {
+        if (\Illuminate\Support\Facades\Schema::hasTable('ai_models')) {
+            $dbModels = \App\Models\AIModel::with('provider')->where('is_active', true)->get();
+            if ($dbModels->isNotEmpty()) {
+                $allModels = [];
+                foreach ($dbModels as $model) {
+                    $allModels[] = [
+                        'id' => $model->model_identifier,
+                        'name' => $model->name,
+                        'context' => $model->context_window,
+                        'provider' => $model->provider->slug,
+                    ];
+                }
+                return $allModels;
+            }
+        }
+
         $providers = [
             new MockProvider(),
             new OpenAIProvider(),

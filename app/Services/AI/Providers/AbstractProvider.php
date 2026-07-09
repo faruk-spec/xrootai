@@ -22,6 +22,22 @@ abstract class AbstractProvider implements ProviderInterface
     }
 
     /**
+     * Dynamically override the API base URL.
+     */
+    public function setBaseUrl(string $baseUrl): void
+    {
+        if (property_exists($this, 'baseUrl')) {
+            if ($this->baseUrl && str_contains($this->baseUrl, '/chat/completions') && !str_contains($baseUrl, '/chat/completions')) {
+                $this->baseUrl = rtrim($baseUrl, '/') . '/chat/completions';
+            } elseif ($this->baseUrl && str_contains($this->baseUrl, '/messages') && !str_contains($baseUrl, '/messages')) {
+                $this->baseUrl = rtrim($baseUrl, '/') . '/messages';
+            } else {
+                $this->baseUrl = $baseUrl;
+            }
+        }
+    }
+
+    /**
      * Resolves the request parameters.
      */
     protected function getHttpClient()

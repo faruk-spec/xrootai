@@ -33,13 +33,66 @@ Route::middleware('auth')->group(function () {
 
 // Admin Panel Routes (protected by auth and admin role check middleware)
 Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->group(function () {
-    Route::get('/', [AdminController::class, 'index'])->name('admin.dashboard');
-    Route::get('/users', [AdminController::class, 'users'])->name('admin.users');
-    Route::post('/users/{user}/role', [AdminController::class, 'updateRole'])->name('admin.users.role');
-    Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('admin.users.delete');
+    // Dashboard
+    Route::get('/', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
     
-    Route::get('/settings', [AdminController::class, 'settings'])->name('admin.settings');
-    Route::post('/settings', [AdminController::class, 'updateSettings'])->name('admin.settings.update');
+    // User Directory CRUD
+    Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users');
+    Route::get('/users/create', [App\Http\Controllers\Admin\UserController::class, 'create'])->name('admin.users.create');
+    Route::post('/users', [App\Http\Controllers\Admin\UserController::class, 'store'])->name('admin.users.store');
+    Route::get('/users/{user}/edit', [App\Http\Controllers\Admin\UserController::class, 'edit'])->name('admin.users.edit');
+    Route::post('/users/{user}/role', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('admin.users.role'); // Mapping to update for edit form submission
+    Route::delete('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('admin.users.delete');
+    
+    // System Settings
+    Route::get('/settings', [App\Http\Controllers\Admin\SettingController::class, 'index'])->name('admin.settings');
+    Route::post('/settings', [App\Http\Controllers\Admin\SettingController::class, 'update'])->name('admin.settings.update');
+    Route::post('/settings/permissions', [App\Http\Controllers\Admin\SettingController::class, 'updatePermissions'])->name('admin.settings.permissions');
+
+    // AI Providers CRUD
+    Route::get('/providers', [App\Http\Controllers\Admin\ProviderController::class, 'index'])->name('admin.providers.index');
+    Route::get('/providers/{provider}/edit', [App\Http\Controllers\Admin\ProviderController::class, 'edit'])->name('admin.providers.edit');
+    Route::put('/providers/{provider}', [App\Http\Controllers\Admin\ProviderController::class, 'update'])->name('admin.providers.update');
+    Route::post('/providers/{provider}/test', [App\Http\Controllers\Admin\ProviderController::class, 'testConnection'])->name('admin.providers.test');
+
+    // AI Models CRUD
+    Route::get('/models', [App\Http\Controllers\Admin\ModelController::class, 'index'])->name('admin.models.index');
+    Route::get('/models/create', [App\Http\Controllers\Admin\ModelController::class, 'create'])->name('admin.models.create');
+    Route::post('/models', [App\Http\Controllers\Admin\ModelController::class, 'store'])->name('admin.models.store');
+    Route::get('/models/{model}/edit', [App\Http\Controllers\Admin\ModelController::class, 'edit'])->name('admin.models.edit');
+    Route::put('/models/{model}', [App\Http\Controllers\Admin\ModelController::class, 'update'])->name('admin.models.update');
+    Route::delete('/models/{model}', [App\Http\Controllers\Admin\ModelController::class, 'destroy'])->name('admin.models.delete');
+
+    // AI Routing CRUD
+    Route::get('/routing', [App\Http\Controllers\Admin\RoutingController::class, 'index'])->name('admin.routing.index');
+    Route::get('/routing/create', [App\Http\Controllers\Admin\RoutingController::class, 'create'])->name('admin.routing.create');
+    Route::post('/routing', [App\Http\Controllers\Admin\RoutingController::class, 'store'])->name('admin.routing.store');
+    Route::get('/routing/{routing}/edit', [App\Http\Controllers\Admin\RoutingController::class, 'edit'])->name('admin.routing.edit');
+    Route::put('/routing/{routing}', [App\Http\Controllers\Admin\RoutingController::class, 'update'])->name('admin.routing.update');
+    Route::delete('/routing/{routing}', [App\Http\Controllers\Admin\RoutingController::class, 'destroy'])->name('admin.routing.delete');
+
+    // Prompt Templates CRUD
+    Route::get('/prompts', [App\Http\Controllers\Admin\PromptController::class, 'index'])->name('admin.prompts.index');
+    Route::get('/prompts/create', [App\Http\Controllers\Admin\PromptController::class, 'create'])->name('admin.prompts.create');
+    Route::post('/prompts', [App\Http\Controllers\Admin\PromptController::class, 'store'])->name('admin.prompts.store');
+    Route::get('/prompts/{prompt}/edit', [App\Http\Controllers\Admin\PromptController::class, 'edit'])->name('admin.prompts.edit');
+    Route::put('/prompts/{prompt}', [App\Http\Controllers\Admin\PromptController::class, 'update'])->name('admin.prompts.update');
+    Route::delete('/prompts/{prompt}', [App\Http\Controllers\Admin\PromptController::class, 'destroy'])->name('admin.prompts.delete');
+
+    // Knowledge Base (RAG) CRUD
+    Route::get('/kb', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'index'])->name('admin.kb.index');
+    Route::get('/kb/create', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'create'])->name('admin.kb.create');
+    Route::post('/kb', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'store'])->name('admin.kb.store');
+    Route::post('/kb/{kb}/sync', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'sync'])->name('admin.kb.sync');
+    Route::delete('/kb/{kb}', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'destroy'])->name('admin.kb.delete');
+
+    // Conversations Log Audit
+    Route::get('/conversations', [App\Http\Controllers\Admin\ConversationController::class, 'index'])->name('admin.conversations.index');
+    Route::get('/conversations/{conversation}', [App\Http\Controllers\Admin\ConversationController::class, 'show'])->name('admin.conversations.show');
+    Route::delete('/conversations/{conversation}', [App\Http\Controllers\Admin\ConversationController::class, 'destroy'])->name('admin.conversations.delete');
+
+    // Audit Logs
+    Route::get('/logs', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('admin.logs.index');
 });
 
 // Open Chat Interface Routes (Access allowed for both guests and authenticated users)
