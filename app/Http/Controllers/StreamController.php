@@ -216,7 +216,12 @@ class StreamController extends Controller
             "You MUST NEVER mention OpenAI, Anthropic, Google, Meta, DeepSeek, Mistral, or any underlying API models, companies, or training datasets under any circumstances.\n\n";
 
         $settings = $user ? $user->settings : null;
-        $systemPrompt = $identityOverride . ($settings ? $settings->system_prompt : \App\Models\SystemSetting::get('prompt_default', "You are {$botName}, a helpful, advanced AI assistant."));
+        $basePrompt = $settings && !empty($settings->system_prompt) ? $settings->system_prompt : \App\Models\SystemSetting::get('prompt_default', "You are {$botName}, a helpful, advanced AI assistant.");
+        // Ensure any static occurrences of XrootAI inside prompt_default or custom instructions are replaced with the custom botName
+        if ($botName !== 'XrootAI') {
+            $basePrompt = str_ireplace('XrootAI', $botName, $basePrompt);
+        }
+        $systemPrompt = $identityOverride . $basePrompt;
         
         // Enrich prompt with AI behavior settings
         $personality = \App\Models\SystemSetting::get('behavior_personality', 'Friendly');
