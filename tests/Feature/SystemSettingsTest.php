@@ -100,4 +100,34 @@ class SystemSettingsTest extends TestCase
         $this->assertInstanceOf(\App\Services\AI\Providers\OpenAIProvider::class, $provider);
         $this->assertEquals('global-openai-key-test', $provider->getApiKey());
     }
+
+    public function test_admin_can_update_settings_for_other_groups(): void
+    {
+        // Test KB settings update
+        $response = $this->actingAs($this->admin)->post(route('admin.settings.update'), [
+            '_group' => 'kb',
+            'kb_chunk_size' => 1000,
+            'kb_auto_sync' => 'on',
+        ]);
+        $response->assertRedirect();
+        $this->assertEquals(1000, SystemSetting::get('kb_chunk_size'));
+        $this->assertTrue(SystemSetting::get('kb_auto_sync'));
+
+        // Test Feature Toggle settings update
+        $response = $this->actingAs($this->admin)->post(route('admin.settings.update'), [
+            '_group' => 'toggle',
+            'toggle_vision' => 'on',
+        ]);
+        $response->assertRedirect();
+        $this->assertTrue(SystemSetting::get('toggle_vision'));
+        $this->assertFalse(SystemSetting::get('toggle_voice')); // omitted boolean should be cast to false
+
+        // Test System Prompt settings update
+        $response = $this->actingAs($this->admin)->post(route('admin.settings.update'), [
+            '_group' => 'prompt',
+            'prompt_brand_voice' => 'Empathetic and Warm',
+        ]);
+        $response->assertRedirect();
+        $this->assertEquals('Empathetic and Warm', SystemSetting::get('prompt_brand_voice'));
+    }
 }

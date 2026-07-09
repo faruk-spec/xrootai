@@ -723,6 +723,7 @@
                                     </span>
                                     <span style="font-weight:600; font-size:0.95rem;">Enforce JSON Mode</span>
                                 </label>
+                            </div>
                             <h4 style="margin:24px 0 10px 0; font-weight:700;">Global Provider API Keys</h4>
                             <div class="setting-row" style="margin-bottom:16px;">
                                 <label class="clay-input-label">OpenAI API Key</label>
