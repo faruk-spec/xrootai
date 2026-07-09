@@ -52,6 +52,11 @@ class StreamController extends Controller
         // Read POST parameters
         $prompt = $request->input('prompt');
         $attachmentPaths = $request->input('attachments', []); // array of files
+        $requestedModel = $request->input('model');
+        if (!empty($requestedModel) && $requestedModel !== $conversation->model) {
+            $conversation->model = $requestedModel;
+            $conversation->save();
+        }
 
         // Check if file upload is enabled
         $fileUploadAllowed = \App\Models\SystemSetting::get('toggle_file_upload', true);
@@ -201,9 +206,17 @@ class StreamController extends Controller
         // 4. Fetch full conversation history
         $history = [];
         
-        // Add system prompt from user settings
+        // Add system prompt from user settings and enforce dynamic identity
+        $botName = \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI');
+        $botDesc = \App\Models\SystemSetting::get('general_chatbot_description', 'Your advanced AI coding and conversation assistant.');
+        
+        $identityOverride = "[MANDATORY IDENTITY DIRECTIVE]\n" .
+            "You are {$botName}. {$botDesc}\n" .
+            "If asked who you are, your name, who created/built/developed/trained you, or about your identity, origin, and underlying technology/model, you MUST strictly and solely answer that you are {$botName}, an artificial intelligence assistant created and developed by the {$botName} Team.\n" .
+            "You MUST NEVER mention OpenAI, Anthropic, Google, Meta, DeepSeek, Mistral, or any underlying API models, companies, or training datasets under any circumstances.\n\n";
+
         $settings = $user ? $user->settings : null;
-        $systemPrompt = $settings ? $settings->system_prompt : \App\Models\SystemSetting::get('prompt_default', 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.');
+        $systemPrompt = $identityOverride . ($settings ? $settings->system_prompt : \App\Models\SystemSetting::get('prompt_default', "You are {$botName}, a helpful, advanced AI assistant."));
         
         // Enrich prompt with AI behavior settings
         $personality = \App\Models\SystemSetting::get('behavior_personality', 'Friendly');

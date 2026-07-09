@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - XrootAI</title>
+    <title>Login - {{ \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI') }}</title>
+    @if(\App\Models\SystemSetting::get('general_site_icon'))
+        <link rel="icon" href="{{ \App\Models\SystemSetting::get('general_site_icon') }}">
+    @endif
     <link rel="stylesheet" href="{{ asset('css/claymorphism.css') }}">
     <script src="{{ asset('js/alpine.min.js') }}" defer></script>
     <style>
@@ -37,13 +40,40 @@
 
     <div class="auth-container">
         <div class="clay-card auth-card">
+            <!-- Back to Home / Chat Button -->
+            <div style="display: flex; justify-content: flex-start; margin-bottom: 12px;">
+                <a href="{{ route('chat') }}" class="clay-btn clay-btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; padding: 6px 12px; border-radius: 10px; font-size: 0.85rem; color: var(--text-color);">
+                    ← Back to Home
+                </a>
+            </div>
+
             <!-- Brand Logo -->
             <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-                <div class="app-brand">
-                    <div class="app-brand-icon">X</div>
-                    <span>XrootAI</span>
-                </div>
+                <a href="{{ route('chat') }}" class="app-brand" style="text-decoration: none; display: flex; align-items: center; gap: 8px;">
+                    @php 
+                        $lightLogo = \App\Models\SystemSetting::get('general_logo_light') ?: \App\Models\SystemSetting::get('general_chatbot_logo'); 
+                        $darkLogo = \App\Models\SystemSetting::get('general_logo_dark') ?: \App\Models\SystemSetting::get('general_chatbot_logo'); 
+                    @endphp
+                    @if($lightLogo || $darkLogo)
+                        <img :src="darkMode ? '{{ $darkLogo ?: $lightLogo }}' : '{{ $lightLogo ?: $darkLogo }}'" alt="Logo" style="width:36px; height:36px; border-radius:10px; object-fit:contain;">
+                    @else
+                        <div class="app-brand-icon">{{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI'), 0, 1) }}</div>
+                    @endif
+                    <span style="color: var(--text-color); font-weight: 700;">{{ \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI') }}</span>
+                </a>
             </div>
+
+            @if(session('error'))
+                <div style="background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; padding: 12px 14px; border-radius: 12px; margin-bottom: 16px; font-size: 0.88rem; text-align: left; line-height: 1.4; display: flex; align-items: flex-start; gap: 8px;">
+                    <span>⚠️</span>
+                    <div>{{ session('error') }}</div>
+                </div>
+            @endif
+            @if(session('status'))
+                <div style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; padding: 12px 14px; border-radius: 12px; margin-bottom: 16px; font-size: 0.88rem; text-align: left; line-height: 1.4;">
+                    {{ session('status') }}
+                </div>
+            @endif
 
             <h1 class="auth-title">Welcome Back</h1>
             <p class="auth-subtitle">Log in to continue your AI conversation</p>

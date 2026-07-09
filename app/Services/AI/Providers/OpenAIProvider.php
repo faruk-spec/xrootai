@@ -52,10 +52,16 @@ class OpenAIProvider extends AbstractProvider
         });
 
         curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         
         if (curl_errno($ch)) {
             $error = curl_error($ch);
             $onChunk("[Connection Error: $error]");
+        } elseif ($httpCode >= 400) {
+            $errorDetail = trim($buffer) ?: "HTTP Status $httpCode";
+            $decodedErr = json_decode($errorDetail, true);
+            $msg = $decodedErr['error']['message'] ?? $errorDetail;
+            $onChunk("[OpenAI/Provider API Error ({$httpCode}): {$msg}]");
         }
 
         curl_close($ch);

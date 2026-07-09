@@ -1486,7 +1486,8 @@
                             },
                             body: JSON.stringify({
                                 prompt: currentPrompt,
-                                attachments: currentAttachments
+                                attachments: currentAttachments,
+                                model: this.activeModel
                             })
                         });
 
