@@ -72,10 +72,41 @@ class ChatController extends Controller
             $apiKeys = [];
         }
 
-        $allowedModels = \App\Models\SystemSetting::get('model_available', ['mock']);
-        $models = array_values(array_filter($this->aiManager->getAllModels(), function ($model) use ($allowedModels) {
-            return in_array($model['id'], $allowedModels);
-        }));
+        $userRole = $user ? $user->role : 'guest';
+        $models = [];
+
+        if (\Illuminate\Support\Facades\Schema::hasTable('ai_models')) {
+            $dbModels = \App\Models\AIModel::with('provider')
+                ->where('is_active', true)
+                ->whereHas('provider', function ($p) {
+                    $p->where('is_active', true);
+                })
+                ->get();
+
+            foreach ($dbModels as $model) {
+                $allowed = true;
+                if (!empty($model->allowed_roles)) {
+                    $rolesList = array_map('strtolower', $model->allowed_roles);
+                    $allowed = in_array(strtolower($userRole), $rolesList);
+                }
+                if ($allowed) {
+                    $models[] = [
+                        'id' => $model->model_identifier,
+                        'name' => $model->name,
+                        'context' => $model->context_window,
+                        'provider' => $model->provider->slug,
+                    ];
+                }
+            }
+        }
+
+        // Fallback to legacy static models if database returns nothing
+        if (empty($models)) {
+            $allowedModels = \App\Models\SystemSetting::get('model_available', ['mock']);
+            $models = array_values(array_filter($this->aiManager->getAllModels(), function ($m) use ($allowedModels) {
+                return in_array($m['id'], $allowedModels);
+            }));
+        }
 
         return view('chat', [
             'settings' => $settings,

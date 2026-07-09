@@ -73,6 +73,30 @@ class StreamController extends Controller
         }
 
         // 2. Enforce Guest Limit (Dynamic)
+        $userRole = $user ? $user->role : 'guest';
+        if (\Illuminate\Support\Facades\Schema::hasTable('ai_models')) {
+            $dbModel = \App\Models\AIModel::with('provider')
+                ->where('model_identifier', $conversation->model)
+                ->where('is_active', true)
+                ->whereHas('provider', function ($p) {
+                    $p->where('is_active', true);
+                })
+                ->first();
+
+            if ($dbModel && !empty($dbModel->allowed_roles)) {
+                $rolesList = array_map('strtolower', $dbModel->allowed_roles);
+                if (!in_array(strtolower($userRole), $rolesList)) {
+                    $response = new StreamedResponse(function() {
+                        echo 'data: ' . json_encode(['text' => "\n\n⚠️ **Model access denied.** You do not have access to this model under your plan."]) . "\n\n";
+                        echo "data: [DONE]\n\n";
+                        flush();
+                    });
+                    $response->headers->set('Content-Type', 'text/event-stream');
+                    return $response;
+                }
+            }
+        }
+
         if (!$user) {
             $sessionToken = app()->environment('testing') ? $conversation->session_token : session()->getId();
             $sessionConversations = Conversation::where('session_token', $sessionToken)->pluck('id');

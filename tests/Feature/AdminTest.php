@@ -72,4 +72,35 @@ class AdminTest extends TestCase
         $response->assertRedirect();
         $this->assertEquals('admin', $this->admin->fresh()->role);
     }
+
+    public function test_admin_can_configure_model_with_allowed_roles(): void
+    {
+        $provider = \App\Models\AIProvider::firstOrCreate(
+            ['slug' => 'openai'],
+            [
+                'name' => 'OpenAI',
+                'base_url' => 'https://api.openai.com/v1',
+                'is_active' => true,
+            ]
+        );
+
+        $response = $this->actingAs($this->admin)->post(route('admin.models.store'), [
+            'provider_id' => $provider->id,
+            'name' => 'GPT-4 Pro Only',
+            'model_identifier' => 'gpt-4-pro',
+            'type' => 'chat',
+            'context_window' => 8192,
+            'max_tokens' => 4096,
+            'cost_per_million_input' => 10.0,
+            'cost_per_million_output' => 30.0,
+            'allowed_roles' => ['pro', 'admin'],
+            'is_active' => 'on',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $response->assertRedirect();
+        $model = \App\Models\AIModel::where('model_identifier', 'gpt-4-pro')->first();
+        $this->assertNotNull($model);
+        $this->assertEquals(['pro', 'admin'], $model->allowed_roles);
+    }
 }

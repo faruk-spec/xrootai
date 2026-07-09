@@ -32,7 +32,12 @@ class ModelController extends Controller
     public function create()
     {
         $providers = AIProvider::all();
-        return view('admin.models.create', compact('providers'));
+        $roles = ['guest', 'user', 'pro', 'admin', 'Super Admin'];
+        if (\Illuminate\Support\Facades\Schema::hasTable('roles')) {
+            $dbRoles = \App\Models\Role::pluck('name')->toArray();
+            $roles = array_values(array_unique(array_merge(['guest'], $dbRoles)));
+        }
+        return view('admin.models.create', compact('providers', 'roles'));
     }
 
     public function store(Request $request)
@@ -47,7 +52,8 @@ class ModelController extends Controller
             'cost_per_million_input' => 'required|numeric|min:0',
             'cost_per_million_output' => 'required|numeric|min:0',
             'capabilities' => 'nullable|array',
-            'is_active' => 'sometimes|boolean',
+            'allowed_roles' => 'nullable|array',
+            'is_active' => 'sometimes',
         ]);
 
         $validated['is_active'] = $request->has('is_active');
@@ -57,6 +63,7 @@ class ModelController extends Controller
             'image_gen' => $request->has('capabilities.image_gen'),
             'audio' => $request->has('capabilities.audio'),
         ];
+        $validated['allowed_roles'] = $request->input('allowed_roles', []);
 
         $model = AIModel::create($validated);
 
@@ -68,7 +75,12 @@ class ModelController extends Controller
     public function edit(AIModel $model)
     {
         $providers = AIProvider::all();
-        return view('admin.models.edit', compact('model', 'providers'));
+        $roles = ['guest', 'user', 'pro', 'admin', 'Super Admin'];
+        if (\Illuminate\Support\Facades\Schema::hasTable('roles')) {
+            $dbRoles = \App\Models\Role::pluck('name')->toArray();
+            $roles = array_values(array_unique(array_merge(['guest'], $dbRoles)));
+        }
+        return view('admin.models.edit', compact('model', 'providers', 'roles'));
     }
 
     public function update(Request $request, AIModel $model)
@@ -83,7 +95,8 @@ class ModelController extends Controller
             'cost_per_million_input' => 'required|numeric|min:0',
             'cost_per_million_output' => 'required|numeric|min:0',
             'capabilities' => 'nullable|array',
-            'is_active' => 'sometimes|boolean',
+            'allowed_roles' => 'nullable|array',
+            'is_active' => 'sometimes',
         ]);
 
         $validated['is_active'] = $request->has('is_active');
@@ -93,6 +106,7 @@ class ModelController extends Controller
             'image_gen' => $request->has('capabilities.image_gen'),
             'audio' => $request->has('capabilities.audio'),
         ];
+        $validated['allowed_roles'] = $request->input('allowed_roles', []);
 
         $model->update($validated);
 

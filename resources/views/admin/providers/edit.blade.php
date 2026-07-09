@@ -17,19 +17,28 @@
 
         <div class="mb-3">
             <label class="form-label fw-medium">Display Name</label>
-            <input type="text" name="name" class="form-control" value="{{ old('name', $provider->name) }}" required>
+            <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $provider->name) }}" required>
+            @error('name')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
             <div class="form-text">The label shown in provider menus.</div>
         </div>
 
         <div class="mb-3">
             <label class="form-label fw-medium">Base Endpoint URL</label>
-            <input type="url" name="base_url" class="form-control" value="{{ old('base_url', $provider->base_url) }}">
+            <input type="text" name="base_url" class="form-control @error('base_url') is-invalid @enderror" value="{{ old('base_url', $provider->base_url) }}">
+            @error('base_url')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
             <div class="form-text">API root endpoint (leave blank to use provider default SDK configs).</div>
         </div>
 
         <div class="mb-3">
             <label class="form-label fw-medium">API Credential Key</label>
-            <input type="password" name="api_key" class="form-control" placeholder="••••••••••••••••">
+            <input type="password" name="api_key" class="form-control @error('api_key') is-invalid @enderror" placeholder="••••••••••••••••">
+            @error('api_key')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
             <div class="form-text">Leave blank to keep current key. Credentials are securely encrypted at rest.</div>
         </div>
 

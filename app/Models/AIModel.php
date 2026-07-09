@@ -19,11 +19,13 @@ class AIModel extends Model
         'cost_per_million_input',
         'cost_per_million_output',
         'capabilities',
+        'allowed_roles',
         'is_active',
     ];
 
     protected $casts = [
         'capabilities' => 'array',
+        'allowed_roles' => 'array',
         'is_active' => 'boolean',
         'cost_per_million_input' => 'float',
         'cost_per_million_output' => 'float',

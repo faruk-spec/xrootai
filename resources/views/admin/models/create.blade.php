@@ -125,6 +125,21 @@
         </div>
 
         <div class="mb-4">
+            <label class="form-label fw-bold">Allowed User Roles</label>
+            <div class="row">
+                @foreach($roles as $role)
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="allowed_roles[]" value="{{ $role }}" id="role_{{ Str::slug($role) }}" checked>
+                            <label class="form-check-label text-capitalize" for="role_{{ Str::slug($role) }}">{{ $role }}</label>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <div class="form-text">Select which subscription plans or roles can view and request completions from this model.</div>
+        </div>
+
+        <div class="mb-4">
             <div class="form-check form-switch">
                 <input class="form-check-input" type="checkbox" name="is_active" id="isActive" checked>
                 <label class="form-check-label fw-semibold" for="isActive">Enable Model</label>
