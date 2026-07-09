@@ -16,6 +16,43 @@ class ChatController extends Controller
         $this->aiManager = $aiManager;
     }
 
+    protected function getAvailableModels($userRole): array
+    {
+        if (\Illuminate\Support\Facades\Schema::hasTable('ai_models')) {
+            $dbModels = \App\Models\AIModel::with('provider')
+                ->where('is_active', true)
+                ->whereHas('provider', function ($query) {
+                    $query->where('is_active', true);
+                })
+                ->orderBy('sort_order', 'asc')
+                ->get();
+
+            if ($dbModels->isNotEmpty()) {
+                $models = [];
+                foreach ($dbModels as $model) {
+                    if (!empty($model->allowed_roles)) {
+                        $rolesList = array_map('strtolower', $model->allowed_roles);
+                        if (!in_array(strtolower($userRole), $rolesList)) {
+                            continue;
+                        }
+                    }
+                    $models[] = [
+                        'id' => $model->model_identifier,
+                        'name' => $model->name,
+                        'context' => $model->context_window,
+                        'provider' => $model->provider ? $model->provider->slug : 'mock',
+                    ];
+                }
+                if (!empty($models)) {
+                    return $models;
+                }
+            }
+        }
+
+        return $this->aiManager->getAllModels();
+    }
+
+
     protected function authorizeAccess(Request $request, Conversation $conversation)
     {
         $user = $request->user();
@@ -73,40 +110,7 @@ class ChatController extends Controller
         }
 
         $userRole = $user ? $user->role : 'guest';
-        $models = [];
-
-        if (\Illuminate\Support\Facades\Schema::hasTable('ai_models')) {
-            $dbModels = \App\Models\AIModel::with('provider')
-                ->where('is_active', true)
-                ->whereHas('provider', function ($p) {
-                    $p->where('is_active', true);
-                })
-                ->get();
-
-            foreach ($dbModels as $model) {
-                $allowed = true;
-                if (!empty($model->allowed_roles)) {
-                    $rolesList = array_map('strtolower', $model->allowed_roles);
-                    $allowed = in_array(strtolower($userRole), $rolesList);
-                }
-                if ($allowed) {
-                    $models[] = [
-                        'id' => $model->model_identifier,
-                        'name' => $model->name,
-                        'context' => $model->context_window,
-                        'provider' => $model->provider->slug,
-                    ];
-                }
-            }
-        }
-
-        // Fallback to legacy static models if database returns nothing
-        if (empty($models)) {
-            $allowedModels = \App\Models\SystemSetting::get('model_available', ['mock']);
-            $models = array_values(array_filter($this->aiManager->getAllModels(), function ($m) use ($allowedModels) {
-                return in_array($m['id'], $allowedModels);
-            }));
-        }
+        $models = $this->getAvailableModels($userRole);
 
         return view('chat', [
             'settings' => $settings,
@@ -194,10 +198,8 @@ class ChatController extends Controller
             $apiKeys = [];
         }
 
-        $allowedModels = \App\Models\SystemSetting::get('model_available', ['mock']);
-        $models = array_values(array_filter($this->aiManager->getAllModels(), function ($model) use ($allowedModels) {
-            return in_array($model['id'], $allowedModels);
-        }));
+        $userRole = $user ? $user->role : 'guest';
+        $models = $this->getAvailableModels($userRole);
         
         $messages = $conversation->messages()
             ->with('attachments')

@@ -365,12 +365,16 @@
 
             <!-- USERS & PLANS -->
             <div class="nav-category">Access Control</div>
+            <a href="{{ route('admin.oauth.index') }}" class="nav-link {{ Request::is('admin/oauth*') ? 'active' : '' }}">
+                <i class="bi bi-shield-lock-fill fs-5"></i>
+                <span class="nav-text">Social Login & OAuth</span>
+            </a>
             <a href="#usersMenu" class="nav-link collapsed" data-bs-toggle="collapse">
                 <i class="bi bi-people-fill fs-5"></i>
                 <span class="nav-text">User Directory</span>
                 <i class="bi bi-chevron-down ms-auto nav-text fs-7"></i>
             </a>
-            <div class="collapse {{ Request::is('admin/users*') || Request::is('admin/oauth*') || Request::is('admin/settings/plans*') || Request::is('admin/settings/roles*') || Request::is('admin/settings/privacy*') ? 'show' : '' }}" id="usersMenu">
+            <div class="collapse {{ Request::is('admin/users*') || Request::is('admin/settings/plans*') || Request::is('admin/settings/roles*') || Request::is('admin/settings/privacy*') ? 'show' : '' }}" id="usersMenu">
                 <div class="submenu">
                     <a href="{{ route('admin.users') }}" class="submenu-link {{ Route::is('admin.users') ? 'active' : '' }}">Users List</a>
                     <a href="{{ route('admin.oauth.index') }}" class="submenu-link {{ Request::is('admin/oauth*') ? 'active' : '' }}">Social Login & OAuth</a>
