@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>XrootAI Chat</title>
     
     <!-- Stylesheets -->
@@ -69,13 +69,19 @@
         }
 
         /* Responsive Layout grid */
+        html, body {
+            overflow-x: hidden;
+            max-width: 100vw;
+        }
         .workspace {
             display: grid;
             grid-template-columns: 300px 1fr;
             height: 100vh;
-            width: 100vw;
+            width: 100%;
+            max-width: 100vw;
             overflow: hidden;
             position: relative;
+            box-sizing: border-box;
         }
 
         /* Mobile hamburger button - hidden on desktop, shown on mobile */
@@ -218,9 +224,13 @@
         .expand-btn:hover {
             color: var(--text-primary);
         }
-        /* Fix overlay pointer-events when hidden */
-        .sidebar-overlay[style*="display: none"] {
-            pointer-events: none !important;
+        /* Sidebar overlay: hidden by default, shown via Alpine x-show on mobile only.
+           pointer-events:none when not displayed prevents click blocking. */
+        .sidebar-overlay {
+            pointer-events: none;
+        }
+        .sidebar-overlay.is-open {
+            pointer-events: auto;
         }
 
         .message-user {
@@ -340,17 +350,18 @@
         /* Auto-expandable textarea logic helper */
         .chat-textarea {
             resize: none;
-            overflow-y: hidden; /* hidden until content exceeds max-height */
-            max-height: 160px;  /* ~6 lines — switches to scroll after */
+            overflow-y: hidden;   /* hides scroll until max-height is hit */
+            max-height: 160px;
             line-height: 1.6;
-            scrollbar-width: none; /* Firefox: hide scrollbar */
+            scrollbar-width: none;        /* Firefox */
+            -ms-overflow-style: none;     /* IE/Edge */
         }
         .chat-textarea::-webkit-scrollbar {
-            display: none; /* Chrome/Safari/Edge: hide scrollbar */
+            display: none;  /* Chrome/Safari */
         }
-        /* Once auto-grow hits the cap, enable invisible scroll */
+        /* When content exceeds max-height JS adds this class to allow scrolling */
         .chat-textarea.overflowed {
-            overflow-y: scroll;
+            overflow-y: auto;
         }
         /* Spin animation for upload spinner */
         @keyframes spin {
@@ -400,22 +411,23 @@
     <div class="glow-sphere glow-1"></div>
     <div class="glow-sphere glow-2"></div>
 
-    <div class="workspace">
-        
-        <!-- Sidebar overlay for Mobile view -->
-        <div
-            class="sidebar-overlay"
-            x-show="sidebarOpen"
-            @click="sidebarOpen = false"
-            style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:40; cursor:pointer;"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-        ></div>
+    <!-- Sidebar overlay for Mobile view -->
+    <!-- Sits outside .workspace so it covers the full viewport without layout interference -->
+    <div
+        class="sidebar-overlay"
+        :class="{ 'is-open': sidebarOpen }"
+        x-show="sidebarOpen"
+        @click="sidebarOpen = false"
+        style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:40; cursor:pointer;"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+    ></div>
 
+    <div class="workspace">
         <!-- Sidebar Container (Phase 2 Component) -->
         <aside class="sidebar" :class="{ 'open': sidebarOpen }">
             <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -438,6 +450,8 @@
                 </button>
             </form>
 
+            <!-- Search + Conversations: only visible to logged-in users -->
+            @auth
             <!-- Search bar -->
             <input type="text" class="clay-inset clay-input" placeholder="Search conversations..." x-model="searchQuery" style="width:100%;">
 
@@ -476,6 +490,18 @@
                     </div>
                 </template>
             </div>
+            @endauth
+
+            {{-- Guest: show locked history placeholder --}}
+            @guest
+            <div style="flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; text-align: center;">
+                <div style="width:48px; height:48px; border-radius:16px; background:rgba(74,136,255,0.1); display:flex; align-items:center; justify-content:center;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4a88ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">Sign in to save and view your chat history</p>
+                <a href="{{ route('login') }}" class="clay-btn clay-btn-primary" style="font-size:0.82rem; padding:8px 20px; border-radius:12px; text-decoration:none; text-align:center;">Sign in</a>
+            </div>
+            @endguest
 
             <!-- User footer menu -->
             <div class="clay-card" style="padding: 12px 16px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; margin-top: auto; flex-shrink: 0; box-shadow: var(--clay-outer-shadow);">
