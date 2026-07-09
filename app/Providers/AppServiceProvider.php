@@ -11,7 +11,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        if (class_exists(\Illuminate\Foundation\AliasLoader::class) && class_exists(\Laravel\Socialite\Facades\Socialite::class)) {
+            \Illuminate\Foundation\AliasLoader::getInstance()->alias('Socialite', \Laravel\Socialite\Facades\Socialite::class);
+        }
     }
 
     /**

@@ -37,6 +37,7 @@ class SystemSetting extends Model
         // GENERAL
         'general_chatbot_name' => 'XrootAI',
         'general_chatbot_logo' => '',
+        'general_site_icon' => '',
         'general_chatbot_description' => 'Your advanced AI coding and conversation assistant.',
         'general_default_language' => 'en',
         'general_timezone' => 'UTC',

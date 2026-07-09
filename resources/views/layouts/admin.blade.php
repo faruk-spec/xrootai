@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'SaaS Admin Dashboard') - XrootAI</title>
+    <title>@yield('title', 'SaaS Admin Dashboard') - {{ \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI') }}</title>
+    @if(\App\Models\SystemSetting::get('general_site_icon'))
+        <link rel="icon" href="{{ \App\Models\SystemSetting::get('general_site_icon') }}">
+    @endif
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -350,9 +353,13 @@
 
     <!-- Sidebar Layout -->
     <aside class="sidebar" id="sidebar">
-        <div class="sidebar-brand">
-            <div class="brand-logo">X</div>
-            <span class="brand-text">XrootAI Admin</span>
+        <div class="sidebar-brand" style="display:flex; align-items:center; gap:10px;">
+            @if(\App\Models\SystemSetting::get('general_chatbot_logo'))
+                <img src="{{ \App\Models\SystemSetting::get('general_chatbot_logo') }}" alt="Logo" style="width:36px; height:36px; border-radius:10px; object-fit:contain; flex-shrink:0;">
+            @else
+                <div class="brand-logo" style="flex-shrink:0;">{{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI'), 0, 1) }}</div>
+            @endif
+            <span class="brand-text">{{ \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI') }} Admin</span>
         </div>
 
         <div class="sidebar-nav">

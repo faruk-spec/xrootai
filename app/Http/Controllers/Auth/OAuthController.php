@@ -24,6 +24,10 @@ class OAuthController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
+        if (!class_exists(\Laravel\Socialite\Facades\Socialite::class)) {
+            abort(500, 'Laravel Socialite package is not installed or loaded on this server. Please run "composer require laravel/socialite" or "composer install" on your live server.');
+        }
+
         $this->bootSocialiteDriver($provider);
 
         $driver = Socialite::driver($providerSlug);
@@ -49,6 +53,10 @@ class OAuthController extends Controller
         $provider = OAuthProvider::where('provider_slug', $providerSlug)
             ->where('is_active', true)
             ->firstOrFail();
+
+        if (!class_exists(\Laravel\Socialite\Facades\Socialite::class)) {
+            abort(500, 'Laravel Socialite package is not installed or loaded on this server. Please run "composer require laravel/socialite" or "composer install" on your live server.');
+        }
 
         $this->bootSocialiteDriver($provider);
 

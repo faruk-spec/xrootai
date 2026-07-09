@@ -30,17 +30,19 @@ class ChatController extends Controller
             if ($dbModels->isNotEmpty()) {
                 $models = [];
                 foreach ($dbModels as $model) {
+                    $isAllowed = true;
                     if (!empty($model->allowed_roles) && !in_array(strtolower($userRole), ['admin', 'super admin'])) {
                         $rolesList = array_map('strtolower', $model->allowed_roles);
                         if (!in_array(strtolower($userRole), $rolesList)) {
-                            continue;
+                            $isAllowed = false;
                         }
                     }
                     $models[] = [
                         'id' => $model->model_identifier,
-                        'name' => $model->name,
+                        'name' => $model->name . (!$isAllowed ? ' 🔒 (Upgrade Plan)' : ''),
                         'context' => $model->context_window,
                         'provider' => $model->provider ? $model->provider->slug : 'mock',
+                        'is_allowed' => $isAllowed,
                     ];
                 }
                 if (!empty($models)) {

@@ -88,7 +88,7 @@
         <div class="card border-0 p-4 shadow-sm">
             <!-- 1. GENERAL SETTINGS -->
             @if($tab === 'general')
-                <form action="{{ route('admin.settings.update') }}" method="POST">
+                <form action="{{ route('admin.settings.update') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="_group" value="general">
                     <h5 class="fw-bold mb-4"><i class="bi bi-sliders text-primary me-2"></i>General Settings</h5>
@@ -103,6 +103,31 @@
                         <label class="form-label fw-semibold">Chatbot Description</label>
                         <input type="text" name="general_chatbot_description" value="{{ $settings['general_chatbot_description'] }}" class="form-control">
                         <div class="form-text">A brief description outlining chatbot capabilities.</div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Chatbot Logo / Brand Image</label>
+                            @if(!empty($settings['general_chatbot_logo']))
+                                <div class="mb-2 d-flex align-items-center gap-2">
+                                    <img src="{{ $settings['general_chatbot_logo'] }}" alt="Logo" style="height: 48px; border-radius: 8px; border: 1px solid #dee2e6; object-fit: contain;">
+                                    <span class="text-muted small">Current Logo</span>
+                                </div>
+                            @endif
+                            <input type="file" name="general_chatbot_logo" class="form-control" accept="image/*">
+                            <div class="form-text">Recommended size: 128x128px (PNG, JPG, SVG, WebP).</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Site Icon / Favicon</label>
+                            @if(!empty($settings['general_site_icon']))
+                                <div class="mb-2 d-flex align-items-center gap-2">
+                                    <img src="{{ $settings['general_site_icon'] }}" alt="Favicon" style="height: 32px; border-radius: 4px; border: 1px solid #dee2e6; object-fit: contain;">
+                                    <span class="text-muted small">Current Favicon</span>
+                                </div>
+                            @endif
+                            <input type="file" name="general_site_icon" class="form-control" accept="image/*,.ico">
+                            <div class="form-text">Recommended: 32x32px or 64x64px (ICO, PNG).</div>
+                        </div>
                     </div>
 
                     <div class="row g-3 mb-3">

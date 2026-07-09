@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI') }} Chat</title>
+    @if(\App\Models\SystemSetting::get('general_site_icon'))
+        <link rel="icon" href="{{ \App\Models\SystemSetting::get('general_site_icon') }}">
+    @endif
     
     <!-- Stylesheets -->
     <link rel="stylesheet" href="{{ asset('css/claymorphism.css') }}">
@@ -600,8 +603,12 @@
         <aside class="sidebar" :class="{ 'open': sidebarOpen, 'collapsed': sidebarCollapsed }">
             <!-- Sidebar header: logo + collapse + close buttons -->
             <div :style="sidebarCollapsed ? 'display:flex; flex-direction:column; align-items:center; gap:12px; width:100%;' : 'display: flex; align-items: center; justify-content: space-between;'" style="flex-shrink:0;">
-                <a href="{{ route('chat') }}" class="app-brand" style="overflow:hidden; white-space:nowrap; padding:0; margin:0;">
-                    <div class="app-brand-icon">{{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI'), 0, 1) }}</div>
+                <a href="{{ route('chat') }}" class="app-brand" style="overflow:hidden; white-space:nowrap; padding:0; margin:0; display:flex; align-items:center; gap:8px;">
+                    @if(\App\Models\SystemSetting::get('general_chatbot_logo'))
+                        <img src="{{ \App\Models\SystemSetting::get('general_chatbot_logo') }}" alt="Logo" style="width:32px; height:32px; border-radius:8px; object-fit:contain; flex-shrink:0;">
+                    @else
+                        <div class="app-brand-icon" style="flex-shrink:0;">{{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI'), 0, 1) }}</div>
+                    @endif
                     <span class="sidebar-text">{{ \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI') }}</span>
                 </a>
                 <div :style="sidebarCollapsed ? 'display:flex; justify-content:center;' : 'display:flex; gap:4px;'" style="flex-shrink:0;">
@@ -741,7 +748,7 @@
                     </template>
                     <template x-if="!sidebarCollapsed">
                         <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                            <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; font-weight: 600;">Guest Mode (5 messages limit)</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; font-weight: 600;">Guest Mode ({{ \App\Models\SystemSetting::get('plans_guest_messages_per_session', 5) }} messages limit)</div>
                             <div style="display: flex; gap: 8px;">
                                 <a href="{{ route('login') }}" class="clay-btn clay-btn-secondary" style="flex: 1; font-size: 0.82rem; padding: 8px 10px; border-radius: 12px; text-decoration: none; text-align: center;">Login</a>
                                 <a href="{{ route('register') }}" class="clay-btn clay-btn-primary" style="flex: 1; font-size: 0.82rem; padding: 8px 10px; border-radius: 12px; text-decoration: none; text-align: center;">Register</a>
@@ -764,8 +771,12 @@
                     </button>
 
                     <!-- Mobile: logo instead of model name -->
-                    <div class="header-mobile-logo">
-                        <div style="width:28px; height:28px; border-radius:10px; background:linear-gradient(135deg,#4a88ff,#56ab2f); display:flex; align-items:center; justify-content:center; color:white; font-weight:800; font-size:0.85rem;">{{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI'), 0, 1) }}</div>
+                    <div class="header-mobile-logo" style="display:flex; align-items:center; gap:8px;">
+                        @if(\App\Models\SystemSetting::get('general_chatbot_logo'))
+                            <img src="{{ \App\Models\SystemSetting::get('general_chatbot_logo') }}" alt="Logo" style="width:28px; height:28px; border-radius:8px; object-fit:contain;">
+                        @else
+                            <div style="width:28px; height:28px; border-radius:10px; background:linear-gradient(135deg,#4a88ff,#56ab2f); display:flex; align-items:center; justify-content:center; color:white; font-weight:800; font-size:0.85rem;">{{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI'), 0, 1) }}</div>
+                        @endif
                         <span>{{ \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI') }}</span>
                     </div>
 
@@ -776,8 +787,8 @@
                 </div>
 
                 <!-- Model selection + theme toggle + settings -->
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <select class="clay-inset" x-model="activeModel" style="padding: 8px 16px; border-radius: 16px; font-weight: 500; font-size: 0.9rem;">
+                <div style="display: flex; flex-shrink: 0; align-items: center; gap: 8px;">
+                    <select class="clay-inset" x-model="activeModel" @change="checkModelAccess($event)" style="padding: 8px 16px; border-radius: 16px; font-weight: 500; font-size: 0.9rem; max-width: 260px;">
                         <template x-for="model in availableModels" :key="model.id">
                             <option :value="model.id" x-text="model.name" :selected="model.id === activeModel"></option>
                         </template>
@@ -1274,7 +1285,16 @@
 
                 getModelName(modelId) {
                     const model = this.availableModels.find(m => m.id === modelId);
-                    return model ? model.name : modelId;
+                    return model ? model.name.replace(' 🔒 (Upgrade Plan)', '') : modelId;
+                },
+
+                checkModelAccess(event) {
+                    const selected = this.availableModels.find(m => m.id === this.activeModel);
+                    if (selected && selected.is_allowed === false) {
+                        alert('🔒 PLAN UPGRADE REQUIRED\n\nYou do not have permission to select "' + selected.name.replace(' 🔒 (Upgrade Plan)', '') + '" under your current tier (' + (this.isAuthenticated ? 'Free/Basic Plan' : 'Guest Mode') + ').\n\nPlease upgrade your membership plan or sign in with a higher tier account to unlock this AI model.');
+                        const allowed = this.availableModels.find(m => m.is_allowed !== false);
+                        this.activeModel = allowed ? allowed.id : 'mock';
+                    }
                 },
 
                 // Toggle dark/light mode and persist

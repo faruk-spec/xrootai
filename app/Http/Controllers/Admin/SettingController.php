@@ -35,7 +35,19 @@ class SettingController extends Controller
     public function update(Request $request)
     {
         $group = $request->input('_group', 'general');
-        $allSettings = $request->except(['_token', '_group']);
+
+        if ($request->hasFile('general_chatbot_logo')) {
+            $file = $request->file('general_chatbot_logo');
+            $path = $file->store('branding', 'public');
+            SystemSetting::set('general_chatbot_logo', '/storage/' . $path, $group, 'string');
+        }
+        if ($request->hasFile('general_site_icon')) {
+            $file = $request->file('general_site_icon');
+            $path = $file->store('branding', 'public');
+            SystemSetting::set('general_site_icon', '/storage/' . $path, $group, 'string');
+        }
+
+        $allSettings = $request->except(['_token', '_group', 'general_chatbot_logo', 'general_site_icon']);
 
         foreach ($allSettings as $key => $value) {
             if (array_key_exists($key, SystemSetting::$defaults)) {
