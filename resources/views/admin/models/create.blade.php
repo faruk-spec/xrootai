@@ -130,7 +130,7 @@
                 @foreach($roles as $role)
                     <div class="col-md-4 mb-2">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="allowed_roles[]" value="{{ $role }}" id="role_{{ Str::slug($role) }}" checked>
+                            <input class="form-check-input" type="checkbox" name="allowed_roles[]" value="{{ strtolower($role) }}" id="role_{{ Str::slug($role) }}" checked>
                             <label class="form-check-label text-capitalize" for="role_{{ Str::slug($role) }}">{{ $role }}</label>
                         </div>
                     </div>

@@ -41,13 +41,29 @@ class SettingController extends Controller
             $path = $file->store('branding', 'public');
             SystemSetting::set('general_chatbot_logo', '/storage/' . $path, $group, 'string');
         }
+        if ($request->hasFile('general_logo_light')) {
+            $file = $request->file('general_logo_light');
+            $path = $file->store('branding', 'public');
+            SystemSetting::set('general_logo_light', '/storage/' . $path, $group, 'string');
+            if (empty(SystemSetting::get('general_chatbot_logo'))) {
+                SystemSetting::set('general_chatbot_logo', '/storage/' . $path, $group, 'string');
+            }
+        }
+        if ($request->hasFile('general_logo_dark')) {
+            $file = $request->file('general_logo_dark');
+            $path = $file->store('branding', 'public');
+            SystemSetting::set('general_logo_dark', '/storage/' . $path, $group, 'string');
+            if (empty(SystemSetting::get('general_chatbot_logo'))) {
+                SystemSetting::set('general_chatbot_logo', '/storage/' . $path, $group, 'string');
+            }
+        }
         if ($request->hasFile('general_site_icon')) {
             $file = $request->file('general_site_icon');
             $path = $file->store('branding', 'public');
             SystemSetting::set('general_site_icon', '/storage/' . $path, $group, 'string');
         }
 
-        $allSettings = $request->except(['_token', '_group', 'general_chatbot_logo', 'general_site_icon']);
+        $allSettings = $request->except(['_token', '_group', 'general_chatbot_logo', 'general_logo_light', 'general_logo_dark', 'general_site_icon']);
 
         foreach ($allSettings as $key => $value) {
             if (array_key_exists($key, SystemSetting::$defaults)) {

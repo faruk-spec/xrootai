@@ -63,7 +63,7 @@ class ModelController extends Controller
             'image_gen' => $request->has('capabilities.image_gen'),
             'audio' => $request->has('capabilities.audio'),
         ];
-        $validated['allowed_roles'] = $request->input('allowed_roles', []);
+        $validated['allowed_roles'] = array_values(array_unique(array_map('strtolower', $request->input('allowed_roles', []))));
 
         $model = AIModel::create($validated);
 
@@ -75,10 +75,10 @@ class ModelController extends Controller
     public function edit(AIModel $model)
     {
         $providers = AIProvider::all();
-        $roles = ['guest', 'user', 'pro', 'admin', 'Super Admin'];
+        $roles = ['guest', 'user', 'pro', 'admin', 'super admin'];
         if (\Illuminate\Support\Facades\Schema::hasTable('roles')) {
             $dbRoles = \App\Models\Role::pluck('name')->toArray();
-            $roles = array_values(array_unique(array_merge(['guest', 'user', 'pro'], $dbRoles)));
+            $roles = array_values(array_unique(array_map('strtolower', array_merge(['guest', 'user', 'pro', 'admin', 'super admin'], $dbRoles))));
         }
         return view('admin.models.edit', compact('model', 'providers', 'roles'));
     }
@@ -106,7 +106,7 @@ class ModelController extends Controller
             'image_gen' => $request->has('capabilities.image_gen'),
             'audio' => $request->has('capabilities.audio'),
         ];
-        $validated['allowed_roles'] = $request->input('allowed_roles', []);
+        $validated['allowed_roles'] = array_values(array_unique(array_map('strtolower', $request->input('allowed_roles', []))));
 
         $model->update($validated);
 

@@ -20,29 +20,36 @@ class OAuthController extends Controller
      */
     public function redirect(Request $request, string $providerSlug)
     {
-        $provider = OAuthProvider::where('provider_slug', $providerSlug)
-            ->where('is_active', true)
-            ->firstOrFail();
+        try {
+            $provider = OAuthProvider::where('provider_slug', $providerSlug)
+                ->where('is_active', true)
+                ->firstOrFail();
 
-        if (!class_exists(\Laravel\Socialite\Facades\Socialite::class)) {
-            abort(500, 'Laravel Socialite package is not installed or loaded on this server. Please run "composer require laravel/socialite" or "composer install" on your live server.');
+            if (!class_exists(\Laravel\Socialite\Facades\Socialite::class)) {
+                return redirect()->route('login')->with('error', 'OAuth Login is currently unavailable: The Laravel Socialite package (`laravel/socialite`) is not installed inside the server\'s vendor directory. Please run `composer install` or `composer require laravel/socialite` via terminal on the production server.');
+            }
+
+            $this->bootSocialiteDriver($provider);
+
+            $driver = Socialite::driver($providerSlug);
+
+            // Append custom scopes
+            if (!empty($provider->scopes)) {
+                $driver->scopes($provider->scopes);
+            }
+
+            // Append additional parameters
+            if (!empty($provider->additional_params)) {
+                $driver->with($provider->additional_params);
+            }
+
+            return $driver->redirect();
+        } catch (\Exception $e) {
+            $message = $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException 
+                ? "Social login provider '{$providerSlug}' is not enabled or configured in the Admin Panel (`/admin/oauth`)." 
+                : $e->getMessage();
+            return redirect()->route('login')->with('error', "Authentication Redirect Error: {$message}");
         }
-
-        $this->bootSocialiteDriver($provider);
-
-        $driver = Socialite::driver($providerSlug);
-
-        // Append custom scopes
-        if (!empty($provider->scopes)) {
-            $driver->scopes($provider->scopes);
-        }
-
-        // Append additional parameters
-        if (!empty($provider->additional_params)) {
-            $driver->with($provider->additional_params);
-        }
-
-        return $driver->redirect();
     }
 
     /**
@@ -50,20 +57,23 @@ class OAuthController extends Controller
      */
     public function callback(Request $request, string $providerSlug)
     {
-        $provider = OAuthProvider::where('provider_slug', $providerSlug)
-            ->where('is_active', true)
-            ->firstOrFail();
-
-        if (!class_exists(\Laravel\Socialite\Facades\Socialite::class)) {
-            abort(500, 'Laravel Socialite package is not installed or loaded on this server. Please run "composer require laravel/socialite" or "composer install" on your live server.');
-        }
-
-        $this->bootSocialiteDriver($provider);
-
         try {
+            $provider = OAuthProvider::where('provider_slug', $providerSlug)
+                ->where('is_active', true)
+                ->firstOrFail();
+
+            if (!class_exists(\Laravel\Socialite\Facades\Socialite::class)) {
+                return redirect()->route('login')->with('error', 'OAuth Login is currently unavailable: The Laravel Socialite package (`laravel/socialite`) is not installed on this server. Please run `composer install` on your server.');
+            }
+
+            $this->bootSocialiteDriver($provider);
+
             $socialiteUser = Socialite::driver($providerSlug)->user();
         } catch (\Exception $e) {
-            return redirect()->route('login')->with('error', "Authentication failed: " . $e->getMessage());
+            $message = $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException 
+                ? "Social login provider '{$providerSlug}' is not enabled or configured in the Admin Panel." 
+                : $e->getMessage();
+            return redirect()->route('login')->with('error', "Authentication Callback Error: {$message}");
         }
 
         $email = $socialiteUser->getEmail() ?: ($socialiteUser->getId() . "@{$providerSlug}.social");

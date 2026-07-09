@@ -106,18 +106,31 @@
                     </div>
 
                     <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Chatbot Logo / Brand Image</label>
-                            @if(!empty($settings['general_chatbot_logo']))
-                                <div class="mb-2 d-flex align-items-center gap-2">
-                                    <img src="{{ $settings['general_chatbot_logo'] }}" alt="Logo" style="height: 48px; border-radius: 8px; border: 1px solid #dee2e6; object-fit: contain;">
-                                    <span class="text-muted small">Current Logo</span>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">White Mode Logo (Light Theme)</label>
+                            @php $lightLogo = $settings['general_logo_light'] ?? $settings['general_chatbot_logo'] ?? ''; @endphp
+                            @if(!empty($lightLogo))
+                                <div class="mb-2 d-flex align-items-center gap-2 p-2 rounded" style="background: #ffffff; border: 1px solid #dee2e6;">
+                                    <img src="{{ $lightLogo }}" alt="Light Logo" style="height: 40px; object-fit: contain;">
+                                    <span class="text-muted small">Current White Mode Logo</span>
                                 </div>
                             @endif
-                            <input type="file" name="general_chatbot_logo" class="form-control" accept="image/*">
-                            <div class="form-text">Recommended size: 128x128px (PNG, JPG, SVG, WebP).</div>
+                            <input type="file" name="general_logo_light" class="form-control" accept="image/*">
+                            <div class="form-text">Shown when users use White/Light mode.</div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Dark Mode Logo (Dark Theme)</label>
+                            @php $darkLogo = $settings['general_logo_dark'] ?? $settings['general_chatbot_logo'] ?? ''; @endphp
+                            @if(!empty($darkLogo))
+                                <div class="mb-2 d-flex align-items-center gap-2 p-2 rounded" style="background: #1e1e2e; border: 1px solid #3b3b4f;">
+                                    <img src="{{ $darkLogo }}" alt="Dark Logo" style="height: 40px; object-fit: contain;">
+                                    <span class="text-white small">Current Dark Mode Logo</span>
+                                </div>
+                            @endif
+                            <input type="file" name="general_logo_dark" class="form-control" accept="image/*">
+                            <div class="form-text">Shown when users use Dark mode.</div>
+                        </div>
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">Site Icon / Favicon</label>
                             @if(!empty($settings['general_site_icon']))
                                 <div class="mb-2 d-flex align-items-center gap-2">
@@ -126,7 +139,7 @@
                                 </div>
                             @endif
                             <input type="file" name="general_site_icon" class="form-control" accept="image/*,.ico">
-                            <div class="form-text">Recommended: 32x32px or 64x64px (ICO, PNG).</div>
+                            <div class="form-text">Favicon (32x32px or 64x64px ICO/PNG).</div>
                         </div>
                     </div>
 

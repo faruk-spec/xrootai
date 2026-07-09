@@ -130,8 +130,8 @@
                 @foreach($roles as $role)
                     <div class="col-md-4 mb-2">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="allowed_roles[]" value="{{ $role }}" id="role_{{ Str::slug($role) }}" 
-                                {{ empty($model->allowed_roles) || in_array($role, $model->allowed_roles) ? 'checked' : '' }}>
+                            <input class="form-check-input" type="checkbox" name="allowed_roles[]" value="{{ strtolower($role) }}" id="role_{{ Str::slug($role) }}" 
+                                {{ is_null($model->allowed_roles) || (is_array($model->allowed_roles) && in_array(strtolower($role), array_map('strtolower', $model->allowed_roles))) ? 'checked' : '' }}>
                             <label class="form-check-label text-capitalize" for="role_{{ Str::slug($role) }}">{{ $role }}</label>
                         </div>
                     </div>

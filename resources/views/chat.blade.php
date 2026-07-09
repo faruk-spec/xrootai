@@ -604,8 +604,12 @@
             <!-- Sidebar header: logo + collapse + close buttons -->
             <div :style="sidebarCollapsed ? 'display:flex; flex-direction:column; align-items:center; gap:12px; width:100%;' : 'display: flex; align-items: center; justify-content: space-between;'" style="flex-shrink:0;">
                 <a href="{{ route('chat') }}" class="app-brand" style="overflow:hidden; white-space:nowrap; padding:0; margin:0; display:flex; align-items:center; gap:8px;">
-                    @if(\App\Models\SystemSetting::get('general_chatbot_logo'))
-                        <img src="{{ \App\Models\SystemSetting::get('general_chatbot_logo') }}" alt="Logo" style="width:32px; height:32px; border-radius:8px; object-fit:contain; flex-shrink:0;">
+                    @php 
+                        $lightLogo = \App\Models\SystemSetting::get('general_logo_light') ?: \App\Models\SystemSetting::get('general_chatbot_logo'); 
+                        $darkLogo = \App\Models\SystemSetting::get('general_logo_dark') ?: \App\Models\SystemSetting::get('general_chatbot_logo'); 
+                    @endphp
+                    @if($lightLogo || $darkLogo)
+                        <img :src="darkMode ? '{{ $darkLogo ?: $lightLogo }}' : '{{ $lightLogo ?: $darkLogo }}'" alt="Logo" style="width:32px; height:32px; border-radius:8px; object-fit:contain; flex-shrink:0;">
                     @else
                         <div class="app-brand-icon" style="flex-shrink:0;">{{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI'), 0, 1) }}</div>
                     @endif
@@ -772,8 +776,8 @@
 
                     <!-- Mobile: logo instead of model name -->
                     <div class="header-mobile-logo" style="display:flex; align-items:center; gap:8px;">
-                        @if(\App\Models\SystemSetting::get('general_chatbot_logo'))
-                            <img src="{{ \App\Models\SystemSetting::get('general_chatbot_logo') }}" alt="Logo" style="width:28px; height:28px; border-radius:8px; object-fit:contain;">
+                        @if($lightLogo || $darkLogo)
+                            <img :src="darkMode ? '{{ $darkLogo ?: $lightLogo }}' : '{{ $lightLogo ?: $darkLogo }}'" alt="Logo" style="width:28px; height:28px; border-radius:8px; object-fit:contain;">
                         @else
                             <div style="width:28px; height:28px; border-radius:10px; background:linear-gradient(135deg,#4a88ff,#56ab2f); display:flex; align-items:center; justify-content:center; color:white; font-weight:800; font-size:0.85rem;">{{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI'), 0, 1) }}</div>
                         @endif

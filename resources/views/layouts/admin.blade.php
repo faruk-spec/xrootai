@@ -348,14 +348,27 @@
             document.body.classList.add('dark-mode');
         }
     </script>
+    <style>
+        body.dark-mode .admin-logo-light { display: none !important; }
+        body.dark-mode .admin-logo-dark { display: block !important; }
+    </style>
     <div class="glass-glow" style="top: 10%; right: 10%;"></div>
     <div class="glass-glow" style="bottom: 20%; left: 5%;"></div>
 
     <!-- Sidebar Layout -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand" style="display:flex; align-items:center; gap:10px;">
-            @if(\App\Models\SystemSetting::get('general_chatbot_logo'))
-                <img src="{{ \App\Models\SystemSetting::get('general_chatbot_logo') }}" alt="Logo" style="width:36px; height:36px; border-radius:10px; object-fit:contain; flex-shrink:0;">
+            @php 
+                $lightLogo = \App\Models\SystemSetting::get('general_logo_light') ?: \App\Models\SystemSetting::get('general_chatbot_logo'); 
+                $darkLogo = \App\Models\SystemSetting::get('general_logo_dark') ?: \App\Models\SystemSetting::get('general_chatbot_logo'); 
+            @endphp
+            @if($lightLogo || $darkLogo)
+                @if($lightLogo && $darkLogo && $lightLogo !== $darkLogo)
+                    <img src="{{ $lightLogo }}" class="admin-logo-light" alt="Logo" style="width:36px; height:36px; border-radius:10px; object-fit:contain; flex-shrink:0;">
+                    <img src="{{ $darkLogo }}" class="admin-logo-dark" alt="Logo" style="width:36px; height:36px; border-radius:10px; object-fit:contain; flex-shrink:0; display:none;">
+                @else
+                    <img src="{{ $lightLogo ?: $darkLogo }}" alt="Logo" style="width:36px; height:36px; border-radius:10px; object-fit:contain; flex-shrink:0;">
+                @endif
             @else
                 <div class="brand-logo" style="flex-shrink:0;">{{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI'), 0, 1) }}</div>
             @endif
