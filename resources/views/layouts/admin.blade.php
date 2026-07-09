@@ -334,7 +334,48 @@
         }
 
         body.dark-mode .table td {
+            background-color: transparent !important;
+            color: var(--text-primary-dark);
             border-bottom: 1px solid var(--border-color-dark);
+        }
+
+        body.dark-mode .modal-content, body.dark-mode .dropdown-menu {
+            background-color: #151b2c !important;
+            border: 1px solid var(--border-color-dark) !important;
+            color: var(--text-primary-dark) !important;
+        }
+
+        body.dark-mode .dropdown-item {
+            color: var(--text-primary-dark) !important;
+        }
+
+        body.dark-mode .dropdown-item:hover {
+            background-color: rgba(59, 130, 246, 0.15) !important;
+            color: #ffffff !important;
+        }
+
+        body.dark-mode .text-muted, body.dark-mode .text-secondary {
+            color: #94a3b8 !important;
+        }
+
+        body.dark-mode .bg-light, body.dark-mode .btn-light {
+            background-color: #1f2937 !important;
+            border-color: var(--border-color-dark) !important;
+            color: var(--text-primary-dark) !important;
+        }
+
+        body.dark-mode .border-light, body.dark-mode .border, body.dark-mode .border-light-subtle {
+            border-color: var(--border-color-dark) !important;
+        }
+
+        body.dark-mode .nav-tabs .nav-link {
+            color: var(--text-secondary-dark);
+        }
+
+        body.dark-mode .nav-tabs .nav-link.active {
+            background-color: var(--bg-card-dark);
+            border-color: var(--border-color-dark) var(--border-color-dark) transparent;
+            color: #3b82f6;
         }
 
         .toast-container {
@@ -346,6 +387,9 @@
     <script>
         if (localStorage.getItem('darkMode') === 'true') {
             document.body.classList.add('dark-mode');
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+        } else {
+            document.documentElement.setAttribute('data-bs-theme', 'light');
         }
     </script>
     <style>
@@ -571,6 +615,7 @@
             body.classList.toggle('dark-mode');
             const isDark = body.classList.contains('dark-mode');
             localStorage.setItem('darkMode', isDark);
+            document.documentElement.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
             
             const themeIcon = document.getElementById('themeIcon');
             if (isDark) {
@@ -590,9 +635,11 @@
         const themeIcon = document.getElementById('themeIcon');
         if (isDark) {
             document.body.classList.add('dark-mode');
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
             themeIcon.className = 'bi bi-sun-fill';
         } else {
             document.body.classList.remove('dark-mode');
+            document.documentElement.setAttribute('data-bs-theme', 'light');
             themeIcon.className = 'bi bi-moon-stars-fill';
         }
     </script>

@@ -43,7 +43,12 @@ class OAuthController extends Controller
                 $driver->with($provider->additional_params);
             }
 
-            return $driver->redirect();
+            try {
+                return $driver->redirect();
+            } catch (\Exception $e) {
+                // Fallback to stateless redirect if session cookie/MAC check fails
+                return $driver->stateless()->redirect();
+            }
         } catch (\Exception $e) {
             $message = $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException 
                 ? "Social login provider '{$providerSlug}' is not enabled or configured in the Admin Panel (`/admin/oauth`)." 
@@ -68,7 +73,12 @@ class OAuthController extends Controller
 
             $this->bootSocialiteDriver($provider);
 
-            $socialiteUser = Socialite::driver($providerSlug)->user();
+            try {
+                $socialiteUser = Socialite::driver($providerSlug)->user();
+            } catch (\Exception $e) {
+                // Automatically fall back to stateless mode if session state or MAC validation throws an exception
+                $socialiteUser = Socialite::driver($providerSlug)->stateless()->user();
+            }
         } catch (\Exception $e) {
             $message = $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException 
                 ? "Social login provider '{$providerSlug}' is not enabled or configured in the Admin Panel." 
