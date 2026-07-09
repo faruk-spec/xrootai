@@ -1062,29 +1062,56 @@
                                                 </span>
                                             </template>
                                             <template x-if="msg._expanded">
-                                                <span style="display:flex;align-items:center;gap:5px;">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-                                                    Show less
-                                                </span>
+                                                <button
+                                                    @click="msg._expanded = false"
+                                                    class="clay-btn clay-btn-secondary"
+                                                    style="margin-top: 8px; padding: 4px 10px; font-size: 0.75rem; border-radius: 12px;"
+                                                >
+                                                    <span>Show less</span>
+                                                </button>
                                             </template>
-                                        </button>
+                                        </div>
                                     </template>
+                                    
+                                    <!-- Assistant actions: copy & regenerate -->
+                                    <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center;">
+                                        <button
+                                            @click="copyMessage(msg.content, $event)"
+                                            class="clay-btn clay-btn-secondary"
+                                            style="padding: 4px 10px; font-size: 0.75rem; border-radius: 12px; display: flex; align-items: center; gap: 4px;"
+                                            title="Copy to clipboard"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                            <span class="copy-label">Copy</span>
+                                        </button>
+
+                                        <button
+                                            @click="regenerateMessage(index)"
+                                            class="clay-btn clay-btn-secondary"
+                                            style="padding: 4px 10px; font-size: 0.75rem; border-radius: 12px; display: flex; align-items: center; gap: 4px;"
+                                            title="Regenerate response"
+                                            :disabled="isStreaming"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                                            <span>Regenerate</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </template>
 
                         <template x-if="msg.role === 'user'">
-                            <div style="width: 100%;">
-                                <!-- Attachments preview row with visual thumbnails -->
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; width: 100%;">
+                                <!-- User Attachments preview row -->
                                 <template x-if="msg.attachments && msg.attachments.length > 0">
-                                    <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0 8px;">
+                                    <div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; padding: 0 0 8px;">
                                         <template x-for="file in msg.attachments" :key="file.id">
-                                            <a :href="'/storage/' + file.file_path" target="_blank" class="attach-pill" style="opacity: 0.95; padding: 6px 12px; display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;">
+                                            <a :href="'/storage/' + file.file_path" target="_blank" class="attach-pill" style="background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; display: flex; align-items: center; gap: 8px; text-decoration: none;">
                                                 <template x-if="file.mime_type && file.mime_type.startsWith('image/')">
                                                     <img :src="'/storage/' + file.file_path" style="width: 28px; height: 28px; object-fit: cover; border-radius: 6px;" />
                                                 </template>
                                                 <template x-if="!file.mime_type || !file.mime_type.startsWith('image/')">
-                                                    <span style="display:flex; align-items:center; color:var(--text-muted);" x-html="getFileIcon(file.mime_type)"></span>
+                                                    <span style="display:flex; align-items:center; color:rgba(255,255,255,0.9);" x-html="getFileIcon(file.mime_type)"></span>
                                                 </template>
                                                 <span x-text="file.file_name" style="font-weight: 500; font-size: 0.82rem; text-decoration: underline;"></span>
                                             </a>
@@ -1092,21 +1119,21 @@
                                     </div>
                                 </template>
 
-                                <!-- Body text -->
+                                <!-- Collapsible User message content -->
                                 <div
                                     class="msg-body"
                                     :class="{ 'collapsed': !msg._expanded && isLongMessage(msg.content) }"
+                                    style="text-align: right;"
                                     x-data="{ ready: false }"
-                                    x-init="$nextTick(() => ready = true)"
+                                    x-init="$nextTick(() => { ready = true })"
+                                    :style="ready ? 'visibility: visible;' : 'visibility: hidden;'"
                                 >
                                     <div class="msg-content" style="padding:0; white-space: pre-wrap;" x-text="msg.content"></div>
                                 </div>
-
-                                <!-- Expand / Collapse toggle -->
                                 <template x-if="isLongMessage(msg.content)">
                                     <button
-                                        class="expand-btn"
                                         @click="msg._expanded = !msg._expanded"
+                                        class="clay-btn clay-btn-secondary"
                                         style="justify-content: flex-end; padding: 8px 0 0; color: rgba(255,255,255,0.85);"
                                     >
                                         <template x-if="!msg._expanded">
@@ -1133,8 +1160,8 @@
                     <div class="message-bubble message-assistant">
                         <div style="display: flex; gap: 14px; width: 100%; align-items: flex-start;">
                             <!-- AI Avatar -->
-                            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #4a88ff, #56ab2f); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(74,136,255,0.2);">
-                                AI
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #4a88ff, #56ab2f); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(74,136,255,0.2); overflow: hidden;">
+                                <img src="{{ \App\Models\SystemSetting::get('general_site_icon', '/favicon.ico') }}" alt="Icon" style="width: 20px; height: 20px; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerText='🤖'" />
                             </div>
                             <div style="flex-grow: 1; min-width: 0;">
                                 <div class="msg-content" style="padding:0;" x-html="renderMessageContent(activeStreamText)"></div>
@@ -1147,10 +1174,11 @@
                 <template x-if="isStreaming && activeStreamText.length === 0">
                     <div class="ai-fast-loading-card">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            <div class="ai-spinner-avatar">AI</div>
+                            <div class="ai-spinner-avatar" style="overflow: hidden;">
+                                <img src="{{ \App\Models\SystemSetting::get('general_site_icon', '/favicon.ico') }}" alt="Icon" style="width: 22px; height: 22px; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerText='🤖'" />
+                            </div>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <div style="font-weight: 700; font-size: 0.95rem; background: linear-gradient(135deg, #4a88ff, #6b52ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Synthesizing response...</div>
-                                <div style="font-size: 0.78rem; color: var(--text-muted);" x-text="'Powered by ' + getModelName(activeModel)"></div>
                             </div>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; padding-left: 46px;">

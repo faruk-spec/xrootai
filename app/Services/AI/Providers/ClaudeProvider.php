@@ -52,7 +52,9 @@ class ClaudeProvider extends AbstractProvider
         curl_setopt($ch, CURLOPT_HTTPHEADER, $this->getHeaders($apiKey));
 
         $buffer = '';
-        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$buffer, $onChunk) {
+        $rawBody = '';
+        curl_setopt($ch, CURLOPT_WRITEFUNCTION, function ($ch, $data) use (&$buffer, &$rawBody, $onChunk) {
+            $rawBody .= $data;
             $buffer .= $data;
             while (($pos = strpos($buffer, "\n")) !== false) {
                 $line = substr($buffer, 0, $pos);
@@ -78,10 +80,17 @@ class ClaudeProvider extends AbstractProvider
             $error = curl_error($ch);
             $onChunk("[Connection Error: $error]");
         } elseif ($httpCode >= 400) {
-            $errorDetail = trim($buffer) ?: "HTTP Status $httpCode";
+            $errorDetail = trim($rawBody) ?: trim($buffer) ?: "HTTP Status $httpCode";
             $decodedErr = json_decode($errorDetail, true);
-            $msg = $decodedErr['error']['message'] ?? $errorDetail;
-            $onChunk("[Anthropic/Claude API Error ({$httpCode}): {$msg}]");
+            $msg = $decodedErr['error']['message'] ?? $decodedErr['message'] ?? $errorDetail;
+            
+            if ($httpCode === 401) {
+                $onChunk("\n\n⚠️ **Anthropic/Claude API Authentication Error (401 Unauthorized)**\n\nThe API key configured for Claude is invalid, missing, or expired.\n\n* **Provider Error Details:** `{$msg}`\n* **How to fix:** Please navigate to **Admin Panel → AI Providers / Settings** and verify your Anthropic API key.");
+            } elseif ($httpCode === 429) {
+                $onChunk("\n\n⚠️ **Rate Limit Exceeded (429)**\n\nAnthropic's rate limit or credit quota has been reached.\n\n* **Provider Error Details:** `{$msg}`");
+            } else {
+                $onChunk("\n\n⚠️ **Anthropic/Claude API Error ({$httpCode})**\n\n* **Provider Error Details:** `{$msg}`");
+            }
         }
 
         curl_close($ch);
