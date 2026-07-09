@@ -16,6 +16,49 @@
                 overflow: hidden !important;
                 max-width: 100vw !important;
                 max-height: 100vh !important;
+                position: fixed !important;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+            }
+            @media (max-height: 850px) {
+                body {
+                    padding: 8px !important;
+                }
+                header {
+                    margin-bottom: 8px !important;
+                }
+                main {
+                    max-width: 90vw !important;
+                }
+                main > div {
+                    padding: 16px !important;
+                }
+                h1 {
+                    font-size: 1.15rem !important;
+                    margin-bottom: 2px !important;
+                }
+                p {
+                    margin-bottom: 6px !important;
+                    font-size: 0.78rem !important;
+                    line-height: 1.4 !important;
+                }
+                ul {
+                    margin-bottom: 6px !important;
+                }
+                li {
+                    padding-top: 4px !important;
+                    padding-bottom: 4px !important;
+                    font-size: 0.78rem !important;
+                }
+                .aspect-\[335\/364\] {
+                    aspect-ratio: auto !important;
+                    height: 140px !important;
+                }
+                svg {
+                    max-height: 100px !important;
+                }
             }
         </style>
 
@@ -39,7 +82,7 @@
     <body x-data="{ darkMode: localStorage.getItem('darkMode') === 'true' || (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches) }"
           x-init="$watch('darkMode', val => { localStorage.setItem('darkMode', val); document.documentElement.classList.toggle('dark', val); document.body.classList.toggle('dark', val); })"
           :class="{ 'dark': darkMode }"
-          class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-6 lg:p-8 items-center lg:justify-center min-h-screen flex-col">
+          class="bg-[#FDFDFC] dark:bg-[#0a0a0a] text-[#1b1b18] flex p-4 lg:p-6 items-center lg:justify-center h-[100dvh] w-screen overflow-hidden flex-col">
         <header class="w-full lg:max-w-4xl max-w-[335px] text-sm mb-6 not-has-[nav]:hidden">
             @if (Route::has('login'))
                 <nav class="flex items-center justify-end gap-4">

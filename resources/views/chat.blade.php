@@ -70,18 +70,27 @@
 
         /* Responsive Layout grid */
         html, body {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            max-width: 100vw;
-            max-height: 100vh;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100% !important;
+            height: 100vh !important;
+            height: 100dvh !important;
+            width: 100% !important;
+            overflow: hidden !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            max-height: 100dvh !important;
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
         .workspace {
             display: grid;
             grid-template-columns: 300px 1fr;
             height: 100vh;
+            height: 100dvh;
             width: 100%;
             max-width: 100vw;
             overflow: hidden;
@@ -151,8 +160,56 @@
                 padding: 12px 16px !important;
             }
             .message-bubble {
-                max-width: 90% !important;
+                max-width: 95% !important;
             }
+            /* Shrink active model select dropdown and reduce header padding on mobile to fit screen */
+            .chat-header {
+                padding: 0 12px !important;
+            }
+            select.clay-inset {
+                max-width: 120px !important;
+                padding: 6px 8px !important;
+                font-size: 0.8rem !important;
+            }
+            /* Speed up slide transition and promote to GPU rendering on mobile */
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                z-index: 50;
+                transform: translateX(-100%);
+                width: 80vw;
+                max-width: 300px;
+                transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+                will-change: transform;
+            }
+        }
+
+        /* Safe area support for notch and gesture bar */
+        .chat-header {
+            padding-top: env(safe-area-inset-top, 0px) !important;
+            height: calc(70px + env(safe-area-inset-top, 0px)) !important;
+        }
+        .chat-input-area {
+            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+        }
+        .sidebar {
+            padding-top: calc(20px + env(safe-area-inset-top, 0px)) !important;
+            padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+        }
+        @media (max-width: 768px) {
+            .chat-input-area {
+                padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+        }
+
+        /* Responsive scaling using clamp() for typography and spacing */
+        .chat-messages {
+            font-size: clamp(0.9rem, 2.2vw, 1.02rem) !important;
+        }
+        .sidebar {
+            font-size: clamp(0.85rem, 2vw, 0.95rem) !important;
         }
 
         /* Sidebar styling — supports collapse on desktop */
@@ -322,16 +379,21 @@
             background: var(--accent-blue);
             color: white;
             box-shadow: var(--accent-blue-shadow);
-            border-radius: 24px 24px 4px 24px;
+            border-radius: 20px 20px 4px 20px; /* Reduced border radius */
+            padding: 10px 14px !important; /* Reduced padding */
+            margin-bottom: 8px; /* Reduced vertical spacing */
         }
 
         .message-assistant {
             align-self: flex-start;
-            background: var(--clay-card-bg);
+            background: transparent;
             color: var(--text-primary);
-            box-shadow: var(--clay-outer-shadow);
-            border: 1px solid var(--clay-card-border);
-            border-radius: 24px 24px 24px 4px;
+            box-shadow: none;
+            border: none;
+            border-radius: 0;
+            padding: 4px 0;
+            width: 100%;
+            margin-bottom: 12px; /* Reduced vertical spacing */
         }
 
         /* Markdown lists & paragraphs spacing */
@@ -598,15 +660,9 @@
             </div>
             @endauth
 
-            {{-- Guest: show locked history placeholder --}}
+            {{-- Guest: show nothing in the middle list, footer will show Guest limitations and Login --}}
             @guest
-            <div style="flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px; text-align: center;">
-                <div style="width:48px; height:48px; border-radius:16px; background:rgba(74,136,255,0.1); display:flex; align-items:center; justify-content:center;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4a88ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                </div>
-                <p style="font-size:0.82rem; color:var(--text-muted); line-height:1.5;">Sign in to save and view your chat history</p>
-                <a href="{{ route('login') }}" class="clay-btn clay-btn-primary" style="font-size:0.82rem; padding:8px 20px; border-radius:12px; text-decoration:none; text-align:center;">Sign in</a>
-            </div>
+            {{-- Sign-in instructions and duplicate Sign-in buttons completely removed --}}
             @endguest
 
             <!-- User footer menu -->
@@ -736,7 +792,6 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2z"/><path d="M3 20a9 9 0 0 1 18 0"/><circle cx="12" cy="12" r="10" opacity=".15" fill="white"/></svg>
                         </div>
                         <h2 style="font-weight: 700; font-size: 1.8rem; background: linear-gradient(135deg, #4a88ff 0%, #56ab2f 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">What can I help you build today?</h2>
-                        <p style="color: var(--text-muted); line-height: 1.6;">XrootAI handles multiple AI providers, code block syntax highlighting, file attachments, and complete chat persistence in a soft clay design.</p>
                         
                         <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px;">
                             <button @click="prompt = 'Write a classic binary search algorithm in PHP'; $nextTick(() => sendMessage())" class="clay-btn clay-btn-secondary" style="border-radius:16px; font-size:0.85rem;">
@@ -751,72 +806,125 @@
 
                 <!-- Render active messages list -->
                 <template x-for="(msg, index) in messages" :key="index">
-                    <div class="clay-card message-bubble" :class="msg.role === 'user' ? 'message-user' : 'message-assistant'">
-                        <!-- Attachments preview row with visual thumbnails -->
-                        <template x-if="msg.attachments && msg.attachments.length > 0">
-                            <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 18px 0;">
-                                <template x-for="file in msg.attachments" :key="file.id">
-                                    <a :href="'/storage/' + file.file_path" target="_blank" class="attach-pill" style="opacity: 0.95; padding: 6px 12px; display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;">
-                                        <template x-if="file.mime_type && file.mime_type.startsWith('image/')">
-                                            <img :src="'/storage/' + file.file_path" style="width: 28px; height: 28px; object-fit: cover; border-radius: 6px;" />
-                                        </template>
-                                        <template x-if="!file.mime_type || !file.mime_type.startsWith('image/')">
-                                            <span style="display:flex; align-items:center; color:var(--text-muted);" x-html="getFileIcon(file.mime_type)"></span>
-                                        </template>
-                                        <span x-text="file.file_name" style="font-weight: 500; font-size: 0.82rem; text-decoration: underline;"></span>
-                                    </a>
-                                </template>
+                    <div class="message-bubble" :class="msg.role === 'user' ? 'clay-card message-user' : 'message-assistant'">
+                        <template x-if="msg.role !== 'user'">
+                            <div style="display: flex; gap: 14px; width: 100%; align-items: flex-start;">
+                                <!-- AI Avatar -->
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #4a88ff, #56ab2f); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(74,136,255,0.2);">
+                                    AI
+                                </div>
+                                <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column;">
+                                    <!-- Attachments preview row with visual thumbnails -->
+                                    <template x-if="msg.attachments && msg.attachments.length > 0">
+                                        <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0 8px;">
+                                            <template x-for="file in msg.attachments" :key="file.id">
+                                                <a :href="'/storage/' + file.file_path" target="_blank" class="attach-pill" style="opacity: 0.95; padding: 6px 12px; display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;">
+                                                    <template x-if="file.mime_type && file.mime_type.startsWith('image/')">
+                                                        <img :src="'/storage/' + file.file_path" style="width: 28px; height: 28px; object-fit: cover; border-radius: 6px;" />
+                                                    </template>
+                                                    <template x-if="!file.mime_type || !file.mime_type.startsWith('image/')">
+                                                        <span style="display:flex; align-items:center; color:var(--text-muted);" x-html="getFileIcon(file.mime_type)"></span>
+                                                    </template>
+                                                    <span x-text="file.file_name" style="font-weight: 500; font-size: 0.82rem; text-decoration: underline;"></span>
+                                                </a>
+                                            </template>
+                                        </div>
+                                    </template>
+
+                                    <!-- Body text: collapsible if tall -->
+                                    <div
+                                        class="msg-body"
+                                        :class="{ 'collapsed': !msg._expanded && isLongMessage(msg.content) }"
+                                        x-data="{ ready: false }"
+                                        x-init="$nextTick(() => ready = true)"
+                                    >
+                                        <div class="msg-content" style="padding:0;" x-html="renderMessageContent(msg.content)"></div>
+                                    </div>
+
+                                    <!-- Expand / Collapse toggle -->
+                                    <template x-if="isLongMessage(msg.content)">
+                                        <button
+                                            class="expand-btn"
+                                            @click="msg._expanded = !msg._expanded"
+                                            style="justify-content: flex-start; padding: 8px 0 0;"
+                                        >
+                                            <template x-if="!msg._expanded">
+                                                <span style="display:flex;align-items:center;gap:5px;">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                                    Show more
+                                                </span>
+                                            </template>
+                                            <template x-if="msg._expanded">
+                                                <span style="display:flex;align-items:center;gap:5px;">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                                                    Show less
+                                                </span>
+                                            </template>
+                                        </button>
+                                    </template>
+                                </div>
                             </div>
                         </template>
 
-                        <!-- Body text: collapsible if tall -->
-                        <div
-                            class="msg-body"
-                            :class="{ 'collapsed': !msg._expanded && isLongMessage(msg.content) }"
-                            x-data="{ ready: false }"
-                            x-init="$nextTick(() => ready = true)"
-                        >
-                            <div class="msg-content" x-html="renderMessageContent(msg.content)"></div>
-                        </div>
+                        <template x-if="msg.role === 'user'">
+                            <div>
+                                <!-- Attachments preview row with visual thumbnails -->
+                                <template x-if="msg.attachments && msg.attachments.length > 0">
+                                    <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0 8px;">
+                                        <template x-for="file in msg.attachments" :key="file.id">
+                                            <a :href="'/storage/' + file.file_path" target="_blank" class="attach-pill" style="opacity: 0.95; padding: 6px 12px; display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit;">
+                                                <template x-if="file.mime_type && file.mime_type.startsWith('image/')">
+                                                    <img :src="'/storage/' + file.file_path" style="width: 28px; height: 28px; object-fit: cover; border-radius: 6px;" />
+                                                </template>
+                                                <template x-if="!file.mime_type || !file.mime_type.startsWith('image/')">
+                                                    <span style="display:flex; align-items:center; color:var(--text-muted);" x-html="getFileIcon(file.mime_type)"></span>
+                                                </template>
+                                                <span x-text="file.file_name" style="font-weight: 500; font-size: 0.82rem; text-decoration: underline;"></span>
+                                            </a>
+                                        </template>
+                                    </div>
+                                </template>
 
-                        <!-- Expand / Collapse toggle -->
-                        <template x-if="isLongMessage(msg.content)">
-                            <button
-                                class="expand-btn"
-                                @click="msg._expanded = !msg._expanded"
-                            >
-                                <template x-if="!msg._expanded">
-                                    <span style="display:flex;align-items:center;gap:5px;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                        Show more
-                                    </span>
-                                </template>
-                                <template x-if="msg._expanded">
-                                    <span style="display:flex;align-items:center;gap:5px;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-                                        Show less
-                                    </span>
-                                </template>
-                            </button>
+                                <!-- Body text -->
+                                <div class="msg-body">
+                                    <div class="msg-content" style="padding:0;" x-text="msg.content"></div>
+                                </div>
+                            </div>
                         </template>
                     </div>
                 </template>
 
                 <!-- Streaming active assistant bubble -->
                 <template x-if="isStreaming && activeStreamText.length > 0">
-                    <div class="clay-card message-bubble message-assistant">
-                        <div class="msg-content" x-html="renderMessageContent(activeStreamText)"></div>
+                    <div class="message-bubble message-assistant">
+                        <div style="display: flex; gap: 14px; width: 100%; align-items: flex-start;">
+                            <!-- AI Avatar -->
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #4a88ff, #56ab2f); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(74,136,255,0.2);">
+                                AI
+                            </div>
+                            <div style="flex-grow: 1; min-width: 0;">
+                                <div class="msg-content" style="padding:0;" x-html="renderMessageContent(activeStreamText)"></div>
+                            </div>
+                        </div>
                     </div>
                 </template>
 
                 <!-- Typing indicator -->
                 <template x-if="isStreaming && activeStreamText.length === 0">
-                    <div class="clay-card message-bubble message-assistant" style="padding: 16px 24px; display: flex; align-items: center; gap: 6px; border-radius: 20px;">
-                        <span style="font-size:0.9rem; color:var(--text-muted);">Thinking</span>
-                        <div style="display:flex; gap:4px; margin-top:2px;">
-                            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--text-muted); animation: bounce 1.4s infinite ease-in-out both;"></span>
-                            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--text-muted); animation: bounce 1.4s infinite ease-in-out both; animation-delay: 0.2s;"></span>
-                            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--text-muted); animation: bounce 1.4s infinite ease-in-out both; animation-delay: 0.4s;"></span>
+                    <div class="message-bubble message-assistant">
+                        <div style="display: flex; gap: 14px; align-items: center; width: 100%;">
+                            <!-- AI Avatar -->
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #4a88ff, #56ab2f); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(74,136,255,0.2);">
+                                AI
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px; padding: 4px 0;">
+                                <span style="font-size:0.9rem; color:var(--text-muted);">Thinking</span>
+                                <div style="display:flex; gap:4px; margin-top:2px;">
+                                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--text-muted); animation: bounce 1.4s infinite ease-in-out both;"></span>
+                                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--text-muted); animation: bounce 1.4s infinite ease-in-out both; animation-delay: 0.2s;"></span>
+                                    <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--text-muted); animation: bounce 1.4s infinite ease-in-out both; animation-delay: 0.4s;"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </template>
@@ -854,7 +962,7 @@
                     
                     <!-- Paperclip upload button -->
                     <div style="position: relative;">
-                        <button @click="$refs.fileInput.click()" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width: 42px; height: 42px; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;" title="Attach File">
+                        <button @click="$refs.fileInput.click()" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width: 44px; height: 44px; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;" title="Attach File">
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                         </button>
                         <input type="file" x-ref="fileInput" @change="handleFileUpload($event)" style="display: none;">
@@ -997,6 +1105,9 @@
                 searchQuery: '',
 
                 initApp() {
+                    // Initialize expansion properties on loaded messages
+                    this.messages = this.messages.map(m => ({ ...m, _expanded: false }));
+
                     // Automatically scroll to bottom on start if we have messages
                     this.scrollToBottom();
 
@@ -1238,7 +1349,8 @@
                     const userMsgObj = {
                         role: 'user',
                         content: cleanPrompt,
-                        attachments: [...this.attachments]
+                        attachments: [...this.attachments],
+                        _expanded: false
                     };
                     this.messages.push(userMsgObj);
                     
@@ -1309,7 +1421,8 @@
                         // Save streamed response fully to messages stack
                         this.messages.push({
                             role: 'assistant',
-                            content: this.activeStreamText
+                            content: this.activeStreamText,
+                            _expanded: false
                         });
                         this.isStreaming = false;
                         this.activeStreamText = '';
