@@ -1017,10 +1017,34 @@
                         <template x-if="msg.role !== 'user'">
                             <div style="display: flex; gap: 14px; width: 100%; align-items: flex-start;">
                                 <!-- AI Avatar -->
-                                <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #4a88ff, #56ab2f); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(74,136,255,0.2);">
-                                    AI
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #4a88ff, #56ab2f); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(74,136,255,0.2); overflow: hidden;">
+                                    <img src="{{ \App\Models\SystemSetting::get('general_site_icon') ?: \App\Models\SystemSetting::get('general_chatbot_logo') ?: '/favicon.ico' }}" alt="Icon" style="width: 20px; height: 20px; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerText='🤖'" />
                                 </div>
-                                <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column;">
+                                <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; position: relative;">
+                                    <!-- Assistant actions at Top Right: copy & regenerate icons only -->
+                                    <div style="display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 4px;">
+                                        <button
+                                            type="button"
+                                            @click="copyMessage(msg.content, $event)"
+                                            class="clay-btn clay-btn-secondary"
+                                            style="padding: 4px 8px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px;"
+                                            title="Copy to clipboard"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            @click="regenerateMessage(index)"
+                                            class="clay-btn clay-btn-secondary"
+                                            style="padding: 4px 8px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 28px;"
+                                            title="Regenerate response"
+                                            :disabled="isStreaming"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                                        </button>
+                                    </div>
+
                                     <!-- Attachments preview row with visual thumbnails -->
                                     <template x-if="msg.attachments && msg.attachments.length > 0">
                                         <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0 8px;">
@@ -1050,52 +1074,28 @@
 
                                     <!-- Expand / Collapse toggle -->
                                     <template x-if="isLongMessage(msg.content)">
-                                        <button
-                                            class="expand-btn"
-                                            @click="msg._expanded = !msg._expanded"
-                                            style="justify-content: flex-start; padding: 8px 0 0;"
-                                        >
-                                            <template x-if="!msg._expanded">
-                                                <span style="display:flex;align-items:center;gap:5px;">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                                                    Show more
-                                                </span>
-                                            </template>
-                                            <template x-if="msg._expanded">
-                                                <button
-                                                    @click="msg._expanded = false"
-                                                    class="clay-btn clay-btn-secondary"
-                                                    style="margin-top: 8px; padding: 4px 10px; font-size: 0.75rem; border-radius: 12px;"
-                                                >
-                                                    <span>Show less</span>
-                                                </button>
-                                            </template>
+                                        <div style="margin-top: 8px;">
+                                            <button
+                                                type="button"
+                                                @click="msg._expanded = !msg._expanded"
+                                                class="clay-btn clay-btn-secondary"
+                                                style="padding: 4px 12px; font-size: 0.78rem; border-radius: 12px; display: inline-flex; align-items: center; gap: 6px;"
+                                            >
+                                                <template x-if="!msg._expanded">
+                                                    <span style="display:flex;align-items:center;gap:5px;">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                                        Show more
+                                                    </span>
+                                                </template>
+                                                <template x-if="msg._expanded">
+                                                    <span style="display:flex;align-items:center;gap:5px;">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                                                        Show less
+                                                    </span>
+                                                </template>
+                                            </button>
                                         </div>
                                     </template>
-                                    
-                                    <!-- Assistant actions: copy & regenerate -->
-                                    <div style="display: flex; gap: 8px; margin-top: 10px; align-items: center;">
-                                        <button
-                                            @click="copyMessage(msg.content, $event)"
-                                            class="clay-btn clay-btn-secondary"
-                                            style="padding: 4px 10px; font-size: 0.75rem; border-radius: 12px; display: flex; align-items: center; gap: 4px;"
-                                            title="Copy to clipboard"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                                            <span class="copy-label">Copy</span>
-                                        </button>
-
-                                        <button
-                                            @click="regenerateMessage(index)"
-                                            class="clay-btn clay-btn-secondary"
-                                            style="padding: 4px 10px; font-size: 0.75rem; border-radius: 12px; display: flex; align-items: center; gap: 4px;"
-                                            title="Regenerate response"
-                                            :disabled="isStreaming"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
-                                            <span>Regenerate</span>
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </template>
@@ -1161,7 +1161,7 @@
                         <div style="display: flex; gap: 14px; width: 100%; align-items: flex-start;">
                             <!-- AI Avatar -->
                             <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #4a88ff, #56ab2f); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; flex-shrink: 0; box-shadow: 0 2px 8px rgba(74,136,255,0.2); overflow: hidden;">
-                                <img src="{{ \App\Models\SystemSetting::get('general_site_icon', '/favicon.ico') }}" alt="Icon" style="width: 20px; height: 20px; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerText='🤖'" />
+                                <img src="{{ \App\Models\SystemSetting::get('general_site_icon') ?: \App\Models\SystemSetting::get('general_chatbot_logo') ?: '/favicon.ico' }}" alt="Icon" style="width: 20px; height: 20px; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerText='🤖'" />
                             </div>
                             <div style="flex-grow: 1; min-width: 0;">
                                 <div class="msg-content" style="padding:0;" x-html="renderMessageContent(activeStreamText)"></div>
@@ -1175,7 +1175,7 @@
                     <div class="ai-fast-loading-card">
                         <div style="display: flex; align-items: center; gap: 12px;">
                             <div class="ai-spinner-avatar" style="overflow: hidden;">
-                                <img src="{{ \App\Models\SystemSetting::get('general_site_icon', '/favicon.ico') }}" alt="Icon" style="width: 22px; height: 22px; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerText='🤖'" />
+                                <img src="{{ \App\Models\SystemSetting::get('general_site_icon') ?: \App\Models\SystemSetting::get('general_chatbot_logo') ?: '/favicon.ico' }}" alt="Icon" style="width: 22px; height: 22px; object-fit: contain;" onerror="this.style.display='none'; this.parentNode.innerText='🤖'" />
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 2px;">
                                 <div style="font-weight: 700; font-size: 0.95rem; background: linear-gradient(135deg, #4a88ff, #6b52ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Synthesizing response...</div>
@@ -1597,6 +1597,98 @@
                         }
                     });
                     return md.render(content);
+                },
+
+                copyMessage(content, event) {
+                    if (!content) return;
+                    navigator.clipboard.writeText(content).then(() => {
+                        const btn = event?.currentTarget;
+                        if (btn) {
+                            const originalHTML = btn.innerHTML;
+                            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+                            setTimeout(() => {
+                                btn.innerHTML = originalHTML;
+                            }, 1500);
+                        }
+                    }).catch(() => {
+                        this.showProAlert('Copy Failed', 'Unable to copy message to clipboard.', 'error');
+                    });
+                },
+
+                regenerateMessage(index) {
+                    if (this.isStreaming || !this.activeConversationId) return;
+                    // Find the last user message before or at this assistant message index
+                    let lastUserMessage = '';
+                    for (let i = index - 1; i >= 0; i--) {
+                        if (this.messages[i].role === 'user') {
+                            lastUserMessage = this.messages[i].content;
+                            break;
+                        }
+                    }
+                    if (!lastUserMessage) return;
+                    // Remove the assistant message (and any messages after it) to regenerate cleanly
+                    this.messages.splice(index);
+                    this.activeStreamText = '';
+                    this.isStreaming = true;
+                    this.scrollToBottom();
+
+                    fetch(`/chats/${this.activeConversationId}/stream`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            model: this.activeModel,
+                            message: lastUserMessage,
+                            regenerate: true
+                        })
+                    }).then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network error during regeneration.');
+                        }
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder('utf-8');
+                        let buffer = '';
+
+                        const processChunk = ({ done, value }) => {
+                            if (done) {
+                                this.isStreaming = false;
+                                if (this.activeStreamText) {
+                                    this.messages.push({
+                                        role: 'assistant',
+                                        content: this.activeStreamText,
+                                        _expanded: false
+                                    });
+                                    this.activeStreamText = '';
+                                }
+                                this.scrollToBottom();
+                                return;
+                            }
+                            buffer += decoder.decode(value, { stream: true });
+                            let lines = buffer.split('\n');
+                            buffer = lines.pop();
+                            for (let line of lines) {
+                                line = line.trim();
+                                if (line.startsWith('data: ')) {
+                                    const dataStr = line.substring(6);
+                                    if (dataStr === '[DONE]') continue;
+                                    try {
+                                        const parsed = JSON.parse(dataStr);
+                                        if (parsed.text) {
+                                            this.activeStreamText += parsed.text;
+                                            this.scrollToBottom();
+                                        }
+                                    } catch(e) {}
+                                }
+                            }
+                            reader.read().then(processChunk);
+                        };
+                        reader.read().then(processChunk);
+                    }).catch(error => {
+                        this.isStreaming = false;
+                        this.showProAlert('Regeneration Error', 'Could not regenerate response. Please check your connection.', 'error');
+                    });
                 },
 
                 scrollToBottom() {

@@ -56,21 +56,11 @@ class OpenAIProvider extends AbstractProvider
         curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         
-        if (curl_errno($ch)) {
-            $error = curl_error($ch);
-            $onChunk("[Connection Error: $error]");
-        } elseif ($httpCode >= 400) {
-            $errorDetail = trim($rawBody) ?: trim($buffer) ?: "HTTP Status $httpCode";
-            $decodedErr = json_decode($errorDetail, true);
-            $msg = $decodedErr['error']['message'] ?? $decodedErr['message'] ?? $errorDetail;
+        if (curl_errno($ch) || $httpCode >= 400) {
+            $errorDetail = trim($rawBody) ?: trim($buffer) ?: (curl_errno($ch) ? curl_error($ch) : "HTTP Status $httpCode");
+            \Illuminate\Support\Facades\Log::error("OpenAIProvider Stream Error ($httpCode): $errorDetail");
             
-            if ($httpCode === 401) {
-                $onChunk("\n\n⚠️ **AI API Authentication Error (401 Unauthorized)**\n\nThe API key configured for this AI model is invalid, missing, or expired.\n\n* **Provider Error Details:** `{$msg}`\n* **How to fix:** Please navigate to **Admin Panel → AI Providers / Settings** and verify that the exact API key (without extra spaces or line breaks) is saved correctly.");
-            } elseif ($httpCode === 429) {
-                $onChunk("\n\n⚠️ **Rate Limit Exceeded (429)**\n\nThe AI provider's rate limit or credit quota has been reached.\n\n* **Provider Error Details:** `{$msg}`");
-            } else {
-                $onChunk("\n\n⚠️ **AI Provider API Error ({$httpCode})**\n\n* **Provider Error Details:** `{$msg}`");
-            }
+            $onChunk("\n\n⚠️ **Service Temporarily Unavailable**\n\nWe are currently experiencing high demand or a temporary disruption with our AI service. Please try again in a few moments.");
         }
 
         curl_close($ch);
