@@ -100,6 +100,7 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
 
 // Open Chat Interface Routes (Access allowed for both guests and authenticated users)
 Route::get('/', [ChatController::class, 'index'])->name('chat');
+Route::get('/chats', [ChatController::class, 'index'])->name('chats.index');
 Route::post('/chats', [ChatController::class, 'store'])->name('chats.store');
 Route::get('/chats/{conversation:uuid}', [ChatController::class, 'show'])->name('chats.show');
 Route::delete('/chats/{conversation:uuid}', [ChatController::class, 'destroy'])->name('chats.destroy');

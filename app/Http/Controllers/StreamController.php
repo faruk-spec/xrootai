@@ -83,7 +83,7 @@ class StreamController extends Controller
                 })
                 ->first();
 
-            if ($dbModel && !empty($dbModel->allowed_roles)) {
+            if ($dbModel && !empty($dbModel->allowed_roles) && !in_array(strtolower($userRole), ['admin', 'super admin'])) {
                 $rolesList = array_map('strtolower', $dbModel->allowed_roles);
                 if (!in_array(strtolower($userRole), $rolesList)) {
                     $response = new StreamedResponse(function() {

@@ -24,13 +24,13 @@ class ChatController extends Controller
                 ->whereHas('provider', function ($query) {
                     $query->where('is_active', true);
                 })
-                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
                 ->get();
 
             if ($dbModels->isNotEmpty()) {
                 $models = [];
                 foreach ($dbModels as $model) {
-                    if (!empty($model->allowed_roles)) {
+                    if (!empty($model->allowed_roles) && !in_array(strtolower($userRole), ['admin', 'super admin'])) {
                         $rolesList = array_map('strtolower', $model->allowed_roles);
                         if (!in_array(strtolower($userRole), $rolesList)) {
                             continue;
