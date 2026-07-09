@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>XrootAI Chat</title>
     
     <!-- Stylesheets -->
@@ -70,8 +70,13 @@
 
         /* Responsive Layout grid */
         html, body {
-            overflow-x: hidden;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
             max-width: 100vw;
+            max-height: 100vh;
         }
         .workspace {
             display: grid;
@@ -105,13 +110,15 @@
                 z-index: 50;
                 transform: translateX(-100%);
                 transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-                width: 280px; /* Explicit width on mobile */
+                width: 80vw;
+                max-width: 300px;
             }
             .sidebar.open {
                 transform: translateX(0);
             }
+            /* Remove display:block !important overlay override since Alpine x-show is used */
             .sidebar-overlay {
-                display: block !important;
+                /* Display is fully controlled by Alpine JS x-show display state */
             }
             /* Show mobile-only controls */
             .mobile-menu-btn {
@@ -120,9 +127,35 @@
             .sidebar-close-btn {
                 display: flex;
             }
+            /* Remove textarea placeholder on mobile */
+            .chat-textarea::placeholder {
+                color: transparent !important;
+                opacity: 0 !important;
+            }
+            .chat-textarea::-webkit-input-placeholder {
+                color: transparent !important;
+                opacity: 0 !important;
+            }
+            /* Hide model name on mobile, show logo instead */
+            .header-model-label { display: none; }
+            .header-mobile-logo { display: flex !important; }
+            /* Scale down inputs/selects on mobile */
+            select, input, button { font-size: 16px; }
+            /* Ensure brightness is proper on mobile */
+            body { -webkit-text-size-adjust: 100%; }
+            /* Mobile padding reductions to fit narrow screens */
+            .chat-messages {
+                padding: 16px !important;
+            }
+            .chat-input-area {
+                padding: 12px 16px !important;
+            }
+            .message-bubble {
+                max-width: 90% !important;
+            }
         }
 
-        /* Sidebar styling */
+        /* Sidebar styling — supports collapse on desktop */
         .sidebar {
             background-color: var(--bg-sidebar);
             border-right: 1px solid var(--clay-card-border);
@@ -132,6 +165,52 @@
             overflow: hidden;
             padding: 20px;
             gap: 16px;
+            transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                        padding 0.25s ease,
+                        min-width 0.25s ease;
+        }
+        /* Collapsed desktop sidebar — icon strip only */
+        .sidebar.collapsed {
+            width: 72px !important;
+            min-width: 72px;
+            padding: 20px 14px;
+        }
+        .sidebar.collapsed .sidebar-text,
+        .sidebar.collapsed .sidebar-search,
+        .sidebar.collapsed .sidebar-history,
+        .sidebar.collapsed .sidebar-footer-text {
+            display: none !important;
+        }
+        .sidebar.collapsed .app-brand span {
+            display: none;
+        }
+        .sidebar.collapsed .app-brand {
+            justify-content: center;
+        }
+        /* Header mobile logo (hidden on desktop, shown on mobile) */
+        .header-mobile-logo {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .header-mobile-logo span {
+            background: linear-gradient(135deg, #4a88ff, #56ab2f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Dark mode toggle button */
+        .theme-toggle-btn {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
 
         /* Chat view pane */
@@ -142,6 +221,7 @@
             overflow: hidden;
             position: relative;
             min-height: 0;
+            min-width: 0; /* Prevents column expansion on responsive grids */
         }
 
         .chat-header {
@@ -184,6 +264,10 @@
         }
         .message-bubble .msg-content {
             padding: 14px 18px;
+        }
+        .message-bubble pre {
+            max-width: 100%;
+            overflow-x: auto;
         }
         /* Collapsible long message */
         .msg-body {
@@ -428,35 +512,57 @@
     ></div>
 
     <div class="workspace">
-        <!-- Sidebar Container (Phase 2 Component) -->
-        <aside class="sidebar" :class="{ 'open': sidebarOpen }">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <a href="{{ route('chat') }}" class="app-brand">
+        <!-- Sidebar Container -->
+        <aside class="sidebar" :class="{ 'open': sidebarOpen, 'collapsed': sidebarCollapsed }">
+            <!-- Sidebar header: logo + collapse + close buttons -->
+            <div :style="sidebarCollapsed ? 'display:flex; flex-direction:column; align-items:center; gap:12px; width:100%;' : 'display: flex; align-items: center; justify-content: space-between;'" style="flex-shrink:0;">
+                <a href="{{ route('chat') }}" class="app-brand" style="overflow:hidden; white-space:nowrap; padding:0; margin:0;">
                     <div class="app-brand-icon">X</div>
-                    <span>XrootAI</span>
+                    <span class="sidebar-text">XrootAI</span>
                 </a>
-                <!-- Close button: only visible on mobile via CSS class -->
-                <button @click="sidebarOpen = false" class="clay-btn clay-btn-secondary sidebar-close-btn" style="border-radius:50%; width:36px; height:36px; padding:0; align-items: center; justify-content: center;" title="Close sidebar">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
+                <div :style="sidebarCollapsed ? 'display:flex; justify-content:center;' : 'display:flex; gap:4px;'" style="flex-shrink:0;">
+                    <!-- Collapse toggle (desktop only) -->
+                    <button @click="sidebarCollapsed = !sidebarCollapsed; localStorage.setItem('sidebarCollapsed', sidebarCollapsed)" class="clay-btn clay-btn-secondary" style="border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; flex-shrink:0;" :title="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+                        <template x-if="!sidebarCollapsed">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                        </template>
+                        <template x-if="sidebarCollapsed">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                        </template>
+                    </button>
+                    <!-- Close button: only on mobile -->
+                    <button @click="sidebarOpen = false" class="clay-btn clay-btn-secondary sidebar-close-btn" style="border-radius:50%; width:32px; height:32px; padding:0; align-items: center; justify-content: center;" title="Close sidebar">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>
             </div>
 
             <!-- New Chat Puffed Button -->
-            <form action="{{ route('chats.store') }}" method="POST">
+            <form action="{{ route('chats.store') }}" method="POST" class="sidebar-text" style="display:block;">
                 @csrf
                 <input type="hidden" name="model" :value="activeModel">
                 <button type="submit" class="clay-btn clay-btn-primary" style="width: 100%;">
                     <span>+ New Chat</span>
                 </button>
             </form>
+            <!-- Collapsed: just a + icon -->
+            <template x-if="sidebarCollapsed">
+                <form action="{{ route('chats.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="model" :value="activeModel">
+                    <button type="submit" class="clay-btn clay-btn-primary" style="width:44px; height:44px; border-radius:50%; padding:0; display:flex; align-items:center; justify-content:center;" title="New Chat">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                </form>
+            </template>
 
             <!-- Search + Conversations: only visible to logged-in users -->
             @auth
             <!-- Search bar -->
-            <input type="text" class="clay-inset clay-input" placeholder="Search conversations..." x-model="searchQuery" style="width:100%;">
+            <input type="text" class="clay-inset clay-input sidebar-search" placeholder="Search conversations..." x-model="searchQuery" style="width:100%;">
 
             <!-- Conversations list (Grouped by date) -->
-            <div style="flex: 1 1 0; min-height: 0; overflow-y: auto; margin-top: 10px; padding-right: 5px;">
+            <div class="sidebar-history" style="flex: 1 1 0; min-height: 0; overflow-y: auto; margin-top: 10px; padding-right: 5px;">
                 <template x-for="group in groupedConversations()" :key="group.label">
                     <div style="margin-bottom: 20px;">
                         <!-- Group Header divider -->
@@ -504,42 +610,66 @@
             @endguest
 
             <!-- User footer menu -->
-            <div class="clay-card" style="padding: 12px 16px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; margin-top: auto; flex-shrink: 0; box-shadow: var(--clay-outer-shadow);">
+            <div :class="sidebarCollapsed ? '' : 'clay-card'" :style="sidebarCollapsed ? 'background:transparent; border:none; box-shadow:none; padding:0; display:flex; justify-content:center; margin-top:auto;' : 'padding: 12px 16px; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; margin-top: auto; flex-shrink: 0; box-shadow: var(--clay-outer-shadow);'">
                 @auth
-                    <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; overflow:hidden;">
-                            <div style="display: flex; align-items: center; gap: 10px; overflow:hidden; flex-grow: 1;">
-                                <div style="width: 36px; height: 36px; border-radius: 50%; background: #4a88ff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">
-                                    {{ substr(Auth::user()->name, 0, 1) }}
-                                </div>
-                                <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.9rem; flex-grow: 1;">
-                                    <div style="font-weight: 600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{{ Auth::user()->name }}</div>
-                                    <div style="font-size: 0.75rem; color: var(--text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{{ Auth::user()->email }}</div>
-                                </div>
-                            </div>
-                            
-                            <div style="display: flex; gap: 4px; flex-shrink: 0;">
-                                <button @click="openSettings()" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center;" title="Settings">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <template x-if="sidebarCollapsed">
+                        <div style="display:flex; flex-direction:column; align-items:center; gap:12px; width:100%;">
+                            <!-- Avatar button opens settings modal -->
+                            <button @click="openSettings()" class="clay-btn" style="width: 36px; height: 36px; border-radius: 50%; background: #4a88ff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; padding:0; border:none;" title="Profile & Settings">
+                                {{ substr(Auth::user()->name, 0, 1) }}
+                            </button>
+                            <!-- Logout -->
+                            <form action="{{ route('logout') }}" method="POST" style="margin: 0; display: flex;">
+                                @csrf
+                                <button type="submit" class="clay-btn" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px;" title="Logout">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                                 </button>
-                                <form action="{{ route('logout') }}" method="POST" style="margin: 0; display: inline-flex;">
-                                    @csrf
-                                    <button type="submit" class="clay-btn" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px;" title="Logout">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            </form>
+                        </div>
+                    </template>
+                    <template x-if="!sidebarCollapsed">
+                        <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; overflow:hidden;">
+                                <div style="display: flex; align-items: center; gap: 10px; overflow:hidden; flex-grow: 1;">
+                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: #4a88ff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;">
+                                        {{ substr(Auth::user()->name, 0, 1) }}
+                                    </div>
+                                    <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size: 0.9rem; flex-grow: 1;">
+                                        <div style="font-weight: 600; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{{ Auth::user()->name }}</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{{ Auth::user()->email }}</div>
+                                    </div>
+                                </div>
+                                
+                                <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                                    <button @click="openSettings()" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center;" title="Settings">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                                     </button>
-                                </form>
+                                    <form action="{{ route('logout') }}" method="POST" style="margin: 0; display: inline-flex;">
+                                        @csrf
+                                        <button type="submit" class="clay-btn" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px;" title="Logout">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </template>
                 @endauth
                 @guest
-                    <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                        <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; font-weight: 600;">Guest Mode (5 messages limit)</div>
-                        <div style="display: flex; gap: 8px;">
-                            <a href="{{ route('login') }}" class="clay-btn clay-btn-secondary" style="flex: 1; font-size: 0.82rem; padding: 8px 10px; border-radius: 12px; text-decoration: none; text-align: center;">Login</a>
-                            <a href="{{ route('register') }}" class="clay-btn clay-btn-primary" style="flex: 1; font-size: 0.82rem; padding: 8px 10px; border-radius: 12px; text-decoration: none; text-align: center;">Register</a>
+                    <template x-if="sidebarCollapsed">
+                        <a href="{{ route('login') }}" class="clay-btn clay-btn-primary" style="width: 44px; height: 44px; border-radius: 50%; padding:0; display:flex; align-items:center; justify-content:center;" title="Sign In">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        </a>
+                    </template>
+                    <template x-if="!sidebarCollapsed">
+                        <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                            <div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; font-weight: 600;">Guest Mode (5 messages limit)</div>
+                            <div style="display: flex; gap: 8px;">
+                                <a href="{{ route('login') }}" class="clay-btn clay-btn-secondary" style="flex: 1; font-size: 0.82rem; padding: 8px 10px; border-radius: 12px; text-decoration: none; text-align: center;">Login</a>
+                                <a href="{{ route('register') }}" class="clay-btn clay-btn-primary" style="flex: 1; font-size: 0.82rem; padding: 8px 10px; border-radius: 12px; text-decoration: none; text-align: center;">Register</a>
+                            </div>
                         </div>
-                    </div>
+                    </template>
                 @endguest
             </div>
         </aside>
@@ -550,24 +680,42 @@
             <!-- Header -->
             <header class="chat-header">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <!-- Hamburger button: only visible on mobile via CSS class -->
+                <!-- Hamburger button: only visible on mobile via CSS class -->
                     <button @click="sidebarOpen = true" class="clay-btn clay-btn-secondary mobile-menu-btn" style="border-radius: 12px; height:40px; padding: 0 14px; align-items: center; justify-content: center; gap:4px;" aria-label="Open sidebar">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
-                    
-                    <!-- Active model indicator -->
-                    <div style="font-weight: 600; font-size: 1.05rem;">
+
+                    <!-- Mobile: XrootAI logo instead of model name -->
+                    <div class="header-mobile-logo">
+                        <div style="width:28px; height:28px; border-radius:10px; background:linear-gradient(135deg,#4a88ff,#56ab2f); display:flex; align-items:center; justify-content:center; color:white; font-weight:800; font-size:0.85rem;">X</div>
+                        <span>XrootAI</span>
+                    </div>
+
+                    <!-- Desktop: active model indicator -->
+                    <div class="header-model-label" style="font-weight: 600; font-size: 1.05rem;">
                         <span x-text="getModelName(activeModel)"></span>
                     </div>
                 </div>
 
-                <!-- Model selection dropdown -->
-                <div style="display: flex; align-items: center; gap: 12px;">
+                <!-- Model selection + theme toggle + settings -->
+                <div style="display: flex; align-items: center; gap: 8px;">
                     <select class="clay-inset" x-model="activeModel" style="padding: 8px 16px; border-radius: 16px; font-weight: 500; font-size: 0.9rem;">
                         <template x-for="model in availableModels" :key="model.id">
                             <option :value="model.id" x-text="model.name" :selected="model.id === activeModel"></option>
                         </template>
                     </select>
+
+                    <!-- Dark/Light mode toggle -->
+                    <button @click="toggleDarkMode()" class="clay-btn clay-btn-secondary theme-toggle-btn" title="Toggle dark/light mode">
+                        <template x-if="darkMode">
+                            <!-- Sun icon (switch to light) -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                        </template>
+                        <template x-if="!darkMode">
+                            <!-- Moon icon (switch to dark) -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        </template>
+                    </button>
 
                     @auth
                     {{-- Settings button: only shown to authenticated users --}}
@@ -737,90 +885,51 @@
             </footer>
         </main>
 
-        <!-- Settings Modal (Frosted Clay style) -->
+        <!-- Settings Modal: Profile only — App Settings and API Keys removed from user view -->
         {{-- Only rendered/opened for authenticated users; guests cannot reach this --}}
         @auth
         <div class="modal-overlay" x-show="settingsModalOpen" x-transition.opacity style="display: none;">
             <div class="clay-card modal-card" @click.away="settingsModalOpen = false">
                 <div style="display:flex; justify-content:between; align-items:center; margin-bottom: 24px; border-bottom: 1px solid var(--clay-card-border); padding-bottom:12px;">
-                    <h2 style="font-weight: 700; font-size: 1.4rem;">App Settings</h2>
+                    <h2 style="font-weight: 700; font-size: 1.4rem;">Profile</h2>
                     <button @click="settingsModalOpen = false" class="clay-btn clay-btn-secondary" style="border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; margin-left:auto;" title="Close">
                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                     </button>
                 </div>
 
-                <!-- Theme / Prompt settings form -->
+                <!-- Logged-in user info -->
+                <div style="display:flex; align-items:center; gap:16px; padding:16px; border-radius:16px; background:rgba(74,136,255,0.06); border:1px solid rgba(74,136,255,0.15); margin-bottom:20px;">
+                    <div style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#4a88ff,#56ab2f); color:white; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.4rem; flex-shrink:0;">
+                        {{ substr(Auth::user()->name, 0, 1) }}
+                    </div>
+                    <div>
+                        <div style="font-weight:700; font-size:1rem;">{{ Auth::user()->name }}</div>
+                        <div style="font-size:0.82rem; color:var(--text-muted);">{{ Auth::user()->email }}</div>
+                    </div>
+                </div>
+
+                <!-- System Prompt only -->
                 <form action="{{ route('settings.update') }}" method="POST">
                     @csrf
-                    
-                    <div class="clay-input-group">
-                        <label class="clay-input-label">Theme Mode</label>
-                        <select name="theme" class="clay-inset" x-model="tempTheme" @change="darkMode = (tempTheme === 'dark' || (tempTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)); localStorage.setItem('darkMode', darkMode)">
-                            <option value="system">System Default</option>
-                            <option value="light">Light Mode</option>
-                            <option value="dark">Dark Mode</option>
-                        </select>
-                    </div>
-
-                    <div class="clay-input-group">
-                        <label class="clay-input-label">Default Model</label>
-                        <select name="default_model" class="clay-inset">
-                            <template x-for="model in availableModels" :key="model.id">
-                                <option :value="model.id" x-text="model.name" :selected="model.id === defaultModel"></option>
-                            </template>
-                        </select>
-                    </div>
-
+                    <input type="hidden" name="theme" :value="tempTheme">
+                    <input type="hidden" name="default_model" :value="defaultModel">
                     <div class="clay-input-group">
                         <label class="clay-input-label">System Instructions</label>
-                        <textarea name="system_prompt" class="clay-inset" rows="3" style="resize:none;">{{ $settings->system_prompt }}</textarea>
+                        <textarea name="system_prompt" class="clay-inset" rows="4" style="resize:none; width:100%;">{{ $settings->system_prompt }}</textarea>
                     </div>
-
-                    <div style="display:flex; justify-content:flex-end; margin-top: 10px;">
-                        <button type="submit" class="clay-btn clay-btn-primary">
-                            Save Settings
-                        </button>
+                    <div style="display:flex; justify-content:flex-end; margin-top: 12px;">
+                        <button type="submit" class="clay-btn clay-btn-primary">Save</button>
                     </div>
                 </form>
 
-                <!-- API Keys section -->
-                <div style="margin-top: 32px; border-top: 1px solid var(--clay-card-border); padding-top: 24px;">
-                    <h3 style="font-weight: 700; font-size: 1.15rem; margin-bottom: 8px;">Provider API Keys</h3>
-                    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 20px;">Keys are encrypted locally before storing and are never exposed to the client.</p>
-
-                    <form action="{{ route('settings.keys') }}" method="POST">
+                <!-- Logout -->
+                <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--clay-card-border);">
+                    <form action="{{ route('logout') }}" method="POST">
                         @csrf
-                        
-                        <div class="clay-input-group">
-                            <label class="clay-input-label">OpenAI Key</label>
-                            <input type="password" name="keys[openai]" class="clay-inset clay-input" placeholder="{{ empty($apiKeys['openai']) ? 'sk-proj-...' : '•••••••• (Saved - enter new to change)' }}">
-                        </div>
-
-                        <div class="clay-input-group">
-                            <label class="clay-input-label">Google Gemini Key</label>
-                            <input type="password" name="keys[gemini]" class="clay-inset clay-input" placeholder="{{ empty($apiKeys['gemini']) ? 'AIzaSy...' : '•••••••• (Saved - enter new to change)' }}">
-                        </div>
-
-                        <div class="clay-input-group">
-                            <label class="clay-input-label">Anthropic Claude Key</label>
-                            <input type="password" name="keys[claude]" class="clay-inset clay-input" placeholder="{{ empty($apiKeys['claude']) ? 'sk-ant-...' : '•••••••• (Saved - enter new to change)' }}">
-                        </div>
-
-                        <div class="clay-input-group">
-                            <label class="clay-input-label">DeepSeek Key</label>
-                            <input type="password" name="keys[deepseek]" class="clay-inset clay-input" placeholder="{{ empty($apiKeys['deepseek']) ? 'sk-...' : '•••••••• (Saved - enter new to change)' }}">
-                        </div>
-
-                        <div class="clay-input-group">
-                            <label class="clay-input-label">Ollama Host URL</label>
-                            <input type="text" name="keys[ollama]" class="clay-inset clay-input" placeholder="http://localhost:11434" value="{{ $apiKeys['ollama'] ?? '' }}">
-                        </div>
-
-                        <div style="display:flex; justify-content:flex-end; margin-top: 10px;">
-                            <button type="submit" class="clay-btn clay-btn-primary">
-                                Save API Keys
-                            </button>
-                        </div>
+                        <button type="submit" class="clay-btn" style="width:100%; background:rgba(239,68,68,0.08); color:#ef4444; border:1px solid rgba(239,68,68,0.2); display:flex; align-items:center; justify-content:center; gap:8px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                            Sign Out
+                        </button>
                     </form>
                 </div>
             </div>
@@ -861,6 +970,7 @@
             return {
                 darkMode: localStorage.getItem('darkMode') === 'true',
                 sidebarOpen: false,
+                sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
                 settingsModalOpen: false,
                 deleteConfirmOpen: false,
                 chatToDelete: null,
@@ -1001,6 +1111,13 @@
                 getModelName(modelId) {
                     const model = this.availableModels.find(m => m.id === modelId);
                     return model ? model.name : modelId;
+                },
+
+                // Toggle dark/light mode and persist
+                toggleDarkMode() {
+                    this.darkMode = !this.darkMode;
+                    localStorage.setItem('darkMode', this.darkMode);
+                    this.tempTheme = this.darkMode ? 'dark' : 'light';
                 },
 
                 // Open settings — guards against unauthenticated access
