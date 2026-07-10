@@ -15,9 +15,13 @@ class DynamicMailConfigService
      */
     public static function configure(?EmailConfiguration $config = null): bool
     {
+        if ($config instanceof \__PHP_Incomplete_Class) {
+            $config = null;
+        }
+
         $config = $config ?: EmailConfiguration::getActiveDefault();
 
-        if (!$config || empty($config->host)) {
+        if (!$config || !($config instanceof EmailConfiguration) || empty($config->host)) {
             return false;
         }
 

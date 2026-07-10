@@ -102,6 +102,45 @@ class StreamController extends Controller
             }
         }
 
+        // Role-based limits (Input prompt length & Output max tokens)
+        $userRole = $user ? strtolower($user->role) : 'guest';
+        $isAdminOrSuper = in_array($userRole, ['admin', 'super admin', 'pro', 'enterprise']);
+
+        if (!$isAdminOrSuper) {
+            $promptLength = mb_strlen($prompt ?? '');
+            if ($userRole === 'guest') {
+                $maxPromptChars = (int) \App\Models\SystemSetting::get('ai_guest_max_prompt_chars', 1000);
+                if ($promptLength > $maxPromptChars) {
+                    $response = new StreamedResponse(function() use ($maxPromptChars, $promptLength) {
+                        if (!app()->environment('testing')) {
+                            while (ob_get_level() > 0) { ob_end_clean(); }
+                        }
+                        echo 'data: ' . json_encode(['text' => "\n\n⚠️ **Prompt too long for Guest Plan.** Guests can send up to {$maxPromptChars} characters per prompt (yours is {$promptLength} characters). Please [Register](/register) or [Login](/login) to submit larger prompts and generate complete code!"]) . "\n\n";
+                        echo "data: [DONE]\n\n";
+                        if (!app()->environment('testing') && ob_get_length()) { ob_flush(); }
+                        flush();
+                    });
+                    $response->headers->set('Content-Type', 'text/event-stream');
+                    return $response;
+                }
+            } elseif ($userRole === 'user') {
+                $maxPromptChars = (int) \App\Models\SystemSetting::get('ai_user_max_prompt_chars', 4000);
+                if ($promptLength > $maxPromptChars) {
+                    $response = new StreamedResponse(function() use ($maxPromptChars, $promptLength) {
+                        if (!app()->environment('testing')) {
+                            while (ob_get_level() > 0) { ob_end_clean(); }
+                        }
+                        echo 'data: ' . json_encode(['text' => "\n\n⚠️ **Prompt too long for Free Plan.** Free accounts can send up to {$maxPromptChars} characters per prompt (yours is {$promptLength} characters). Upgrade to Pro for unlimited prompt sizes!"]) . "\n\n";
+                        echo "data: [DONE]\n\n";
+                        if (!app()->environment('testing') && ob_get_length()) { ob_flush(); }
+                        flush();
+                    });
+                    $response->headers->set('Content-Type', 'text/event-stream');
+                    return $response;
+                }
+            }
+        }
+
         if (!$user) {
             $sessionToken = app()->environment('testing') ? $conversation->session_token : session()->getId();
             $sessionConversations = Conversation::where('session_token', $sessionToken)->pluck('id');
@@ -282,16 +321,53 @@ class StreamController extends Controller
                 // Pass mock User object if guest to satisfy registry interface
                 $providerUser = $user ?: new User();
                 
+                // Determine output max_tokens based on role
+                $maxOutputTokens = 4096;
+                $maxOutputChars = -1; // -1 means unlimited
+                $currentRole = $user ? strtolower($user->role) : 'guest';
+                $isAdminOrSuperRole = in_array($currentRole, ['admin', 'super admin', 'pro', 'enterprise']);
+
+                if ($currentRole === 'guest') {
+                    $maxOutputTokens = (int) \App\Models\SystemSetting::get('ai_guest_max_tokens', 400);
+                    $maxOutputChars = (int) ($maxOutputTokens * 4.5);
+                } elseif ($currentRole === 'user') {
+                    $maxOutputTokens = (int) \App\Models\SystemSetting::get('ai_user_max_tokens', 1500);
+                    $maxOutputChars = (int) ($maxOutputTokens * 4.5);
+                } elseif ($isAdminOrSuperRole) {
+                    $maxOutputTokens = (int) \App\Models\SystemSetting::get('model_max_tokens', 8192);
+                }
+
+                $options = [
+                    'model' => $conversation->model,
+                    'max_tokens' => $maxOutputTokens,
+                ];
+
+                $truncated = false;
+
                 // Call the AI provider streaming engine
                 $this->aiManager->make($conversation->model, $providerUser)->streamCompletion(
                     $history,
-                    ['model' => $conversation->model],
-                    function ($chunk) use (&$assistantContent) {
+                    $options,
+                    function ($chunk) use (&$assistantContent, &$truncated, $maxOutputChars, $currentRole, $maxOutputTokens) {
+                        if ($truncated) {
+                            return;
+                        }
+
                         $assistantContent .= $chunk;
                         
                         // Output SSE format event
                         echo "data: " . json_encode(['text' => $chunk]) . "\n\n";
                         
+                        if ($maxOutputChars > 0 && mb_strlen($assistantContent) >= $maxOutputChars) {
+                            $truncated = true;
+                            $truncMsg = $currentRole === 'guest'
+                                ? "\n\n---\n🔒 *Response reached the maximum output length for Guest accounts (~{$maxOutputTokens} tokens). [Register or Login](/register) for full, detailed AI responses and complete code generation!*"
+                                : "\n\n---\n🔒 *Response reached the maximum output length for Free accounts (~{$maxOutputTokens} tokens). Upgrade to Pro for unlimited AI response lengths and massive code generation!*";
+                            
+                            $assistantContent .= $truncMsg;
+                            echo "data: " . json_encode(['text' => $truncMsg]) . "\n\n";
+                        }
+
                         // Flush the output buffer to the client
                         if (ob_get_length()) {
                             ob_flush();

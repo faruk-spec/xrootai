@@ -85,7 +85,11 @@ class EmailConfiguration extends Model
      */
     public static function getActiveDefault()
     {
-        return Cache::rememberForever('active_default_email_config', function () {
+        if (!class_exists(self::class, false)) {
+            class_exists(self::class, true);
+        }
+
+        $config = Cache::rememberForever('active_default_email_config', function () {
             try {
                 if (!\Illuminate\Support\Facades\Schema::hasTable('email_configurations')) {
                     return null;
@@ -97,6 +101,25 @@ class EmailConfiguration extends Model
                 return null;
             }
         });
+
+        if ($config instanceof \__PHP_Incomplete_Class || ($config !== null && !($config instanceof self))) {
+            Cache::forget('active_default_email_config');
+            try {
+                if (!\Illuminate\Support\Facades\Schema::hasTable('email_configurations')) {
+                    return null;
+                }
+                $config = self::where('is_active', true)
+                    ->where('is_default', true)
+                    ->first() ?: self::where('is_active', true)->first();
+                if ($config) {
+                    Cache::put('active_default_email_config', $config);
+                }
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+
+        return $config;
     }
 
     /**
