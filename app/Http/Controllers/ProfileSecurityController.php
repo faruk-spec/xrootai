@@ -24,24 +24,7 @@ class ProfileSecurityController extends Controller
      */
     public function index(Request $request)
     {
-        $user = Auth::user();
-        $recoveryCodes = $user->getTwoFactorRecoveryCodesArray();
-
-        // If user wants to setup TOTP, generate temporary secret session if not present
-        $qrCodeUrl = null;
-        $secretKey = null;
-
-        if ($request->query('setup') === 'totp') {
-            $secretKey = session('totp_pending_secret');
-            if (!$secretKey) {
-                $secretKey = $this->twoFactorService->generateSecretKey(16);
-                session(['totp_pending_secret' => $secretKey]);
-            }
-            $otpauthUrl = $this->twoFactorService->getOtpAuthUrl($user, $secretKey);
-            $qrCodeUrl = $this->twoFactorService->getQrCodeUrl($otpauthUrl);
-        }
-
-        return view('profile.security', compact('user', 'recoveryCodes', 'qrCodeUrl', 'secretKey'));
+        return redirect()->route('user.settings', ['tab' => 'security', 'setup' => $request->query('setup')]);
     }
 
     /**
@@ -57,7 +40,7 @@ class ProfileSecurityController extends Controller
         $pendingSecret = session('totp_pending_secret');
 
         if (!$pendingSecret) {
-            return redirect()->route('profile.security', ['setup' => 'totp'])
+            return redirect()->route('user.settings', ['tab' => 'security', 'setup' => 'totp'])
                 ->with('error', 'Setup session expired. Please scan the new QR code and try again.');
         }
 
@@ -78,7 +61,7 @@ class ProfileSecurityController extends Controller
 
         ActivityLog::log('2fa_enabled_totp', "User enabled Authenticator App 2FA: {$user->email}", $user->id);
 
-        return redirect()->route('profile.security')
+        return redirect()->route('user.settings', ['tab' => 'security'])
             ->with('success', 'Authenticator App two-factor authentication enabled successfully! Please save your emergency recovery codes below.');
     }
 
@@ -100,7 +83,7 @@ class ProfileSecurityController extends Controller
             $this->twoFactorService->generateRecoveryCodes($user, 8);
             ActivityLog::log('2fa_enabled_email', "User enabled Email OTP 2FA: {$user->email}", $user->id);
 
-            return redirect()->route('profile.security')
+            return redirect()->route('user.settings', ['tab' => 'security'])
                 ->with('success', 'Email OTP Two-Factor Authentication has been activated.');
         }
 
@@ -109,7 +92,7 @@ class ProfileSecurityController extends Controller
             $this->twoFactorService->generateRecoveryCodes($user, 8);
             ActivityLog::log('2fa_recovery_regenerated', "User regenerated 2FA recovery codes: {$user->email}", $user->id);
 
-            return redirect()->route('profile.security')
+            return redirect()->route('user.settings', ['tab' => 'security'])
                 ->with('success', 'Emergency recovery codes have been regenerated. Any previous codes are now invalid.');
         }
 
@@ -133,10 +116,10 @@ class ProfileSecurityController extends Controller
 
             ActivityLog::log('2fa_disabled', "User disabled Two-Factor Authentication: {$user->email}", $user->id);
 
-            return redirect()->route('profile.security')
+            return redirect()->route('user.settings', ['tab' => 'security'])
                 ->with('success', 'Two-Factor Authentication has been turned off.');
         }
 
-        return redirect()->route('profile.security');
+        return redirect()->route('user.settings', ['tab' => 'security']);
     }
 }

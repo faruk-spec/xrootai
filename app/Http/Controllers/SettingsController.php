@@ -8,6 +8,49 @@ use Illuminate\Http\Request;
 
 class SettingsController extends Controller
 {
+    public function index(Request $request, \App\Services\TwoFactorService $twoFactorService, \App\Services\AIManager $aiManager)
+    {
+        $user = $request->user();
+        $settings = UserSetting::where('user_id', $user->id)->first() ?? new UserSetting([
+            'theme' => 'system',
+            'default_model' => 'mock',
+            'system_prompt' => ''
+        ]);
+
+        $recoveryCodes = $user->getTwoFactorRecoveryCodesArray();
+        $qrCodeUrl = null;
+        $secretKey = null;
+
+        if ($request->query('setup') === 'totp') {
+            $secretKey = session('totp_pending_secret');
+            if (!$secretKey) {
+                $secretKey = $twoFactorService->generateSecretKey(16);
+                session(['totp_pending_secret' => $secretKey]);
+            }
+            $otpauthUrl = $twoFactorService->getOtpAuthUrl($user, $secretKey);
+            $qrCodeUrl = $twoFactorService->getQrCodeUrl($otpauthUrl);
+        }
+
+        // Get available models
+        $models = [];
+        if (\Illuminate\Support\Facades\Schema::hasTable('ai_models')) {
+            $dbModels = \App\Models\AIModel::with('provider')->where('is_active', true)->get();
+            foreach ($dbModels as $model) {
+                $models[] = [
+                    'id' => $model->model_identifier,
+                    'name' => $model->name,
+                ];
+            }
+        }
+        if (empty($models)) {
+            $models = $aiManager->getAllModels();
+        }
+
+        $activeTab = $request->query('tab', session('active_tab', 'general'));
+
+        return view('user.settings', compact('user', 'settings', 'recoveryCodes', 'qrCodeUrl', 'secretKey', 'models', 'activeTab'));
+    }
+
     public function update(Request $request)
     {
         $request->validate([
@@ -27,7 +70,7 @@ class SettingsController extends Controller
             ]
         );
 
-        return redirect()->back()->with('success', 'Settings updated successfully.');
+        return redirect()->route('user.settings', ['tab' => 'general'])->with('success', 'Settings updated successfully.');
     }
 
     public function updateKeys(Request $request)
@@ -59,6 +102,6 @@ class SettingsController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', 'API Keys saved successfully.');
+        return redirect()->route('user.settings', ['tab' => 'keys'])->with('success', 'API Keys saved successfully.');
     }
 }

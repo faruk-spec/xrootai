@@ -200,6 +200,35 @@
             border-left-color: var(--primary-accent);
         }
 
+        /* Responsive Sidebar & Mobile Support */
+        @media (max-width: 991px) {
+            .sidebar {
+                left: -100%;
+                box-shadow: none;
+            }
+            .sidebar.mobile-show {
+                left: 0 !important;
+                box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            }
+            .wrapper {
+                margin-left: 0 !important;
+            }
+            .sidebar-backdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(4px);
+                z-index: 999;
+            }
+            .sidebar-backdrop.show {
+                display: block;
+            }
+        }
+
         /* Main Content Panel */
         .wrapper {
             margin-left: var(--sidebar-width);
@@ -427,26 +456,22 @@
                 <span class="nav-text">Dashboard</span>
             </a>
 
-            <!-- USERS & PLANS -->
-            <div class="nav-category">Access Control</div>
-            <a href="{{ route('admin.oauth.index') }}" class="nav-link {{ Request::is('admin/oauth*') ? 'active' : '' }}">
-                <i class="bi bi-shield-lock-fill fs-5"></i>
-                <span class="nav-text">Social Login & OAuth</span>
-            </a>
+            <!-- ACCESS CONTROL -->
+            <div class="nav-category">Access Control & Plans</div>
             <a href="#usersMenu" class="nav-link collapsed" data-bs-toggle="collapse">
                 <i class="bi bi-people-fill fs-5"></i>
-                <span class="nav-text">User Directory</span>
+                <span class="nav-text">Users & Permissions</span>
                 <i class="bi bi-chevron-down ms-auto nav-text fs-7"></i>
             </a>
-            <div class="collapse {{ Request::is('admin/users*') || Request::is('admin/roles*') || Request::is('admin/permissions*') || Request::is('admin/auth-settings*') || Request::is('admin/settings/plans*') || Request::is('admin/settings/privacy*') ? 'show' : '' }}" id="usersMenu">
+            <div class="collapse {{ Request::is('admin/users*') || Request::is('admin/roles*') || Request::is('admin/permissions*') || Request::is('admin/oauth*') || Request::is('admin/auth-settings*') || (Request::is('admin/settings') && in_array(request('tab'), ['plans','roles','privacy'])) ? 'show' : '' }}" id="usersMenu">
                 <div class="submenu">
                     <a href="{{ route('admin.users') }}" class="submenu-link {{ Request::is('admin/users*') ? 'active' : '' }}">Users List</a>
                     <a href="{{ route('admin.roles.index') }}" class="submenu-link {{ Request::is('admin/roles*') ? 'active' : '' }}">Roles & RBAC</a>
                     <a href="{{ route('admin.permissions.index') }}" class="submenu-link {{ Request::is('admin/permissions*') ? 'active' : '' }}">System Permissions</a>
                     <a href="{{ route('admin.oauth.index') }}" class="submenu-link {{ Request::is('admin/oauth*') ? 'active' : '' }}">Social Login & OAuth</a>
                     <a href="{{ route('admin.auth-settings.index') }}" class="submenu-link {{ Request::is('admin/auth-settings*') ? 'active' : '' }}">Auth & Security Policies</a>
-                    <a href="{{ route('admin.settings') }}?tab=plans" class="submenu-link">Plans & Limits</a>
-                    <a href="{{ route('admin.settings') }}?tab=privacy" class="submenu-link">Data & Privacy</a>
+                    <a href="{{ route('admin.settings') }}?tab=plans" class="submenu-link {{ request('tab') === 'plans' ? 'active' : '' }}">Plans & Limits</a>
+                    <a href="{{ route('admin.settings') }}?tab=privacy" class="submenu-link {{ request('tab') === 'privacy' ? 'active' : '' }}">Data & Privacy</a>
                 </div>
             </div>
 
@@ -457,13 +482,13 @@
                 <span class="nav-text">AI Orchestration</span>
                 <i class="bi bi-chevron-down ms-auto nav-text fs-7"></i>
             </a>
-            <div class="collapse {{ Request::is('admin/providers*') || Request::is('admin/models*') || Request::is('admin/routing*') || Request::is('admin/settings/model*') || Request::is('admin/settings/behavior*') ? 'show' : '' }}" id="aiMenu">
+            <div class="collapse {{ Request::is('admin/providers*') || Request::is('admin/models*') || Request::is('admin/routing*') || Request::is('admin/prompts*') || (Request::is('admin/settings') && in_array(request('tab'), ['behavior','prompt'])) ? 'show' : '' }}" id="aiMenu">
                 <div class="submenu">
                     <a href="{{ route('admin.providers.index') }}" class="submenu-link {{ Request::is('admin/providers*') ? 'active' : '' }}">AI Providers</a>
                     <a href="{{ route('admin.models.index') }}" class="submenu-link {{ Request::is('admin/models*') ? 'active' : '' }}">AI Models</a>
                     <a href="{{ route('admin.routing.index') }}" class="submenu-link {{ Request::is('admin/routing*') ? 'active' : '' }}">AI Routing Rules</a>
-                    <a href="{{ route('admin.settings') }}?tab=behavior" class="submenu-link">Model Parameters</a>
-                    <a href="{{ route('admin.settings') }}?tab=prompt" class="submenu-link">System Prompts</a>
+                    <a href="{{ route('admin.settings') }}?tab=behavior" class="submenu-link {{ request('tab') === 'behavior' ? 'active' : '' }}">Model Parameters</a>
+                    <a href="{{ route('admin.settings') }}?tab=prompt" class="submenu-link {{ request('tab') === 'prompt' ? 'active' : '' }}">System Prompts</a>
                     <a href="{{ route('admin.prompts.index') }}" class="submenu-link {{ Request::is('admin/prompts*') ? 'active' : '' }}">Prompt Templates</a>
                 </div>
             </div>
@@ -472,56 +497,75 @@
             <div class="nav-category">Knowledge & Data</div>
             <a href="#kbMenu" class="nav-link collapsed" data-bs-toggle="collapse">
                 <i class="bi bi-database-fill fs-5"></i>
-                <span class="nav-text">Data Base</span>
+                <span class="nav-text">RAG & Knowledge Base</span>
                 <i class="bi bi-chevron-down ms-auto nav-text fs-7"></i>
             </a>
-            <div class="collapse {{ Request::is('admin/kb*') || Request::is('admin/settings/kb*') ? 'show' : '' }}" id="kbMenu">
+            <div class="collapse {{ Request::is('admin/kb*') || (Request::is('admin/settings') && request('tab') === 'kb') ? 'show' : '' }}" id="kbMenu">
                 <div class="submenu">
                     <a href="{{ route('admin.kb.index') }}" class="submenu-link {{ Request::is('admin/kb*') ? 'active' : '' }}">Knowledge Sources</a>
-                    <a href="{{ route('admin.settings') }}?tab=kb" class="submenu-link">RAG Configurations</a>
+                    <a href="{{ route('admin.settings') }}?tab=kb" class="submenu-link {{ request('tab') === 'kb' ? 'active' : '' }}">RAG Configurations</a>
                 </div>
             </div>
 
-            <!-- OPERATIONS -->
-            <div class="nav-category">Operations</div>
-            <a href="#opsMenu" class="nav-link collapsed" data-bs-toggle="collapse">
-                <i class="bi bi-gear-wide-connected fs-5"></i>
-                <span class="nav-text">System Configurations</span>
+            <!-- CONVERSATION & UX -->
+            <div class="nav-category">Chat Experience</div>
+            <a href="#convMenu" class="nav-link collapsed" data-bs-toggle="collapse">
+                <i class="bi bi-chat-left-dots-fill fs-5"></i>
+                <span class="nav-text">Conversation & UX</span>
                 <i class="bi bi-chevron-down ms-auto nav-text fs-7"></i>
             </a>
-            <div class="collapse {{ Request::is('admin/settings*') && !Request::is('admin/settings/plans*') || Request::is('admin/email-config*') || Request::is('admin/email-templates*') || Request::is('admin/auth-settings*') ? 'show' : '' }}" id="opsMenu">
+            <div class="collapse {{ Request::is('admin/settings') && in_array(request('tab'), ['conv','handoff','ux']) ? 'show' : '' }}" id="convMenu">
                 <div class="submenu">
-                    <a href="{{ route('admin.settings') }}?tab=general" class="submenu-link">General Settings</a>
-                    <a href="{{ route('admin.email-config.index') }}" class="submenu-link {{ Request::is('admin/email-config*') ? 'active' : '' }}">Email Configuration</a>
-                    <a href="{{ route('admin.email-templates.index') }}" class="submenu-link {{ Request::is('admin/email-templates*') ? 'active' : '' }}">Email Templates</a>
-                    <a href="{{ route('admin.auth-settings.index') }}" class="submenu-link {{ Request::is('admin/auth-settings*') ? 'active' : '' }}">Authentication & Security</a>
-                    <a href="{{ route('admin.settings') }}?tab=lang" class="submenu-link">Language Settings</a>
-                    <a href="{{ route('admin.settings') }}?tab=notif" class="submenu-link">Alerts & Notifications</a>
-                    <a href="{{ route('admin.settings') }}?tab=security" class="submenu-link">Security & Moderation</a>
-                    <a href="{{ route('admin.settings') }}?tab=integrations" class="submenu-link">Integrations</a>
-                    <a href="{{ route('admin.settings') }}?tab=toggle" class="submenu-link">Feature Toggles</a>
+                    <a href="{{ route('admin.settings') }}?tab=conv" class="submenu-link {{ request('tab') === 'conv' ? 'active' : '' }}">Conversation Config</a>
+                    <a href="{{ route('admin.settings') }}?tab=handoff" class="submenu-link {{ request('tab') === 'handoff' ? 'active' : '' }}">Human Handoff</a>
+                    <a href="{{ route('admin.settings') }}?tab=ux" class="submenu-link {{ request('tab') === 'ux' ? 'active' : '' }}">User Experience (UX)</a>
                 </div>
             </div>
 
-            <div class="nav-category">Audit & Ops</div>
+            <!-- OPERATIONS & SAAS CONFIG -->
+            <div class="nav-category">System Operations</div>
+            <a href="#opsMenu" class="nav-link collapsed" data-bs-toggle="collapse">
+                <i class="bi bi-gear-wide-connected fs-5"></i>
+                <span class="nav-text">SaaS Configurations</span>
+                <i class="bi bi-chevron-down ms-auto nav-text fs-7"></i>
+            </a>
+            <div class="collapse {{ Request::is('admin/email-config*') || Request::is('admin/email-templates*') || (Request::is('admin/settings') && in_array(request('tab', 'general'), ['general','lang','notif','security','moderation','integrations','toggle'])) ? 'show' : '' }}" id="opsMenu">
+                <div class="submenu">
+                    <a href="{{ route('admin.settings') }}?tab=general" class="submenu-link {{ request('tab', 'general') === 'general' ? 'active' : '' }}">General Settings</a>
+                    <a href="{{ route('admin.email-config.index') }}" class="submenu-link {{ Request::is('admin/email-config*') ? 'active' : '' }}">Email Configuration</a>
+                    <a href="{{ route('admin.email-templates.index') }}" class="submenu-link {{ Request::is('admin/email-templates*') ? 'active' : '' }}">Email Templates</a>
+                    <a href="{{ route('admin.settings') }}?tab=lang" class="submenu-link {{ request('tab') === 'lang' ? 'active' : '' }}">Language Settings</a>
+                    <a href="{{ route('admin.settings') }}?tab=notif" class="submenu-link {{ request('tab') === 'notif' ? 'active' : '' }}">Alerts & Notifications</a>
+                    <a href="{{ route('admin.settings') }}?tab=security" class="submenu-link {{ request('tab') === 'security' ? 'active' : '' }}">Security & Policies</a>
+                    <a href="{{ route('admin.settings') }}?tab=moderation" class="submenu-link {{ request('tab') === 'moderation' ? 'active' : '' }}">Content Moderation</a>
+                    <a href="{{ route('admin.settings') }}?tab=integrations" class="submenu-link {{ request('tab') === 'integrations' ? 'active' : '' }}">Integrations</a>
+                    <a href="{{ route('admin.settings') }}?tab=toggle" class="submenu-link {{ request('tab') === 'toggle' ? 'active' : '' }}">Feature Toggles</a>
+                </div>
+            </div>
+
+            <!-- AUDIT & PERFORMANCE -->
+            <div class="nav-category">Audit & Performance</div>
             <a href="#auditMenu" class="nav-link collapsed" data-bs-toggle="collapse">
                 <i class="bi bi-activity fs-5"></i>
                 <span class="nav-text">Logs & Performance</span>
                 <i class="bi bi-chevron-down ms-auto nav-text fs-7"></i>
             </a>
-            <div class="collapse {{ Request::is('admin/logs*') || Request::is('admin/settings/billing*') || Request::is('admin/settings/developer*') || Request::is('admin/settings/backup*') ? 'show' : '' }}" id="auditMenu">
+            <div class="collapse {{ Request::is('admin/logs*') || (Request::is('admin/settings') && in_array(request('tab'), ['billing','analytics','logging','backup','developer'])) ? 'show' : '' }}" id="auditMenu">
                 <div class="submenu">
                     <a href="{{ route('admin.logs.index') }}" class="submenu-link {{ Request::is('admin/logs*') ? 'active' : '' }}">Audit Logs</a>
-                    <a href="{{ route('admin.settings') }}?tab=billing" class="submenu-link">Billing & Cost Usage</a>
-                    <a href="{{ route('admin.settings') }}?tab=backup" class="submenu-link">Backup & Recovery</a>
-                    <a href="{{ route('admin.settings') }}?tab=developer" class="submenu-link">Developer Settings</a>
+                    <a href="{{ route('admin.settings') }}?tab=logging" class="submenu-link {{ request('tab') === 'logging' ? 'active' : '' }}">System Logs Config</a>
+                    <a href="{{ route('admin.settings') }}?tab=billing" class="submenu-link {{ request('tab') === 'billing' ? 'active' : '' }}">Billing & Budget</a>
+                    <a href="{{ route('admin.settings') }}?tab=analytics" class="submenu-link {{ request('tab') === 'analytics' ? 'active' : '' }}">Analytics Simulation</a>
+                    <a href="{{ route('admin.settings') }}?tab=backup" class="submenu-link {{ request('tab') === 'backup' ? 'active' : '' }}">Backup & Recovery</a>
+                    <a href="{{ route('admin.settings') }}?tab=developer" class="submenu-link {{ request('tab') === 'developer' ? 'active' : '' }}">Developer Settings</a>
                 </div>
             </div>
 
-            <div class="nav-category">Design</div>
-            <a href="{{ route('admin.settings') }}?tab=branding" class="nav-link">
+            <!-- DESIGN -->
+            <div class="nav-category">Appearance</div>
+            <a href="{{ route('admin.settings') }}?tab=branding" class="nav-link {{ Request::is('admin/settings') && request('tab') === 'branding' ? 'active' : '' }}">
                 <i class="bi bi-palette-fill fs-5"></i>
-                <span class="nav-text">Appearance</span>
+                <span class="nav-text">Appearance & Branding</span>
             </a>
         </div>
         
@@ -610,9 +654,22 @@
     <!-- Sidebar & Theme Switcher Logic -->
     <script>
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-            document.getElementById('wrapper').classList.toggle('collapsed');
-            localStorage.setItem('sidebarCollapsed', document.getElementById('sidebar').classList.contains('collapsed'));
+            if (window.innerWidth <= 991) {
+                document.getElementById('sidebar').classList.toggle('mobile-show');
+                let backdrop = document.getElementById('sidebar-backdrop');
+                if (!backdrop) {
+                    backdrop = document.createElement('div');
+                    backdrop.id = 'sidebar-backdrop';
+                    backdrop.className = 'sidebar-backdrop';
+                    backdrop.onclick = toggleSidebar;
+                    document.body.appendChild(backdrop);
+                }
+                backdrop.classList.toggle('show');
+            } else {
+                document.getElementById('sidebar').classList.toggle('collapsed');
+                document.getElementById('wrapper').classList.toggle('collapsed');
+                localStorage.setItem('sidebarCollapsed', document.getElementById('sidebar').classList.contains('collapsed'));
+            }
         }
 
         function toggleDarkMode() {

@@ -65,7 +65,7 @@
                                 <span class="input-group-text bg-light"><i class="bi bi-envelope-check text-muted"></i></span>
                                 <input type="text" name="subject" id="input_subject" class="form-control focus-track" value="{{ old('subject', $emailTemplate->subject) }}" required maxlength="255">
                             </div>
-                            <div class="form-text">Supports placeholders like <code>{{ '{{app_name}}' }}</code> and <code>{{ '{{user_name}}' }}</code>.</div>
+                            <div class="form-text">Supports placeholders like <code>@{{app_name}}</code> and <code>@{{user_name}}</code>.</div>
                         </div>
 
                         <div class="mb-4">
@@ -143,9 +143,9 @@
                             <div class="border rounded-3 p-2 bg-light mt-2">
                                 <div class="fw-bold text-dark small mb-1">Universal Placeholders:</div>
                                 <div class="d-flex flex-wrap gap-1">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary font-monospace insert-var-btn" data-variable="{{ '{{app_name}}' }}">{{ '{{app_name}}' }}</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary font-monospace insert-var-btn" data-variable="{{ '{{app_url}}' }}">{{ '{{app_url}}' }}</button>
-                                    <button type="button" class="btn btn-sm btn-outline-secondary font-monospace insert-var-btn" data-variable="{{ '{{current_year}}' }}">{{ '{{current_year}}' }}</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary font-monospace insert-var-btn" data-variable="@{{app_name}}">@{{app_name}}</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary font-monospace insert-var-btn" data-variable="@{{app_url}}">@{{app_url}}</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary font-monospace insert-var-btn" data-variable="@{{current_year}}">@{{current_year}}</button>
                                 </div>
                             </div>
                         </div>

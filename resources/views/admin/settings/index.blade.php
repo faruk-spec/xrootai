@@ -8,83 +8,8 @@
 
 @section('content')
 <div class="row g-4">
-    <!-- Left Navigation Menu -->
-    <div class="col-lg-3">
-        <div class="card border-0 p-3 shadow-sm position-sticky" style="top:90px;">
-            <h6 class="fw-bold text-muted text-uppercase mb-3 px-2" style="font-size:0.75rem;">SaaS Configurations</h6>
-            <div class="d-flex flex-column gap-1">
-                <a href="?tab=general" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'general' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-sliders"></i> General Settings
-                </a>
-                <a href="?tab=plans" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'plans' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-shield-lock-fill"></i> User Plans & Limits
-                </a>
-                <a href="?tab=behavior" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'behavior' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-gear-fill"></i> Model Parameters
-                </a>
-                <a href="?tab=prompt" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'prompt' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-chat-left-quote-fill"></i> System Prompts
-                </a>
-                <a href="?tab=kb" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'kb' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-database-fill-gear"></i> RAG Configurations
-                </a>
-                <a href="?tab=conv" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'conv' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-chat-left-dots-fill"></i> Conversation Config
-                </a>
-                <a href="?tab=handoff" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'handoff' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-headset"></i> Human Handoff
-                </a>
-                <a href="?tab=ux" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'ux' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-window-sidebar"></i> User Experience (UX)
-                </a>
-                <a href="?tab=lang" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'lang' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-translate"></i> Language Settings
-                </a>
-                <a href="?tab=notif" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'notif' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-bell-fill"></i> Alerts & Notifications
-                </a>
-                <a href="?tab=security" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'security' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-safe-fill"></i> Security & Moderation
-                </a>
-                <a href="?tab=roles" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'roles' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-person-fill-lock"></i> Roles & Permissions
-                </a>
-                <a href="?tab=privacy" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'privacy' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-eye-slash-fill"></i> Data & Privacy
-                </a>
-                <a href="?tab=integrations" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'integrations' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-puzzle-fill"></i> Integrations
-                </a>
-                <a href="?tab=billing" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'billing' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-credit-card-fill"></i> Billing & Budget
-                </a>
-                <a href="?tab=analytics" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'analytics' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-bar-chart-fill"></i> Analytics Simulation
-                </a>
-                <a href="?tab=moderation" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'moderation' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-exclamation-triangle-fill"></i> Content Moderation
-                </a>
-                <a href="?tab=logging" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'logging' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-journal-text"></i> System Logs Config
-                </a>
-                <a href="?tab=backup" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'backup' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-cloud-arrow-down-fill"></i> Backup & Recovery
-                </a>
-                <a href="?tab=developer" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'developer' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-code-slash"></i> Developer Settings
-                </a>
-                <a href="?tab=branding" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'branding' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-palette-fill"></i> Appearance & Branding
-                </a>
-                <a href="?tab=toggle" class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 {{ $tab === 'toggle' ? 'btn-primary text-white' : 'btn-light' }}">
-                    <i class="bi bi-toggle-on"></i> Feature Toggles
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Right Settings Input Card -->
-    <div class="col-lg-9">
+    <!-- Settings Input Card (Expanded to full width since all tabs are now cleanly in global leftbar sub-dropdowns) -->
+    <div class="col-12">
         <div class="card border-0 p-4 shadow-sm">
             <!-- 1. GENERAL SETTINGS -->
             @if($tab === 'general')

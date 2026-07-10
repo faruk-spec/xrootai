@@ -871,10 +871,10 @@
                 @auth
                     <template x-if="sidebarCollapsed">
                         <div style="display:flex; flex-direction:column; align-items:center; gap:12px; width:100%;">
-                            <!-- Avatar button opens settings modal -->
-                            <button @click="openSettings()" class="clay-btn" style="width: 36px; height: 36px; border-radius: 50%; background: #4a88ff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; padding:0; border:none;" title="Profile & Settings">
+                            <!-- Avatar button opens settings page -->
+                            <a href="{{ route('user.settings') }}" class="clay-btn" style="width: 36px; height: 36px; border-radius: 50%; background: #4a88ff; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; padding:0; border:none; text-decoration:none;" title="Profile & Settings">
                                 {{ substr(Auth::user()->name, 0, 1) }}
-                            </button>
+                            </a>
                             <!-- Logout -->
                             <form action="{{ route('logout') }}" method="POST" style="margin: 0; display: flex;">
                                 @csrf
@@ -898,12 +898,12 @@
                                 </div>
                                 
                                 <div style="display: flex; gap: 4px; flex-shrink: 0;">
-                                    <a href="{{ route('profile.security') }}" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; text-decoration:none;" title="Account Security & 2FA">
+                                    <a href="{{ route('user.settings', ['tab' => 'security']) }}" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; text-decoration:none;" title="Account Security & 2FA">
                                         🛡️
                                     </a>
-                                    <button @click="openSettings()" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center;" title="Settings">
+                                    <a href="{{ route('user.settings', ['tab' => 'general']) }}" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; text-decoration:none;" title="Settings">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                                    </button>
+                                    </a>
                                     <form action="{{ route('logout') }}" method="POST" style="margin: 0; display: inline-flex;">
                                         @csrf
                                         <button type="submit" class="clay-btn" style="background:none; border:none; padding:4px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:8px;" title="Logout">
@@ -955,8 +955,8 @@
                         <span>{{ \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI') }}</span>
                     </div>
 
-                    <!-- Desktop: active model indicator -->
-                    <div class="header-model-label" style="font-weight: 600; font-size: 1.05rem;">
+                    <!-- Desktop: active model indicator hidden per user request -->
+                    <div class="header-model-label" style="display: none !important;">
                         <span x-text="getModelName(activeModel)"></span>
                     </div>
                 </div>
@@ -983,9 +983,9 @@
 
                     @auth
                     {{-- Settings button: only shown to authenticated users --}}
-                    <button @click="openSettings()" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:40px; height:40px; padding:0; display:flex; align-items:center; justify-content:center;" title="Settings">
+                    <a href="{{ route('user.settings', ['tab' => 'general']) }}" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:40px; height:40px; padding:0; display:flex; align-items:center; justify-content:center; text-decoration:none;" title="Settings">
                         <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                    </button>
+                    </a>
                     @endauth
                 </div>
             </header>
@@ -1263,63 +1263,7 @@
             </footer>
         </main>
 
-        <!-- Settings Modal: Profile only — App Settings and API Keys removed from user view -->
-        {{-- Only rendered/opened for authenticated users; guests cannot reach this --}}
-        @auth
-        <div class="modal-overlay" x-show="settingsModalOpen" x-transition.opacity style="display: none;">
-            <div class="clay-card modal-card" @click.away="settingsModalOpen = false">
-                <div style="display:flex; justify-content:between; align-items:center; margin-bottom: 24px; border-bottom: 1px solid var(--clay-card-border); padding-bottom:12px;">
-                    <h2 style="font-weight: 700; font-size: 1.4rem;">Profile</h2>
-                    <button @click="settingsModalOpen = false" class="clay-btn clay-btn-secondary" style="border-radius:50%; width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; margin-left:auto;" title="Close">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                </div>
-
-                <!-- Logged-in user info -->
-                <div style="display:flex; align-items:center; gap:16px; padding:16px; border-radius:16px; background:rgba(74,136,255,0.06); border:1px solid rgba(74,136,255,0.15); margin-bottom:20px;">
-                    <div style="width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#4a88ff,#56ab2f); color:white; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.4rem; flex-shrink:0;">
-                        {{ substr(Auth::user()->name, 0, 1) }}
-                    </div>
-                    <div>
-                        <div style="font-weight:700; font-size:1rem;">{{ Auth::user()->name }}</div>
-                        <div style="font-size:0.82rem; color:var(--text-muted);">{{ Auth::user()->email }}</div>
-                    </div>
-                </div>
-
-                <!-- System Prompt only -->
-                <form action="{{ route('settings.update') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="theme" :value="tempTheme">
-                    <input type="hidden" name="default_model" :value="defaultModel">
-                    <div class="clay-input-group">
-                        <label class="clay-input-label">System Instructions</label>
-                        <textarea name="system_prompt" class="clay-inset" rows="4" style="resize:none; width:100%;">{{ $settings->system_prompt }}</textarea>
-                    </div>
-                    <div style="display:flex; justify-content:flex-end; margin-top: 12px;">
-                        <button type="submit" class="clay-btn clay-btn-primary">Save</button>
-                    </div>
-                </form>
-
-                <!-- Security & 2FA Management -->
-                <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--clay-card-border);">
-                    <a href="{{ route('profile.security') }}" class="clay-btn" style="width:100%; background:rgba(59,130,246,0.08); color:#3b82f6; border:1px solid rgba(59,130,246,0.2); display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; font-weight:600;">
-                        🛡️ Account Security & 2FA
-                    </a>
-                </div>
-
-                <!-- Logout -->
-                <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--clay-card-border);">
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="clay-btn" style="width:100%; background:rgba(239,68,68,0.08); color:#ef4444; border:1px solid rgba(239,68,68,0.2); display:flex; align-items:center; justify-content:center; gap:8px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                            Sign Out
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        @endauth
+        <!-- Settings Modal: Removed in favor of dedicated /settings page -->
 
         <!-- Delete Confirmation Modal -->
         <div class="modal-overlay" x-show="deleteConfirmOpen" x-transition.opacity style="display:none; z-index:200;">
@@ -1573,13 +1517,13 @@
                     this.tempTheme = this.darkMode ? 'dark' : 'light';
                 },
 
-                // Open settings — guards against unauthenticated access
+                // Open settings — navigates to dedicated /settings page
                 openSettings() {
                     if (!this.isAuthenticated) {
                         window.location.href = '{{ route("login") }}';
                         return;
                     }
-                    this.settingsModalOpen = true;
+                    window.location.href = '{{ route("user.settings") }}';
                 },
 
                 isLongMessage(content) {
