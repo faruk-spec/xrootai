@@ -21,16 +21,35 @@ class DynamicMailConfigService
             return false;
         }
 
+        $host = trim($config->host);
+        $port = (int) $config->port;
+        $encryption = $config->encryption === 'null' ? null : trim((string) $config->encryption);
+        $username = !empty($config->username) ? trim($config->username) : null;
+        $password = !empty($config->password) ? trim($config->password) : null;
+
         Config::set('mail.default', 'smtp');
-        Config::set('mail.mailers.smtp.host', $config->host);
-        Config::set('mail.mailers.smtp.port', $config->port);
-        Config::set('mail.mailers.smtp.encryption', $config->encryption === 'null' ? null : $config->encryption);
-        Config::set('mail.mailers.smtp.username', $config->username);
-        Config::set('mail.mailers.smtp.password', $config->password);
+        Config::set('mail.mailers.smtp.host', $host);
+        Config::set('mail.mailers.smtp.port', $port);
+        Config::set('mail.mailers.smtp.encryption', $encryption);
+        Config::set('mail.mailers.smtp.username', $username);
+        Config::set('mail.mailers.smtp.password', $password);
+
+        if ($encryption === 'ssl' || $port === 465) {
+            Config::set('mail.mailers.smtp.scheme', 'smtps');
+        } elseif ($encryption === 'tls' || $port === 587) {
+            Config::set('mail.mailers.smtp.scheme', 'smtp');
+        } else {
+            Config::set('mail.mailers.smtp.scheme', null);
+        }
         
         if (!empty($config->from_email)) {
-            Config::set('mail.from.address', $config->from_email);
-            Config::set('mail.from.name', $config->from_name ?: 'XrootAI');
+            Config::set('mail.from.address', trim($config->from_email));
+            Config::set('mail.from.name', trim($config->from_name ?: 'XrootAI'));
+        }
+
+        if (app()->bound('mail.manager')) {
+            app('mail.manager')->purge('smtp');
+            app('mail.manager')->forgetMailers();
         }
 
         return true;
