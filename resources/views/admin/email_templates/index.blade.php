@@ -32,6 +32,12 @@
                             @endif
                         </div>
                     </form>
+                    <form method="POST" action="{{ route('admin.email-templates.seed') }}">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-success btn-sm fw-semibold d-flex align-items-center gap-1" title="Seed / Restore Default System Templates">
+                            <i class="bi bi-arrow-clockwise"></i> Restore Default Templates
+                        </button>
+                    </form>
                     <a href="{{ route('admin.email-config.index') }}" class="btn btn-outline-primary btn-sm fw-semibold d-flex align-items-center gap-1">
                         <i class="bi bi-gear-fill"></i> SMTP Settings
                     </a>
@@ -141,7 +147,13 @@
                             <tr>
                                 <td colspan="5" class="text-center py-5 text-muted">
                                     <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                    No email templates found matching your criteria.
+                                    No email templates found matching your criteria.<br><br>
+                                    <form method="POST" action="{{ route('admin.email-templates.seed') }}" class="d-inline">
+                                        @csrf
+                                        <button type="submit" class="btn btn-primary fw-semibold px-4 py-2">
+                                            <i class="bi bi-arrow-clockwise me-1"></i> Seed / Restore Default Templates
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         @endforelse

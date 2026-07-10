@@ -262,16 +262,17 @@ HTML,
 <head>
     <meta charset="utf-8">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 30px; color: #333; }
-        .container { max-width: 550px; margin: 0 auto; background: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .header { text-align: center; border-bottom: 2px solid #f0f4f8; padding-bottom: 20px; margin-bottom: 30px; }
-        .logo { font-size: 24px; font-weight: bold; color: #4361ee; text-decoration: none; }
-        .title { font-size: 20px; font-weight: 700; color: #1e293b; margin-top: 0; }
-        .code-box { background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 25px; text-align: center; margin: 30px 0; }
-        .otp-code { font-size: 34px; font-weight: 800; letter-spacing: 6px; color: #4361ee; font-family: monospace; }
-        .text { font-size: 15px; line-height: 1.6; color: #475569; margin-bottom: 20px; }
-        .warning { font-size: 13px; color: #dc2626; background: #fef2f2; padding: 12px; border-radius: 8px; margin-top: 20px; }
-        .footer { text-align: center; font-size: 13px; color: #94a3b8; margin-top: 40px; border-top: 1px solid #f0f4f8; padding-top: 20px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; margin: 0; padding: 40px 20px; color: #f8fafc; }
+        .container { max-width: 560px; margin: 0 auto; background: #1e293b; padding: 40px; border-radius: 20px; border: 1px solid #334155; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .header { text-align: center; border-bottom: 2px solid #334155; padding-bottom: 25px; margin-bottom: 30px; }
+        .logo { font-size: 26px; font-weight: 800; background: linear-gradient(135deg, #60a5fa 0%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
+        .badge { display: inline-block; background-color: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 6px 14px; border-radius: 50px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 15px; border: 1px solid rgba(245, 158, 11, 0.4); }
+        .title { font-size: 22px; font-weight: 700; color: #ffffff; margin-top: 0; }
+        .code-box { background: #0f172a; border: 2px dashed #3b82f6; border-radius: 14px; padding: 28px; text-align: center; margin: 30px 0; }
+        .otp-code { font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #38bdf8; font-family: monospace; }
+        .text { font-size: 15px; line-height: 1.6; color: #cbd5e1; margin-bottom: 20px; }
+        .warning { font-size: 13px; color: #fca5a5; background: rgba(239, 68, 68, 0.15); padding: 16px; border-radius: 10px; border-left: 4px solid #ef4444; margin-top: 25px; line-height: 1.5; }
+        .footer { text-align: center; font-size: 13px; color: #64748b; margin-top: 40px; border-top: 1px solid #334155; padding-top: 20px; }
     </style>
 </head>
 <body>
@@ -279,28 +280,33 @@ HTML,
         <div class="header">
             <span class="logo">{{app_name}}</span>
         </div>
-        <h1 class="title">Security Check: Verification Code</h1>
+        <div style="text-align: center;">
+            <span class="badge">🔒 Two-Factor Security Alert</span>
+            <h1 class="title">Login Verification Code</h1>
+        </div>
         <p class="text">
             Hello <strong>{{user_name}}</strong>,<br><br>
-            We detected a login attempt to your account. Please enter the following 6-digit verification code to complete your login:
+            A sign-in attempt requires Two-Factor Authentication (2FA). Please use the secure 6-digit one-time password below to complete your login:
         </p>
         <div class="code-box">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #94a3b8; margin-bottom: 10px;">2FA ONE-TIME PASSWORD</div>
             <div class="otp-code">{{otp_code}}</div>
+            <div style="font-size: 12px; color: #f87171; margin-top: 10px;">⏱ Expires in 15 minutes</div>
         </div>
-        <p class="text" style="text-align: center; font-size: 14px; color: #64748b;">
-            This verification code expires in <strong>15 minutes</strong>.
+        <p class="text" style="font-size: 14px; color: #94a3b8; text-align: center;">
+            Enter this code on the 2FA Challenge screen to authenticate.
         </p>
         <div class="warning">
-            <strong>Security Alert:</strong> If you did not attempt to log in, your password or account details may be compromised. Please change your password immediately.
+            <strong>⚠️ Security Notice:</strong> If you did not initiate this login attempt, someone may know your password. Please immediately reset your account password and verify your account activity.
         </div>
         <div class="footer">
-            &copy; {{current_year}} {{app_name}}. All rights reserved.
+            &copy; {{current_year}} {{app_name}} Security Team. All rights reserved.
         </div>
     </div>
 </body>
 </html>
 HTML,
-                'body_text' => "Hello {{user_name}},\n\nYour 2FA verification login code is: {{otp_code}}\n\nThis code expires in 15 minutes. If you did not attempt to log in, please reset your password immediately.\n\n© {{current_year}} {{app_name}}.",
+                'body_text' => "Hello {{user_name}},\n\n[Two-Factor Security Alert]\nYour 2FA login verification code is: {{otp_code}}\n\nThis code expires in 15 minutes. If you did not initiate this login, please reset your password immediately.\n\n© {{current_year}} {{app_name}} Security Team.",
             ],
         ];
 

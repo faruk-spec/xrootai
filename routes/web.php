@@ -166,6 +166,7 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
 
     // Email Template Management Module
     Route::get('/email-templates', [EmailTemplateController::class, 'index'])->name('admin.email-templates.index');
+    Route::post('/email-templates/seed', [EmailTemplateController::class, 'seedDefaults'])->name('admin.email-templates.seed');
     Route::get('/email-templates/{email_template}/edit', [EmailTemplateController::class, 'edit'])->name('admin.email-templates.edit');
     Route::put('/email-templates/{email_template}', [EmailTemplateController::class, 'update'])->name('admin.email-templates.update');
     Route::post('/email-templates/{email_template}/toggle', [EmailTemplateController::class, 'toggle'])->name('admin.email-templates.toggle');

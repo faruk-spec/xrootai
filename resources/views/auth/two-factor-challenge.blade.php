@@ -61,6 +61,9 @@
                            name="code" 
                            class="clay-input challenge-input" 
                            :placeholder="recoveryMode ? 'XXXX-XXXX' : '123456'"
+                           :maxlength="recoveryMode ? 20 : 6"
+                           :inputmode="recoveryMode ? 'text' : 'numeric'"
+                           @input="if (!recoveryMode) { $event.target.value = $event.target.value.replace(/[^0-9]/g, '').slice(0, 6); }"
                            required 
                            autofocus 
                            autocomplete="one-time-code">

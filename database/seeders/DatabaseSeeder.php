@@ -32,5 +32,7 @@ class DatabaseSeeder extends Seeder
                 'system_prompt' => 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.',
             ]
         );
+
+        $this->call(EmailTemplateSeeder::class);
     }
 }

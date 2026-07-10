@@ -37,6 +37,23 @@ class EmailTemplateController extends Controller
     }
 
     /**
+     * Seed or restore all default system email templates.
+     */
+    public function seedDefaults()
+    {
+        \Illuminate\Support\Facades\Artisan::call('db:seed', ['--class' => 'EmailTemplateSeeder', '--force' => true]);
+
+        ActivityLog::log(
+            'email_templates_seeded',
+            'Seeded/restored default system email templates',
+            Auth::id()
+        );
+
+        return redirect()->route('admin.email-templates.index')
+            ->with('success', 'All default system email templates have been seeded and restored successfully!');
+    }
+
+    /**
      * Show the form for editing the specified email template.
      */
     public function edit(EmailTemplate $emailTemplate)
