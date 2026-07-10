@@ -58,7 +58,8 @@ class EmailTemplateController extends Controller
      */
     public function edit(EmailTemplate $emailTemplate)
     {
-        return view('admin.email_templates.edit', compact('emailTemplate'));
+        $dummyVariables = $this->getDummyVariables($emailTemplate);
+        return view('admin.email_templates.edit', compact('emailTemplate', 'dummyVariables'));
     }
 
     /**

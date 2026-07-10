@@ -8,33 +8,27 @@
 
 @section('content')
 <div class="row g-4">
-    <!-- Left Navigation for OAuth Providers -->
-    <div class="col-lg-3">
-        <div class="card border-0 p-3 shadow-sm position-sticky" style="top:90px;">
-            <h6 class="fw-bold text-muted text-uppercase mb-3 px-2" style="font-size:0.75rem;">SSO Login Providers</h6>
-            <div class="d-flex flex-column gap-1 nav flex-column nav-pills" id="oauth-tabs" role="tablist">
-                @foreach($providers as $prov)
-                    <button class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 nav-link {{ $loop->first ? 'active' : '' }}" 
+    <div class="col-12">
+        <ul class="nav nav-pills bg-light p-2 rounded-4 mb-4 flex-wrap gap-2 border shadow-sm" id="oauth-tabs" role="tablist">
+            @foreach($providers as $prov)
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link btn-sm py-2 px-3 d-flex align-items-center gap-2 fw-semibold {{ $loop->first ? 'active' : '' }}" 
                             id="tab-{{ $prov->provider_slug }}" 
                             data-bs-toggle="pill" 
                             data-bs-target="#panel-{{ $prov->provider_slug }}" 
                             type="button" 
                             role="tab" 
                             aria-selected="{{ $loop->first ? 'true' : 'false' }}">
-                        <i class="bi bi-{{ $prov->provider_slug === 'twitter' ? 'twitter-x' : ($prov->provider_slug === 'custom' ? 'shield-lock' : $prov->provider_slug) }} fs-5"></i>
-                        <span class="fw-medium text-capitalize">{{ str_replace('(Twitter)', '', $prov->provider_name) }}</span>
-                        
-                        <span class="ms-auto badge {{ $prov->is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}" style="font-size: 0.65rem;">
+                        <i class="bi bi-{{ $prov->provider_slug === 'twitter' ? 'twitter-x' : ($prov->provider_slug === 'custom' ? 'shield-lock' : $prov->provider_slug) }}"></i>
+                        <span>{{ str_replace('(Twitter)', '', $prov->provider_name) }}</span>
+                        <span class="badge {{ $prov->is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}" style="font-size: 0.65rem;">
                             {{ $prov->is_active ? 'On' : 'Off' }}
                         </span>
                     </button>
-                @endforeach
-            </div>
-        </div>
-    </div>
+                </li>
+            @endforeach
+        </ul>
 
-    <!-- Right Panels for Provider Details -->
-    <div class="col-lg-9">
         <div id="connectionAlert" class="alert d-none shadow-sm mb-4" style="border-radius:12px;"></div>
 
         <div class="tab-content" id="oauth-panels">

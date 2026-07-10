@@ -4,11 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\ApiKey;
 use App\Models\UserSetting;
+use App\Services\AI\AIProviderManager;
 use Illuminate\Http\Request;
 
 class SettingsController extends Controller
 {
-    public function index(Request $request, \App\Services\TwoFactorService $twoFactorService, \App\Services\AIManager $aiManager)
+    public function index(Request $request, \App\Services\TwoFactorService $twoFactorService, AIProviderManager $aiManager)
     {
         $user = $request->user();
         $settings = UserSetting::where('user_id', $user->id)->first() ?? new UserSetting([

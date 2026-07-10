@@ -8,53 +8,42 @@
 
 @section('content')
 <div class="row g-4">
-    <!-- Left Navigation for SMTP Providers -->
-    <div class="col-lg-3">
-        <div class="card border-0 p-3 shadow-sm position-sticky" style="top:90px;">
-            <div class="d-flex justify-content-between align-items-center mb-3 px-2">
-                <h6 class="fw-bold text-muted text-uppercase mb-0" style="font-size:0.75rem;">Mail Providers</h6>
-                <span class="badge bg-primary-subtle text-primary" style="font-size: 0.65rem;">{{ $configurations->where('is_active', true)->count() }} Active</span>
-            </div>
-            <div class="d-flex flex-column gap-1 nav flex-column nav-pills" id="smtp-tabs" role="tablist">
-                @foreach($configurations as $config)
-                    @php
-                        $iconClass = match($config->provider_slug) {
-                            'zoho' => 'bi-envelope-at-fill',
-                            'gmail' => 'bi-google',
-                            'outlook' => 'bi-microsoft',
-                            'ses' => 'bi-cloud-arrow-up-fill',
-                            'mailgun' => 'bi-send-fill',
-                            'sendgrid' => 'bi-lightning-charge-fill',
-                            'brevo' => 'bi-mailbox2',
-                            default => 'bi-hdd-network-fill',
-                        };
-                    @endphp
-                    <button class="btn btn-sm text-start py-2 px-3 border-0 d-flex align-items-center gap-2 nav-link {{ $loop->first ? 'active' : '' }}" 
+    <div class="col-12">
+        <ul class="nav nav-pills bg-light p-2 rounded-4 mb-4 flex-wrap gap-2 border shadow-sm" id="smtp-tabs" role="tablist">
+            @foreach($configurations as $config)
+                @php
+                    $iconClass = match($config->provider_slug) {
+                        'zoho' => 'bi-envelope-at-fill',
+                        'gmail' => 'bi-google',
+                        'outlook' => 'bi-microsoft',
+                        'ses' => 'bi-cloud-arrow-up-fill',
+                        'mailgun' => 'bi-send-fill',
+                        'sendgrid' => 'bi-lightning-charge-fill',
+                        'brevo' => 'bi-mailbox2',
+                        default => 'bi-hdd-network-fill',
+                    };
+                @endphp
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link btn-sm py-2 px-3 d-flex align-items-center gap-2 fw-semibold {{ $loop->first ? 'active' : '' }}" 
                             id="tab-{{ $config->provider_slug }}" 
                             data-bs-toggle="pill" 
                             data-bs-target="#panel-{{ $config->provider_slug }}" 
                             type="button" 
                             role="tab" 
                             aria-selected="{{ $loop->first ? 'true' : 'false' }}">
-                        <i class="bi {{ $iconClass }} fs-5"></i>
-                        <span class="fw-medium text-truncate" style="max-width: 130px;">{{ str_replace(' / Microsoft 365', '', $config->provider_name) }}</span>
-                        
-                        <div class="ms-auto d-flex align-items-center gap-1">
-                            @if($config->is_default)
-                                <span class="badge bg-primary px-1 py-1" title="Primary Mail Provider" style="font-size: 0.55rem;">DEF</span>
-                            @endif
-                            <span class="badge {{ $config->is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}" style="font-size: 0.65rem;">
-                                {{ $config->is_active ? 'On' : 'Off' }}
-                            </span>
-                        </div>
+                        <i class="bi {{ $iconClass }}"></i>
+                        <span>{{ str_replace(' / Microsoft 365', '', $config->provider_name) }}</span>
+                        @if($config->is_default)
+                            <span class="badge bg-primary px-1 py-1" title="Primary Mail Provider" style="font-size: 0.55rem;">DEF</span>
+                        @endif
+                        <span class="badge {{ $config->is_active ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' }}" style="font-size: 0.65rem;">
+                            {{ $config->is_active ? 'On' : 'Off' }}
+                        </span>
                     </button>
-                @endforeach
-            </div>
-        </div>
-    </div>
+                </li>
+            @endforeach
+        </ul>
 
-    <!-- Right Panels for SMTP Provider Details -->
-    <div class="col-lg-9">
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show shadow-sm mb-4 d-flex align-items-center gap-2" role="alert" style="border-radius: 12px;">
                 <i class="bi bi-check-circle-fill fs-5"></i>

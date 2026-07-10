@@ -8,82 +8,7 @@
 
 @section('content')
 <div class="row g-4">
-    <!-- Left Navigation Pills for Auth Sections -->
-    <div class="col-lg-3">
-        <div class="card border-0 p-3 shadow-sm position-sticky" style="top:90px; border-radius: 16px;">
-            <div class="d-flex justify-content-between align-items-center mb-3 px-2">
-                <h6 class="fw-bold text-muted text-uppercase mb-0" style="font-size:0.75rem;">Auth Modules</h6>
-                <span class="badge bg-success-subtle text-success" style="font-size: 0.65rem;">Active</span>
-            </div>
-            <div class="d-flex flex-column gap-1 nav flex-column nav-pills" id="auth-tabs" role="tablist">
-                <button class="btn btn-sm text-start py-3 px-3 border-0 d-flex align-items-center gap-2 nav-link {{ $activeTab === 'registration' ? 'active' : '' }}" 
-                        id="tab-registration" 
-                        data-bs-toggle="pill" 
-                        data-bs-target="#panel-registration" 
-                        type="button" 
-                        role="tab" 
-                        aria-selected="{{ $activeTab === 'registration' ? 'true' : 'false' }}">
-                    <i class="bi bi-person-plus-fill fs-5 text-primary"></i>
-                    <span class="fw-semibold">Registration & Onboarding</span>
-                </button>
-
-                <button class="btn btn-sm text-start py-3 px-3 border-0 d-flex align-items-center gap-2 nav-link {{ $activeTab === 'verification' ? 'active' : '' }}" 
-                        id="tab-verification" 
-                        data-bs-toggle="pill" 
-                        data-bs-target="#panel-verification" 
-                        type="button" 
-                        role="tab" 
-                        aria-selected="{{ $activeTab === 'verification' ? 'true' : 'false' }}">
-                    <i class="bi bi-envelope-check-fill fs-5 text-info"></i>
-                    <span class="fw-semibold">Email Verification</span>
-                </button>
-
-                <button class="btn btn-sm text-start py-3 px-3 border-0 d-flex align-items-center gap-2 nav-link {{ $activeTab === 'password' ? 'active' : '' }}" 
-                        id="tab-password" 
-                        data-bs-toggle="pill" 
-                        data-bs-target="#panel-password" 
-                        type="button" 
-                        role="tab" 
-                        aria-selected="{{ $activeTab === 'password' ? 'true' : 'false' }}">
-                    <i class="bi bi-shield-lock-fill fs-5 text-warning"></i>
-                    <span class="fw-semibold">Password Security</span>
-                </button>
-
-                <button class="btn btn-sm text-start py-3 px-3 border-0 d-flex align-items-center gap-2 nav-link {{ $activeTab === 'session' ? 'active' : '' }}" 
-                        id="tab-session" 
-                        data-bs-toggle="pill" 
-                        data-bs-target="#panel-session" 
-                        type="button" 
-                        role="tab" 
-                        aria-selected="{{ $activeTab === 'session' ? 'true' : 'false' }}">
-                    <i class="bi bi-fingerprint fs-5 text-danger"></i>
-                    <span class="fw-semibold">Session & Lockout Control</span>
-                </button>
-
-                <button class="btn btn-sm text-start py-3 px-3 border-0 d-flex align-items-center gap-2 nav-link {{ $activeTab === 'twofactor' ? 'active' : '' }}" 
-                        id="tab-twofactor" 
-                        data-bs-toggle="pill" 
-                        data-bs-target="#panel-twofactor" 
-                        type="button" 
-                        role="tab" 
-                        aria-selected="{{ $activeTab === 'twofactor' ? 'true' : 'false' }}">
-                    <i class="bi bi-shield-check fs-5 text-success"></i>
-                    <span class="fw-semibold">Two-Factor Authentication (2FA)</span>
-                </button>
-            </div>
-            
-            <hr class="my-3 text-secondary opacity-25">
-            
-            <div class="px-2">
-                <small class="text-muted d-block" style="font-size: 0.72rem; line-height: 1.4;">
-                    <i class="bi bi-info-circle me-1"></i> Changes applied here instantly update Laravel authentication gates and security middleware.
-                </small>
-            </div>
-        </div>
-    </div>
-
-    <!-- Right Panels for Section Settings -->
-    <div class="col-lg-9">
+    <div class="col-12">
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm d-flex align-items-center gap-2 rounded-3 mb-4" role="alert">
                 <i class="bi bi-check-circle-fill fs-5"></i>
@@ -91,6 +16,45 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
+
+        <!-- Horizontal Top Navigation Pills -->
+        <ul class="nav nav-pills bg-light p-2 rounded-4 mb-4 flex-wrap gap-2 border shadow-sm" id="auth-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link btn-sm py-2 px-3 d-flex align-items-center gap-2 fw-semibold {{ $activeTab === 'registration' ? 'active' : '' }}" 
+                        id="tab-registration" data-bs-toggle="pill" data-bs-target="#panel-registration" type="button" role="tab" 
+                        aria-selected="{{ $activeTab === 'registration' ? 'true' : 'false' }}">
+                    <i class="bi bi-person-plus-fill"></i> Registration & Onboarding
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link btn-sm py-2 px-3 d-flex align-items-center gap-2 fw-semibold {{ $activeTab === 'verification' ? 'active' : '' }}" 
+                        id="tab-verification" data-bs-toggle="pill" data-bs-target="#panel-verification" type="button" role="tab" 
+                        aria-selected="{{ $activeTab === 'verification' ? 'true' : 'false' }}">
+                    <i class="bi bi-envelope-check-fill"></i> Email Verification
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link btn-sm py-2 px-3 d-flex align-items-center gap-2 fw-semibold {{ $activeTab === 'password' ? 'active' : '' }}" 
+                        id="tab-password" data-bs-toggle="pill" data-bs-target="#panel-password" type="button" role="tab" 
+                        aria-selected="{{ $activeTab === 'password' ? 'true' : 'false' }}">
+                    <i class="bi bi-shield-lock-fill"></i> Password Security
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link btn-sm py-2 px-3 d-flex align-items-center gap-2 fw-semibold {{ $activeTab === 'session' ? 'active' : '' }}" 
+                        id="tab-session" data-bs-toggle="pill" data-bs-target="#panel-session" type="button" role="tab" 
+                        aria-selected="{{ $activeTab === 'session' ? 'true' : 'false' }}">
+                    <i class="bi bi-fingerprint"></i> Session & Lockout
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link btn-sm py-2 px-3 d-flex align-items-center gap-2 fw-semibold {{ $activeTab === 'twofactor' ? 'active' : '' }}" 
+                        id="tab-twofactor" data-bs-toggle="pill" data-bs-target="#panel-twofactor" type="button" role="tab" 
+                        aria-selected="{{ $activeTab === 'twofactor' ? 'true' : 'false' }}">
+                    <i class="bi bi-shield-check"></i> Two-Factor (2FA)
+                </button>
+            </li>
+        </ul>
 
         <div class="tab-content" id="auth-tabs-content">
             <!-- PANEL 1: REGISTRATION & ONBOARDING -->

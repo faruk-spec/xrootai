@@ -36,10 +36,12 @@ class EmailTemplate extends Model
     {
         static::saved(function ($template) {
             Cache::forget("email_template_{$template->slug}");
+            Cache::forget("email_template_data_{$template->slug}");
         });
 
         static::deleted(function ($template) {
             Cache::forget("email_template_{$template->slug}");
+            Cache::forget("email_template_data_{$template->slug}");
         });
     }
 
@@ -48,12 +50,30 @@ class EmailTemplate extends Model
      */
     public static function render(string $slug, array $data = []): ?array
     {
-        $template = Cache::rememberForever("email_template_{$slug}", function () use ($slug) {
-            return self::where('slug', $slug)->where('is_active', true)->first();
+        $templateData = Cache::rememberForever("email_template_data_{$slug}", function () use ($slug) {
+            $template = self::where('slug', $slug)->first();
+            if (!$template) {
+                return null;
+            }
+            return [
+                'subject' => $template->subject,
+                'body_html' => $template->body_html,
+                'body_text' => $template->body_text ?? strip_tags($template->body_html),
+            ];
         });
 
-        if (!$template) {
-            return null;
+        if (!$templateData || !is_array($templateData)) {
+            Cache::forget("email_template_data_{$slug}");
+            Cache::forget("email_template_{$slug}");
+            $template = self::where('slug', $slug)->first();
+            if (!$template) {
+                return null;
+            }
+            $templateData = [
+                'subject' => $template->subject,
+                'body_html' => $template->body_html,
+                'body_text' => $template->body_text ?? strip_tags($template->body_html),
+            ];
         }
 
         // Always inject universal default variables
@@ -65,9 +85,9 @@ class EmailTemplate extends Model
 
         $mergedData = array_merge($universalData, $data);
 
-        $subject = $template->subject;
-        $bodyHtml = $template->body_html;
-        $bodyText = $template->body_text ?? strip_tags($bodyHtml);
+        $subject = $templateData['subject'];
+        $bodyHtml = $templateData['body_html'];
+        $bodyText = $templateData['body_text'];
 
         foreach ($mergedData as $key => $value) {
             if (is_scalar($value) || (is_object($value) && method_exists($value, '__toString'))) {

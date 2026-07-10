@@ -42,48 +42,75 @@
                 <!-- Main Editor Left Column -->
                 <div class="col-lg-8">
                     <div class="card border-0 shadow-sm p-4 mb-4">
-                        <div class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom flex-wrap gap-2">
                             <div>
-                                <h5 class="fw-bold mb-1">Edit Template Details</h5>
+                                <h5 class="fw-bold mb-1">Edit & Live Preview</h5>
                                 <p class="text-muted small mb-0">Modifying template: <code class="badge bg-secondary-subtle text-secondary">{{ $emailTemplate->slug }}</code></p>
                             </div>
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('admin.email-templates.preview', $emailTemplate) }}" target="_blank" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1">
-                                    <i class="bi bi-eye-fill"></i> Live Preview
-                                </a>
+                            <ul class="nav nav-pills bg-light p-1 rounded-3" id="templateEditorTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active btn-sm py-1 px-3 d-flex align-items-center gap-1 fw-semibold" id="editor-tab" data-bs-toggle="pill" data-bs-target="#editor-pane" type="button" role="tab" aria-controls="editor-pane" aria-selected="true">
+                                        <i class="bi bi-code-slash"></i> Editor
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link btn-sm py-1 px-3 d-flex align-items-center gap-1 fw-semibold" id="preview-tab" data-bs-toggle="pill" data-bs-target="#preview-pane" type="button" role="tab" aria-controls="preview-pane" aria-selected="false" onclick="updateLivePreview()">
+                                        <i class="bi bi-eye-fill"></i> Live Preview
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="tab-content" id="templateEditorTabsContent">
+                            <!-- EDITOR TAB -->
+                            <div class="tab-pane fade show active" id="editor-pane" role="tabpanel" aria-labelledby="editor-tab">
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">Template Display Name <span class="text-danger">*</span></label>
+                                    <input type="text" name="name" class="form-control" value="{{ old('name', $emailTemplate->name) }}" required maxlength="150">
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold">Email Subject Line <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light"><i class="bi bi-envelope-check text-muted"></i></span>
+                                        <input type="text" name="subject" id="input_subject" class="form-control focus-track" value="{{ old('subject', $emailTemplate->subject) }}" required maxlength="255">
+                                    </div>
+                                    <div class="form-text">Supports placeholders like <code>@{{app_name}}</code> and <code>@{{user_name}}</code>.</div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label class="form-label fw-semibold d-flex justify-content-between align-items-center">
+                                        <span>HTML Email Body <span class="text-danger">*</span></span>
+                                        <span class="badge bg-info-subtle text-info fw-normal">Rich HTML / Blade Syntax Supported</span>
+                                    </label>
+                                    <textarea name="body_html" id="input_body_html" class="form-control font-monospace focus-track" rows="18" required style="font-size: 0.88rem; background-color: #1e293b; color: #f8fafc; border-radius: 12px; padding: 18px; line-height: 1.5;">{{ old('body_html', $emailTemplate->body_html) }}</textarea>
+                                    <div class="form-text">Enter clean inline-styled HTML. Use double curly braces for dynamic variables.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold d-flex justify-content-between align-items-center">
+                                        <span>Plain Text Version (Optional Fallback)</span>
+                                        <span class="badge bg-secondary-subtle text-secondary fw-normal">For Email Clients Without HTML</span>
+                                    </label>
+                                    <textarea name="body_text" id="input_body_text" class="form-control font-monospace focus-track" rows="6" style="font-size: 0.88rem;">{{ old('body_text', $emailTemplate->body_text) }}</textarea>
+                                    <div class="form-text">If left blank, the system will automatically strip HTML tags from your HTML body when sending to plaintext clients.</div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">Template Display Name <span class="text-danger">*</span></label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name', $emailTemplate->name) }}" required maxlength="150">
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">Email Subject Line <span class="text-danger">*</span></label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light"><i class="bi bi-envelope-check text-muted"></i></span>
-                                <input type="text" name="subject" id="input_subject" class="form-control focus-track" value="{{ old('subject', $emailTemplate->subject) }}" required maxlength="255">
+                            <!-- PREVIEW TAB -->
+                            <div class="tab-pane fade" id="preview-pane" role="tabpanel" aria-labelledby="preview-tab">
+                                <div class="bg-light p-3 rounded-3 mb-3 border">
+                                    <div class="small text-muted fw-bold text-uppercase mb-1">Preview Subject Line:</div>
+                                    <div id="livePreviewSubject" class="fw-bold fs-6 text-dark"></div>
+                                </div>
+                                <div class="border rounded-4 overflow-hidden shadow-sm bg-white">
+                                    <div class="bg-light px-3 py-2 border-bottom d-flex align-items-center gap-2">
+                                        <span class="badge bg-success-subtle text-success small">Real-time Render</span>
+                                        <span class="text-muted small ms-auto">Placeholders populated with sample data</span>
+                                    </div>
+                                    <iframe id="livePreviewFrame" style="width: 100%; height: 620px; border: none; display: block; background: #fff;"></iframe>
+                                </div>
                             </div>
-                            <div class="form-text">Supports placeholders like <code>@{{app_name}}</code> and <code>@{{user_name}}</code>.</div>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold d-flex justify-content-between align-items-center">
-                                <span>HTML Email Body <span class="text-danger">*</span></span>
-                                <span class="badge bg-info-subtle text-info fw-normal">Rich HTML / Blade Syntax Supported</span>
-                            </label>
-                            <textarea name="body_html" id="input_body_html" class="form-control font-monospace focus-track" rows="18" required style="font-size: 0.88rem; background-color: #1e293b; color: #f8fafc; border-radius: 12px; padding: 18px; line-height: 1.5;">{{ old('body_html', $emailTemplate->body_html) }}</textarea>
-                            <div class="form-text">Enter clean inline-styled HTML. Use double curly braces for dynamic variables.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold d-flex justify-content-between align-items-center">
-                                <span>Plain Text Version (Optional Fallback)</span>
-                                <span class="badge bg-secondary-subtle text-secondary fw-normal">For Email Clients Without HTML</span>
-                            </label>
-                            <textarea name="body_text" id="input_body_text" class="form-control font-monospace focus-track" rows="6" style="font-size: 0.88rem;">{{ old('body_text', $emailTemplate->body_text) }}</textarea>
-                            <div class="form-text">If left blank, the system will automatically strip HTML tags from your HTML body when sending to plaintext clients.</div>
                         </div>
                     </div>
                 </div>
@@ -157,6 +184,31 @@
 </div>
 
 <script>
+const dummyVars = @json($dummyVariables ?? []);
+
+function updateLivePreview() {
+    let subject = document.getElementById('input_subject') ? document.getElementById('input_subject').value : '';
+    let bodyHtml = document.getElementById('input_body_html') ? document.getElementById('input_body_html').value : '';
+
+    for (const [key, val] of Object.entries(dummyVars)) {
+        const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp('{{' + escapedKey + '}}|{{ ' + escapedKey + ' }}|\\{' + escapedKey + '\\}', 'g');
+        subject = subject.replace(regex, val);
+        bodyHtml = bodyHtml.replace(regex, val);
+    }
+
+    const subjectEl = document.getElementById('livePreviewSubject');
+    if (subjectEl) subjectEl.textContent = subject;
+
+    const iframe = document.getElementById('livePreviewFrame');
+    if (iframe) {
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(bodyHtml);
+        doc.close();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     let lastFocusedElement = document.getElementById('input_body_html');
 
@@ -166,6 +218,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         el.addEventListener('click', function() {
             lastFocusedElement = this;
+        });
+        el.addEventListener('input', function() {
+            updateLivePreview();
         });
     });
 
@@ -187,8 +242,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 lastFocusedElement.value += varText;
                 lastFocusedElement.focus();
             }
+            updateLivePreview();
         });
     });
+
+    updateLivePreview();
 });
 </script>
 @endsection
