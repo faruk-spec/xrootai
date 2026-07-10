@@ -9,6 +9,7 @@
     @endif
     
     <!-- Stylesheets -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ asset('css/claymorphism.css') }}">
     <link rel="stylesheet" href="{{ asset('css/github-dark.min.css') }}">
     
@@ -333,37 +334,43 @@
         }
 
         /* Custom Puffed Gradient + New Chat Button */
+        /* Flat Premium New Chat Button using secondary styling */
         .btn-new-chat {
-            background: linear-gradient(135deg, #4a88ff 0%, #3b5bdb 50%, #6b52ff 100%);
-            color: #ffffff !important;
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            border-radius: 18px;
-            padding: 12px 18px;
-            font-weight: 700;
-            font-size: 0.95rem;
+            background: var(--clay-card-bg) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--clay-card-border) !important;
+            border-radius: 16px !important;
+            padding: 12px 18px !important;
+            font-weight: 600 !important;
+            font-size: 0.95rem !important;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            box-shadow: 0 6px 18px rgba(74, 136, 255, 0.35), inset 2px 2px 4px rgba(255, 255, 255, 0.3);
-            transition: all 0.22s cubic-bezier(0.2, 0, 0, 1) !important;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+            transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease !important;
             cursor: pointer;
             text-decoration: none;
             width: 100%;
+            transform: none !important;
         }
         .btn-new-chat:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(74, 136, 255, 0.45), inset 2px 2px 6px rgba(255, 255, 255, 0.4);
+            background: rgba(74, 136, 255, 0.12) !important;
+            border-color: rgba(74, 136, 255, 0.4) !important;
+            color: #4a88ff !important;
+            box-shadow: 0 4px 12px rgba(74, 136, 255, 0.15) !important;
+            transform: none !important;
         }
         .btn-new-chat:active {
-            transform: translateY(1px);
-            box-shadow: 0 3px 10px rgba(74, 136, 255, 0.3), inset 1px 1px 3px rgba(0, 0, 0, 0.2);
+            background: rgba(74, 136, 255, 0.18) !important;
+            transform: none !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
         }
         .sidebar.collapsed .btn-new-chat {
             width: 44px !important;
             height: 44px !important;
             padding: 0 !important;
-            border-radius: 14px;
+            border-radius: 14px !important;
         }
         .sidebar.collapsed .btn-new-chat span.new-chat-text {
             display: none !important;
@@ -786,12 +793,12 @@
                 </div>
             </div>
 
-            <!-- New Chat Puffed Gradient Button -->
+            <!-- New Chat Flat Premium Button -->
             <form action="{{ route('chats.store') }}" method="POST" style="display:block; width:100%; flex-shrink:0;">
                 @csrf
                 <input type="hidden" name="model" :value="activeModel">
-                <button type="submit" class="btn-new-chat" :title="sidebarCollapsed ? 'New Chat' : ''">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <button type="submit" class="clay-btn clay-btn-secondary btn-new-chat" :title="sidebarCollapsed ? 'New Chat' : ''">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     <span class="new-chat-text">New Chat</span>
                 </button>
             </form>
@@ -899,7 +906,7 @@
                                 
                                 <div style="display: flex; gap: 4px; flex-shrink: 0;">
                                     <a href="{{ route('user.settings', ['tab' => 'security']) }}" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; text-decoration:none;" title="Account Security & 2FA">
-                                        🛡️
+                                        <i class="bi bi-shield-lock-fill" style="font-size: 0.9rem;"></i>
                                     </a>
                                     <a href="{{ route('user.settings', ['tab' => 'general']) }}" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; text-decoration:none;" title="Settings">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>

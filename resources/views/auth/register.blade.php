@@ -7,6 +7,7 @@
     @if(\App\Models\SystemSetting::get('general_site_icon'))
         <link rel="icon" href="{{ \App\Models\SystemSetting::get('general_site_icon') }}">
     @endif
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="{{ asset('css/claymorphism.css') }}">
     <script src="{{ asset('js/alpine.min.js') }}" defer></script>
     <style>
@@ -43,7 +44,7 @@
             <!-- Back to Home / Chat Button -->
             <div style="display: flex; justify-content: flex-start; margin-bottom: 12px;">
                 <a href="{{ route('chat') }}" class="clay-btn clay-btn-secondary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none; padding: 6px 12px; border-radius: 10px; font-size: 0.85rem; color: var(--text-color);">
-                    ← Back to Home
+                    <i class="bi bi-arrow-left"></i> Back to Home
                 </a>
             </div>
 
@@ -65,7 +66,7 @@
 
             @if(session('error'))
                 <div style="background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; padding: 12px 14px; border-radius: 12px; margin-bottom: 16px; font-size: 0.88rem; text-align: left; line-height: 1.4; display: flex; align-items: flex-start; gap: 8px;">
-                    <span>⚠️</span>
+                    <i class="bi bi-exclamation-triangle-fill fs-5"></i>
                     <div>{{ session('error') }}</div>
                 </div>
             @endif
@@ -177,8 +178,8 @@
             <!-- Floating Theme Toggle -->
             <div style="position: absolute; top: 15px; right: 15px;">
                 <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center;">
-                    <span x-show="!darkMode">🌙</span>
-                    <span x-show="darkMode">☀️</span>
+                    <i x-show="!darkMode" class="bi bi-moon-stars-fill"></i>
+                    <i x-show="darkMode" class="bi bi-sun-fill"></i>
                 </button>
             </div>
         </div>

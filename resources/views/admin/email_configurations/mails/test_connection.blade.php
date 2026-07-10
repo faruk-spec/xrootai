@@ -27,7 +27,7 @@
                 <span class="badge">✔ Connection Successful</span>
             </div>
             <p>Hello Admin,</p>
-            <p>This is a verification email automatically sent by your <strong>XrootAI</strong> application to confirm that the SMTP settings for <strong>{{ $providerName }}</strong> are working correctly.</p>
+            <p>This is a verification email automatically sent by your <strong>{{ \App\Models\SystemSetting::get('general_chatbot_name', 'App') }}</strong> application to confirm that the SMTP settings for <strong>{{ $providerName }}</strong> are working correctly.</p>
 
             <table class="details-table">
                 <tr>
@@ -59,7 +59,7 @@
             <p style="margin-top: 25px; font-size: 13px; color: #64748b;">If you received this message, emails from this provider are ready to be sent to users, notifications, and queues.</p>
         </div>
         <div class="footer">
-            &copy; {{ date('Y') }} XrootAI System. All rights reserved.
+            &copy; {{ date('Y') }} {{ \App\Models\SystemSetting::get('general_chatbot_name', 'App') }} System. All rights reserved.
         </div>
     </div>
 </body>

@@ -201,11 +201,11 @@
                             <div class="row g-3 mb-4">
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">From Name</label>
-                                    <input type="text" name="from_name" class="form-control" value="{{ $config->from_name }}" required placeholder="e.g. XrootAI Support">
+                                    <input type="text" name="from_name" class="form-control" value="{{ $config->from_name }}" required placeholder="e.g. {{ \App\Models\SystemSetting::get('general_chatbot_name', 'App') }} Support">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">From Email</label>
-                                    <input type="email" name="from_email" class="form-control" value="{{ $config->from_email }}" placeholder="e.g. hello@xrootai.com">
+                                    <input type="email" name="from_email" class="form-control" value="{{ $config->from_email }}" placeholder="e.g. support@domain.com">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label fw-semibold">Reply-To Email</label>

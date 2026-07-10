@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Settings - XrootAI Admin</title>
+    <title>System Settings - {{ \App\Models\SystemSetting::get('general_chatbot_name', 'App') }} Admin</title>
     <link rel="stylesheet" href="{{ asset('css/claymorphism.css') }}">
     <script src="{{ asset('js/alpine.min.js') }}" defer></script>
     <style>
@@ -227,8 +227,8 @@
         <!-- Sidebar -->
         <aside class="admin-sidebar">
             <a href="{{ route('chat') }}" class="app-brand" style="margin-bottom: 20px;">
-                <div class="app-brand-icon">X</div>
-                <span>XrootAI Admin</span>
+                <div class="app-brand-icon">{{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'App'), 0, 1) }}</div>
+                <span>{{ \App\Models\SystemSetting::get('general_chatbot_name', 'App') }} Admin</span>
             </a>
 
             <nav style="display: flex; flex-direction: column; gap: 8px;">
@@ -300,7 +300,7 @@
         <!-- Main Content -->
         <main class="admin-main" x-data="{ activeTab: 'general' }">
             <h1 style="font-weight: 800; font-size: 2.2rem; margin-bottom: 8px;">System Settings</h1>
-            <p style="color: var(--text-muted); margin-bottom: 40px;">Configure the dynamic behaviors, security guidelines, UI elements, and API options of XrootAI.</p>
+            <p style="color: var(--text-muted); margin-bottom: 40px;">Configure the dynamic behaviors, security guidelines, UI elements, and API options of {{ \App\Models\SystemSetting::get('general_chatbot_name', 'App') }}.</p>
 
             @if(session('success'))
                 <div class="clay-card" style="padding: 16px 24px; background: rgba(86, 171, 47, 0.15); border: 1px solid rgba(86, 171, 47, 0.3); border-radius: 16px; color: #56ab2f; margin-bottom: 24px; font-weight: 600;">
