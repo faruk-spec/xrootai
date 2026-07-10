@@ -336,6 +336,45 @@ class SystemSetting extends Model
         'toggle_feedback' => true,
         'toggle_analytics' => true,
         'toggle_api_access' => true,
+
+        // AUTHENTICATION & VERIFICATION SETTINGS
+        'auth_enable_registration' => true,
+        'auth_default_user_role' => 'user',
+        'auth_auto_approve_user' => true,
+        'auth_require_email_verification' => true,
+        'auth_allow_login_unverified' => false,
+        'auth_verification_by_link' => true,
+        'auth_verification_by_otp' => true,
+        'auth_verification_link_expiry' => 60,
+        'auth_verification_otp_length' => 6,
+        'auth_verification_otp_expiry' => 15,
+        'auth_verification_max_attempts' => 5,
+
+        // PASSWORD RESET & SECURITY SETTINGS
+        'auth_password_reset_enable_otp' => true,
+        'auth_password_reset_enable_link' => true,
+        'auth_password_reset_otp_length' => 6,
+        'auth_password_reset_expiry_minutes' => 30,
+        'auth_password_reset_cooldown_seconds' => 60,
+        'auth_password_reset_max_requests_per_hour' => 5,
+        'auth_password_reset_max_attempts' => 5,
+        'auth_password_reset_require_uppercase' => true,
+        'auth_password_reset_require_numbers' => true,
+        'auth_password_reset_require_symbols' => true,
+        'auth_password_reset_min_length' => 8,
+
+        // ENTERPRISE AUTHENTICATION & SESSION CONTROLS
+        'auth_require_terms' => true,
+        'auth_allowed_domains' => '',
+        'auth_blocked_domains' => 'mailinator.com, tempmail.com, 10minutemail.com, yopmail.com, guerrillamail.com',
+        'auth_session_lifetime_minutes' => 120,
+        'auth_single_session_per_user' => false,
+        'auth_login_max_attempts' => 5,
+        'auth_login_lockout_minutes' => 15,
+        'auth_track_login_history' => true,
+        'auth_2fa_enabled' => true,
+        'auth_2fa_remember_days' => 30,
+        'auth_2fa_enforce_roles' => 'admin',
     ];
 
     public static function get(string $key, $default = null)

@@ -117,10 +117,27 @@
                     @enderror
                 </div>
 
-                <!-- Submit Button -->
-                <button type="submit" class="clay-btn clay-btn-primary" style="width: 100%; padding: 14px; margin-top: 10px; margin-bottom: 16px;">
-                    Create Account
-                </button>
+                <!-- Terms & Conditions Checkbox -->
+                <div style="margin-top: 16px; margin-bottom: 20px; text-align: left; display: flex; align-items: flex-start; gap: 10px;">
+                    <input type="checkbox" name="terms_and_conditions" id="terms_and_conditions" value="1" required style="margin-top: 3px; width: 18px; height: 18px; accent-color: #3b82f6; cursor: pointer;">
+                    <label for="terms_and_conditions" style="font-size: 0.86rem; color: var(--text-color); cursor: pointer; line-height: 1.4;">
+                        I have read and agree to the <a href="{{ route('terms') }}" target="_blank" style="color: #3b82f6; font-weight: 600; text-decoration: underline;">Terms of Service</a> & <a href="{{ route('privacy') }}" target="_blank" style="color: #3b82f6; font-weight: 600; text-decoration: underline;">Privacy Policy</a>.
+                    </label>
+                </div>
+                @error('terms_and_conditions')
+                    <div class="text-danger" style="margin-bottom: 12px; font-size: 0.85rem;">{{ $message }}</div>
+                @enderror
+
+                @if(isset($registrationDisabled) && $registrationDisabled)
+                    <div style="background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; padding: 12px 14px; border-radius: 12px; margin-bottom: 16px; font-size: 0.88rem; text-align: left;">
+                        ⚠️ New user registration is currently disabled by the system administrator.
+                    </div>
+                @else
+                    <!-- Submit Button -->
+                    <button type="submit" class="clay-btn clay-btn-primary" style="width: 100%; padding: 14px; margin-top: 10px; margin-bottom: 16px;">
+                        Create Account
+                    </button>
+                @endif
             </form>
 
             <div style="display: flex; align-items: center; text-align: center; margin: 16px 0; color: var(--text-muted); font-size: 0.85rem;">

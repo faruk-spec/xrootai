@@ -8,6 +8,14 @@ use App\Http\Controllers\StreamController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Admin\EmailConfigurationController;
+use App\Http\Controllers\Admin\EmailTemplateController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\AuthSettingController;
+use App\Http\Controllers\Auth\EmailVerificationController;
+use App\Http\Controllers\Auth\PasswordResetController;
+use App\Http\Controllers\Auth\TwoFactorController;
+use App\Http\Controllers\ProfileSecurityController;
 use Illuminate\Support\Facades\Route;
 
 // Guest-only authentication routes
@@ -17,12 +25,36 @@ Route::middleware('guest')->group(function () {
     
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
     Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
+
+    // Password Reset Routes
+    Route::get('/password/reset', [PasswordResetController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('/password/email', [PasswordResetController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::get('/password/otp', [PasswordResetController::class, 'showOtpForm'])->name('password.otp');
+    Route::get('/password/reset/{token}', [PasswordResetController::class, 'showResetForm'])->name('password.reset');
+    Route::post('/password/reset', [PasswordResetController::class, 'update'])->name('password.update');
 });
+
+// Two-Factor Authentication (2FA) Challenge Routes (unauthenticated/pending login session check)
+Route::get('/two-factor-challenge', [TwoFactorController::class, 'showChallengeForm'])->name('two-factor.challenge');
+Route::post('/two-factor-challenge', [TwoFactorController::class, 'verifyChallenge'])->name('two-factor.verify');
+Route::post('/two-factor-challenge/resend', [TwoFactorController::class, 'resendOtp'])->name('two-factor.resend');
 
 
 // Authenticated-only routes
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
+
+    // Profile & Two-Factor Security Management
+    Route::get('/profile/security', [ProfileSecurityController::class, 'index'])->name('profile.security');
+    Route::post('/profile/security', [ProfileSecurityController::class, 'update'])->name('profile.security.update');
+    Route::post('/profile/security/totp-confirm', [ProfileSecurityController::class, 'confirmTotp'])->name('profile.security.totp-confirm');
+
+    // Email Verification Routes
+    Route::get('/email/verify', [EmailVerificationController::class, 'show'])->name('verification.notice');
+    Route::post('/email/verify/otp', [EmailVerificationController::class, 'verifyOtp'])->name('verification.verify-otp');
+    Route::get('/email/verify/{token}', [EmailVerificationController::class, 'verifyLink'])->name('verification.verify-link');
+    Route::post('/email/resend', [EmailVerificationController::class, 'resend'])->name('verification.resend');
+    Route::post('/email/change', [EmailVerificationController::class, 'changeEmail'])->name('verification.change-email');
 
     // Settings & Profile (authenticated only)
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
@@ -39,8 +71,29 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::get('/users/create', [App\Http\Controllers\Admin\UserController::class, 'create'])->name('admin.users.create');
     Route::post('/users', [App\Http\Controllers\Admin\UserController::class, 'store'])->name('admin.users.store');
     Route::get('/users/{user}/edit', [App\Http\Controllers\Admin\UserController::class, 'edit'])->name('admin.users.edit');
+    Route::put('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('admin.users.update');
     Route::post('/users/{user}/role', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('admin.users.role'); // Mapping to update for edit form submission
     Route::delete('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('admin.users.delete');
+
+    // Role Management (RBAC)
+    Route::get('/roles', [RoleController::class, 'index'])->name('admin.roles.index');
+    Route::get('/roles/create', [RoleController::class, 'create'])->name('admin.roles.create');
+    Route::post('/roles', [RoleController::class, 'store'])->name('admin.roles.store');
+    Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('admin.roles.edit');
+    Route::put('/roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');
+    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('admin.roles.destroy');
+
+    // Permission Management
+    Route::get('/permissions', [PermissionController::class, 'index'])->name('admin.permissions.index');
+    Route::post('/permissions', [PermissionController::class, 'store'])->name('admin.permissions.store');
+    Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->name('admin.permissions.update');
+    Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->name('admin.permissions.destroy');
+    
+    // Admin User Verification & Approval Overrides
+    Route::post('/users/{user}/verify-manually', [App\Http\Controllers\Admin\UserController::class, 'verifyManually'])->name('admin.users.verify-manually');
+    Route::post('/users/{user}/resend-verification', [App\Http\Controllers\Admin\UserController::class, 'resendVerification'])->name('admin.users.resend-verification');
+    Route::post('/users/{user}/approve', [App\Http\Controllers\Admin\UserController::class, 'approveUser'])->name('admin.users.approve');
+    Route::post('/users/{user}/suspend', [App\Http\Controllers\Admin\UserController::class, 'suspendUser'])->name('admin.users.suspend');
     
     // System Settings
     Route::get('/settings', [App\Http\Controllers\Admin\SettingController::class, 'index'])->name('admin.settings');
@@ -105,6 +158,18 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::post('/email-config/{email_configuration}/test', [EmailConfigurationController::class, 'testConnection'])->name('admin.email-config.test');
     Route::post('/email-config/{email_configuration}/send-test', [EmailConfigurationController::class, 'sendTestEmail'])->name('admin.email-config.send-test');
     Route::post('/email-config/{email_configuration}/reset', [EmailConfigurationController::class, 'reset'])->name('admin.email-config.reset');
+
+    // Authentication & Security Settings Module
+    Route::get('/auth-settings', [AuthSettingController::class, 'index'])->name('admin.auth-settings.index');
+    Route::post('/auth-settings', [AuthSettingController::class, 'update'])->name('admin.auth-settings.update');
+
+    // Email Template Management Module
+    Route::get('/email-templates', [EmailTemplateController::class, 'index'])->name('admin.email-templates.index');
+    Route::get('/email-templates/{email_template}/edit', [EmailTemplateController::class, 'edit'])->name('admin.email-templates.edit');
+    Route::put('/email-templates/{email_template}', [EmailTemplateController::class, 'update'])->name('admin.email-templates.update');
+    Route::post('/email-templates/{email_template}/toggle', [EmailTemplateController::class, 'toggle'])->name('admin.email-templates.toggle');
+    Route::get('/email-templates/{email_template}/preview', [EmailTemplateController::class, 'preview'])->name('admin.email-templates.preview');
+    Route::post('/email-templates/{email_template}/test', [EmailTemplateController::class, 'sendTest'])->name('admin.email-templates.test');
 });
 
 // Legal & Privacy Pages

@@ -151,6 +151,9 @@ class SettingController extends Controller
             if ($group === 'toggle' && str_starts_with($key, 'toggle_') && is_bool($defaultValue) && !$request->has($key)) {
                 SystemSetting::set($key, false, $group, 'boolean');
             }
+            if ($group === 'auth' && str_starts_with($key, 'auth_') && is_bool($defaultValue) && !$request->has($key)) {
+                SystemSetting::set($key, false, $group, 'boolean');
+            }
         }
 
         ActivityLog::log('update_settings', "Updated settings group: {$group}");

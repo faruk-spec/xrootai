@@ -99,10 +99,13 @@
                     @enderror
                 </div>
 
-                <!-- Remember Me -->
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 24px; padding-left: 8px;">
-                    <input id="remember_me" type="checkbox" name="remember" style="width: 16px; height: 16px; accent-color: #4a88ff;">
-                    <label for="remember_me" class="clay-input-label" style="padding-left: 0; cursor: pointer; user-select: none;">Remember me</label>
+                <!-- Remember Me & Forgot Password -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 0 4px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input id="remember_me" type="checkbox" name="remember" style="width: 16px; height: 16px; accent-color: #4a88ff; cursor: pointer;">
+                        <label for="remember_me" class="clay-input-label" style="padding-left: 0; margin-bottom: 0; cursor: pointer; user-select: none;">Remember me</label>
+                    </div>
+                    <a href="{{ route('password.request') }}" style="color: #3b82f6; font-size: 0.85rem; font-weight: 600; text-decoration: none;">Forgot password?</a>
                 </div>
 
                 <!-- Submit Button -->

@@ -898,6 +898,9 @@
                                 </div>
                                 
                                 <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                                    <a href="{{ route('profile.security') }}" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center; text-decoration:none;" title="Account Security & 2FA">
+                                        🛡️
+                                    </a>
                                     <button @click="openSettings()" class="clay-btn clay-btn-secondary" style="border-radius: 50%; width:30px; height:30px; padding:0; display:flex; align-items:center; justify-content:center;" title="Settings">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                                     </button>
@@ -1296,6 +1299,13 @@
                         <button type="submit" class="clay-btn clay-btn-primary">Save</button>
                     </div>
                 </form>
+
+                <!-- Security & 2FA Management -->
+                <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--clay-card-border);">
+                    <a href="{{ route('profile.security') }}" class="clay-btn" style="width:100%; background:rgba(59,130,246,0.08); color:#3b82f6; border:1px solid rgba(59,130,246,0.2); display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; font-weight:600;">
+                        🛡️ Account Security & 2FA
+                    </a>
+                </div>
 
                 <!-- Logout -->
                 <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--clay-card-border);">

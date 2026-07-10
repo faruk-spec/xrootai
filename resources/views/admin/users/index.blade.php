@@ -53,6 +53,8 @@
                 <tr>
                     <th>User</th>
                     <th>Role</th>
+                    <th>Status</th>
+                    <th>Verification</th>
                     <th>Conversations</th>
                     <th>Registered</th>
                     <th class="text-end">Actions</th>
@@ -73,36 +75,119 @@
                             </div>
                         </td>
                         <td>
-                            <span class="badge {{ $user->role === 'admin' ? 'bg-danger-subtle text-danger' : 'bg-primary-subtle text-primary' }}">
-                                {{ $user->role }}
-                            </span>
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge {{ in_array($user->role, ['admin', 'Super Admin']) ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-primary-subtle text-primary border border-primary-subtle' }}">
+                                    {{ $user->role }}
+                                </span>
+                                @foreach($user->roles as $assignedRole)
+                                    @if($assignedRole->name !== $user->role)
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle font-monospace" style="font-size: 0.72rem;">
+                                            + {{ $assignedRole->name }}
+                                        </span>
+                                    @endif
+                                @endforeach
+                            </div>
+                        </td>
+                        <td>
+                            @if($user->status === 'suspended')
+                                <span class="badge bg-danger-subtle text-danger"><i class="bi bi-slash-circle me-1"></i> Suspended</span>
+                            @elseif(!$user->is_approved)
+                                <span class="badge bg-warning-subtle text-warning-emphasis"><i class="bi bi-clock me-1"></i> Pending Approval</span>
+                            @else
+                                <span class="badge bg-success-subtle text-success"><i class="bi bi-check-circle-fill me-1"></i> Active</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($user->isVerified())
+                                <span class="badge bg-success-subtle text-success" title="Verified on {{ $user->email_verified_at?->format('M d, Y H:i') ?? $user->otp_verified_at?->format('M d, Y H:i') }}">
+                                    <i class="bi bi-shield-check me-1"></i> Verified
+                                </span>
+                            @else
+                                <span class="badge bg-secondary-subtle text-secondary">
+                                    <i class="bi bi-exclamation-circle me-1"></i> Unverified
+                                </span>
+                            @endif
                         </td>
                         <td>
                             <span class="fw-bold">{{ $user->conversations_count }}</span> conversations
                         </td>
                         <td>
-                            {{ $user->created_at->format('M d, Y H:i') }}
+                            <div style="font-size:0.85rem;">{{ $user->created_at->format('M d, Y') }}</div>
+                            <div class="text-muted" style="font-size:0.75rem;">{{ $user->created_at->format('H:i') }}</div>
                         </td>
                         <td class="text-end">
-                            <div class="d-flex justify-content-end gap-2">
-                                <a href="{{ route('admin.users.edit', $user->id) }}" class="btn btn-sm btn-outline-secondary py-1 px-2">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a href="{{ route('admin.users.edit', $user->id) }}" class="btn btn-sm btn-outline-secondary py-1 px-2 d-flex align-items-center gap-1">
                                     <i class="bi bi-pencil-square"></i> Edit
                                 </a>
-                                @if(auth()->id() !== $user->id)
-                                    <form action="{{ route('admin.users.delete', $user->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to permanently delete user {{ $user->name }}? This action is irreversible.')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2">
-                                            <i class="bi bi-trash"></i> Delete
-                                        </button>
-                                    </form>
-                                @endif
+
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-1 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="font-size: 0.85rem;">
+                                        @if(!$user->isVerified())
+                                            <li>
+                                                <form action="{{ route('admin.users.verify-manually', $user->id) }}" method="POST">
+                                                    @csrf
+                                                    <button type="submit" class="dropdown-item text-success d-flex align-items-center gap-2">
+                                                        <i class="bi bi-check-circle-fill"></i> Mark as Verified
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form action="{{ route('admin.users.resend-verification', $user->id) }}" method="POST">
+                                                    @csrf
+                                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2">
+                                                        <i class="bi bi-envelope-check"></i> Resend Verification Mail
+                                                    </button>
+                                                </form>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                        @endif
+
+                                        @if(!$user->is_approved || $user->status !== 'active')
+                                            <li>
+                                                <form action="{{ route('admin.users.approve', $user->id) }}" method="POST">
+                                                    @csrf
+                                                    <button type="submit" class="dropdown-item text-primary d-flex align-items-center gap-2">
+                                                        <i class="bi bi-person-check-fill"></i> Approve User Account
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        @endif
+
+                                        @if(auth()->id() !== $user->id && $user->status !== 'suspended')
+                                            <li>
+                                                <form action="{{ route('admin.users.suspend', $user->id) }}" method="POST" onsubmit="return confirm('Suspend user {{ $user->name }}? They will be blocked from logging in.')">
+                                                    @csrf
+                                                    <button type="submit" class="dropdown-item text-warning d-flex align-items-center gap-2">
+                                                        <i class="bi bi-slash-circle"></i> Suspend Account
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        @endif
+
+                                        @if(auth()->id() !== $user->id)
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li>
+                                                <form action="{{ route('admin.users.delete', $user->id) }}" method="POST" onsubmit="return confirm('Permanently delete {{ $user->name }}?')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="dropdown-item text-danger d-flex align-items-center gap-2">
+                                                        <i class="bi bi-trash-fill"></i> Delete Permanently
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </div>
                             </div>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">
+                        <td colspan="7" class="text-center py-5 text-muted">
                             <i class="bi bi-people fs-1 d-block mb-3 text-secondary"></i>
                             No users found matching the criteria.
                         </td>

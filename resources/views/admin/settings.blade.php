@@ -360,6 +360,10 @@
                         <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         <span>Security & Moderation</span>
                     </button>
+                    <button @click="activeTab = 'auth'" :class="{ 'active': activeTab === 'auth' }" class="settings-tab-btn">
+                        <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        <span>Auth & Verification</span>
+                    </button>
                     <button @click="activeTab = 'roles'" :class="{ 'active': activeTab === 'roles' }" class="settings-tab-btn">
                         <svg style="width:16px; height:16px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                         <span>Roles & Permissions</span>
@@ -1120,6 +1124,185 @@
                             </div>
 
                             <button type="submit" class="clay-btn clay-btn-primary">Save Security Settings</button>
+                        </form>
+                    </div>
+
+                    <!-- 12.5. AUTHENTICATION & EMAIL VERIFICATION -->
+                    <div x-show="activeTab === 'auth'">
+                        <form action="{{ route('admin.settings.update') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="_group" value="auth">
+                            <h3 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 8px;">Authentication & Registration</h3>
+                            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">Configure user signup flow, administrator auto-approval policies, and email verification parameters.</p>
+                            
+                            <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <label class="clay-input-label" style="margin-bottom:2px;">Enable Public Registration</label>
+                                    <div style="font-size: 0.82rem; color: var(--text-muted);">Allow new users to sign up from the public registration page.</div>
+                                </div>
+                                <label style="position:relative; display:inline-block; width:52px; height:28px;">
+                                    <input type="checkbox" name="auth_enable_registration" value="1" {{ $settings['auth_enable_registration'] ?? true ? 'checked' : '' }} style="opacity:0; width:0; height:0;">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-row">
+                                <label class="clay-input-label">Default User Role upon Registration</label>
+                                <input type="text" name="auth_default_user_role" class="clay-inset clay-input" value="{{ $settings['auth_default_user_role'] ?? 'user' }}" style="width: 100%;">
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Role assigned to new accounts (e.g., 'user', 'member').</div>
+                            </div>
+
+                            <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <label class="clay-input-label" style="margin-bottom:2px;">Auto-Approve New Accounts</label>
+                                    <div style="font-size: 0.82rem; color: var(--text-muted);">If disabled, registered users will be placed in 'Pending Approval' state until an admin activates them.</div>
+                                </div>
+                                <label style="position:relative; display:inline-block; width:52px; height:28px;">
+                                    <input type="checkbox" name="auth_auto_approve_user" value="1" {{ $settings['auth_auto_approve_user'] ?? true ? 'checked' : '' }} style="opacity:0; width:0; height:0;">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <h4 style="font-size: 1.15rem; font-weight: 700; margin: 32px 0 16px 0; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 24px;">Email Verification Policies</h4>
+
+                            <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <label class="clay-input-label" style="margin-bottom:2px;">Require Email Verification</label>
+                                    <div style="font-size: 0.82rem; color: var(--text-muted);">Dispatch mandatory OTP code and link to verify user email address upon registration.</div>
+                                </div>
+                                <label style="position:relative; display:inline-block; width:52px; height:28px;">
+                                    <input type="checkbox" name="auth_require_email_verification" value="1" {{ $settings['auth_require_email_verification'] ?? true ? 'checked' : '' }} style="opacity:0; width:0; height:0;">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <label class="clay-input-label" style="margin-bottom:2px;">Allow Login Before Verification</label>
+                                    <div style="font-size: 0.82rem; color: var(--text-muted);">Allow unverified users to access the dashboard and chat while verification is still pending.</div>
+                                </div>
+                                <label style="position:relative; display:inline-block; width:52px; height:28px;">
+                                    <input type="checkbox" name="auth_allow_login_unverified" value="1" {{ $settings['auth_allow_login_unverified'] ?? false ? 'checked' : '' }} style="opacity:0; width:0; height:0;">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <label class="clay-input-label" style="margin-bottom:2px;">Enable Verification by OTP Code</label>
+                                    <div style="font-size: 0.82rem; color: var(--text-muted);">Allow users to verify by typing the numeric OTP code displayed in their email.</div>
+                                </div>
+                                <label style="position:relative; display:inline-block; width:52px; height:28px;">
+                                    <input type="checkbox" name="auth_verification_by_otp" value="1" {{ $settings['auth_verification_by_otp'] ?? true ? 'checked' : '' }} style="opacity:0; width:0; height:0;">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <label class="clay-input-label" style="margin-bottom:2px;">Enable Verification by Clickable Link</label>
+                                    <div style="font-size: 0.82rem; color: var(--text-muted);">Include a secure clickable button URL in verification emails.</div>
+                                </div>
+                                <label style="position:relative; display:inline-block; width:52px; height:28px;">
+                                    <input type="checkbox" name="auth_verification_by_link" value="1" {{ $settings['auth_verification_by_link'] ?? true ? 'checked' : '' }} style="opacity:0; width:0; height:0;">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+                                <div class="setting-row">
+                                    <label class="clay-input-label">OTP Code Length (Digits)</label>
+                                    <input type="number" name="auth_verification_otp_length" class="clay-inset clay-input" value="{{ $settings['auth_verification_otp_length'] ?? 6 }}" min="4" max="10" style="width: 100%;">
+                                </div>
+                                <div class="setting-row">
+                                    <label class="clay-input-label">OTP Expiry (Minutes)</label>
+                                    <input type="number" name="auth_verification_otp_expiry" class="clay-inset clay-input" value="{{ $settings['auth_verification_otp_expiry'] ?? 15 }}" min="1" max="1440" style="width: 100%;">
+                                </div>
+                                <div class="setting-row">
+                                    <label class="clay-input-label">Link Expiry (Minutes)</label>
+                                    <input type="number" name="auth_verification_link_expiry" class="clay-inset clay-input" value="{{ $settings['auth_verification_link_expiry'] ?? 60 }}" min="5" max="10080" style="width: 100%;">
+                                </div>
+                                <div class="setting-row">
+                                    <label class="clay-input-label">Max Verification Attempts</label>
+                                    <input type="number" name="auth_verification_max_attempts" class="clay-inset clay-input" value="{{ $settings['auth_verification_max_attempts'] ?? 5 }}" min="1" max="20" style="width: 100%;">
+                                </div>
+                            </div>
+
+                            <h4 style="font-size: 1.15rem; font-weight: 700; margin: 36px 0 16px 0; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 24px;">Password Reset & Security Policies</h4>
+
+                            <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <label class="clay-input-label" style="margin-bottom:2px;">Enable Reset by OTP Verification Code</label>
+                                    <div style="font-size: 0.82rem; color: var(--text-muted);">Send a 6-digit verification code allowing users to reset their password right on the page.</div>
+                                </div>
+                                <label style="position:relative; display:inline-block; width:52px; height:28px;">
+                                    <input type="checkbox" name="auth_password_reset_enable_otp" value="1" {{ $settings['auth_password_reset_enable_otp'] ?? true ? 'checked' : '' }} style="opacity:0; width:0; height:0;">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <label class="clay-input-label" style="margin-bottom:2px;">Enable Reset by Clickable Link</label>
+                                    <div style="font-size: 0.82rem; color: var(--text-muted);">Include a secure tokenized button link in password reset emails.</div>
+                                </div>
+                                <label style="position:relative; display:inline-block; width:52px; height:28px;">
+                                    <input type="checkbox" name="auth_password_reset_enable_link" value="1" {{ $settings['auth_password_reset_enable_link'] ?? true ? 'checked' : '' }} style="opacity:0; width:0; height:0;">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px;">
+                                <div class="setting-row">
+                                    <label class="clay-input-label">Reset OTP Length (Digits)</label>
+                                    <input type="number" name="auth_password_reset_otp_length" class="clay-inset clay-input" value="{{ $settings['auth_password_reset_otp_length'] ?? 6 }}" min="4" max="10" style="width: 100%;">
+                                </div>
+                                <div class="setting-row">
+                                    <label class="clay-input-label">Reset Code Expiry (Minutes)</label>
+                                    <input type="number" name="auth_password_reset_expiry_minutes" class="clay-inset clay-input" value="{{ $settings['auth_password_reset_expiry_minutes'] ?? 30 }}" min="5" max="1440" style="width: 100%;">
+                                </div>
+                                <div class="setting-row">
+                                    <label class="clay-input-label">Request Cooldown (Seconds)</label>
+                                    <input type="number" name="auth_password_reset_cooldown_seconds" class="clay-inset clay-input" value="{{ $settings['auth_password_reset_cooldown_seconds'] ?? 60 }}" min="10" max="3600" style="width: 100%;">
+                                </div>
+                                <div class="setting-row">
+                                    <label class="clay-input-label">Max Requests Per Hour</label>
+                                    <input type="number" name="auth_password_reset_max_requests_per_hour" class="clay-inset clay-input" value="{{ $settings['auth_password_reset_max_requests_per_hour'] ?? 5 }}" min="1" max="50" style="width: 100%;">
+                                </div>
+                            </div>
+
+                            <h5 style="font-size: 1rem; font-weight: 700; margin: 24px 0 14px 0; color: var(--text-color);">New Password Strength Requirements</h5>
+
+                            <div class="setting-row">
+                                <label class="clay-input-label">Minimum Password Length</label>
+                                <input type="number" name="auth_password_reset_min_length" class="clay-inset clay-input" value="{{ $settings['auth_password_reset_min_length'] ?? 8 }}" min="6" max="32" style="width: 100%;">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-top: 10px;">
+                                <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center;">
+                                    <label class="clay-input-label" style="margin-bottom:0;">Require Uppercase</label>
+                                    <label style="position:relative; display:inline-block; width:52px; height:28px;">
+                                        <input type="checkbox" name="auth_password_reset_require_uppercase" value="1" {{ $settings['auth_password_reset_require_uppercase'] ?? true ? 'checked' : '' }} style="opacity:0; width:0; height:0;">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center;">
+                                    <label class="clay-input-label" style="margin-bottom:0;">Require Numbers</label>
+                                    <label style="position:relative; display:inline-block; width:52px; height:28px;">
+                                        <input type="checkbox" name="auth_password_reset_require_numbers" value="1" {{ $settings['auth_password_reset_require_numbers'] ?? true ? 'checked' : '' }} style="opacity:0; width:0; height:0;">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-row" style="display:flex; justify-content:space-between; align-items:center;">
+                                    <label class="clay-input-label" style="margin-bottom:0;">Require Symbols</label>
+                                    <label style="position:relative; display:inline-block; width:52px; height:28px;">
+                                        <input type="checkbox" name="auth_password_reset_require_symbols" value="1" {{ $settings['auth_password_reset_require_symbols'] ?? true ? 'checked' : '' }} style="opacity:0; width:0; height:0;">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="clay-btn clay-btn-primary" style="margin-top: 28px; padding: 14px 28px;">Save Auth & Security Settings</button>
                         </form>
                     </div>
 
