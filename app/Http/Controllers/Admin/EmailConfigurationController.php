@@ -41,7 +41,14 @@ class EmailConfigurationController extends Controller
         $validated['is_active'] = $request->boolean('is_active');
         $isDefault = $request->boolean('is_default');
 
-        // Do not update password field if submitted blank
+        // Trim leading and trailing whitespace from string inputs to prevent 535 auth failures
+        foreach (['host', 'username', 'password', 'from_email', 'reply_to', 'from_name'] as $field) {
+            if (isset($validated[$field]) && is_string($validated[$field])) {
+                $validated[$field] = trim($validated[$field]);
+            }
+        }
+
+        // Do not update password field if submitted blank after trim
         if (empty($validated['password'])) {
             unset($validated['password']);
         }

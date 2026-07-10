@@ -67,6 +67,23 @@ class User extends Authenticatable
         ];
     }
 
+    protected static function booted()
+    {
+        static::saved(function ($user) {
+            if ($user->role && ($user->isDirty('role') || !$user->roles()->exists())) {
+                $roleRecord = Role::where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), strtolower($user->role))->first();
+                if (!$roleRecord && strtolower($user->role) === 'user') {
+                    $roleRecord = Role::firstOrCreate(['name' => 'user'], [
+                        'description' => 'Standard user account with general application access and chat capabilities.'
+                    ]);
+                }
+                if ($roleRecord) {
+                    $user->roles()->syncWithoutDetaching([$roleRecord->id]);
+                }
+            }
+        });
+    }
+
     public function verifications()
     {
         return $this->hasMany(UserVerification::class);
@@ -126,6 +143,11 @@ class User extends Authenticatable
         return $this->hasOne(UserSetting::class);
     }
 
+    public function activityLogs()
+    {
+        return $this->hasMany(ActivityLog::class);
+    }
+
     public function apiKeys()
     {
         return $this->hasMany(ApiKey::class);
@@ -136,22 +158,22 @@ class User extends Authenticatable
         return $this->hasMany(Conversation::class);
     }
 
-    public function roles()
+    public function roles(): BelongsToMany
     {
         return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
     }
 
     public function hasRole(string $role): bool
     {
-        if ($this->role === $role) {
+        if (strcasecmp($this->role, $role) === 0) {
             return true;
         }
-        return $this->roles()->where('name', $role)->exists();
+        return $this->roles()->where(\Illuminate\Support\Facades\DB::raw('LOWER(name)'), strtolower($role))->exists();
     }
 
     public function hasPermission(string $permission): bool
     {
-        if ($this->role === 'admin' || $this->hasRole('admin') || $this->hasRole('Super Admin')) {
+        if (in_array($this->role, ['admin', 'Super Admin', 'Admin']) || $this->hasRole('admin') || $this->hasRole('Super Admin') || $this->hasRole('Admin')) {
             return true;
         }
 

@@ -27,6 +27,15 @@ class RoleController extends Controller
         }
 
         $roles = $query->orderBy('id')->paginate(15);
+        foreach ($roles as $role) {
+            $role->users_count = \App\Models\User::where(function ($q) use ($role) {
+                $q->where(\Illuminate\Support\Facades\DB::raw('LOWER(role)'), strtolower($role->name))
+                  ->orWhereHas('roles', function ($r) use ($role) {
+                      $r->where('roles.id', $role->id);
+                  });
+            })->count();
+        }
+
         $allPermissions = Permission::orderBy('name')->get();
 
         return view('admin.roles.index', compact('roles', 'allPermissions'));
@@ -131,13 +140,20 @@ class RoleController extends Controller
     public function destroy(Role $role)
     {
         // Safeguard default core roles
-        $protectedRoles = ['Super Admin', 'Admin', 'User'];
+        $protectedRoles = ['Super Admin', 'Admin', 'User', 'user'];
         if (in_array($role->name, $protectedRoles)) {
             return back()->with('error', "The '{$role->name}' role is a core system role and cannot be deleted.");
         }
 
-        if ($role->users()->count() > 0) {
-            return back()->with('error', "Cannot delete role '{$role->name}' because it has {$role->users()->count()} assigned users. Please reassign those users first.");
+        $assignedCount = \App\Models\User::where(function ($q) use ($role) {
+            $q->where(\Illuminate\Support\Facades\DB::raw('LOWER(role)'), strtolower($role->name))
+              ->orWhereHas('roles', function ($r) use ($role) {
+                  $r->where('roles.id', $role->id);
+              });
+        })->count();
+
+        if ($assignedCount > 0) {
+            return back()->with('error', "Cannot delete role '{$role->name}' because it has {$assignedCount} assigned users. Please reassign those users first.");
         }
 
         $name = $role->name;

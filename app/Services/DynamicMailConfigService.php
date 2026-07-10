@@ -59,7 +59,6 @@ class DynamicMailConfigService
             $socket = @fsockopen($targetHost, $config->port, $errno, $errstr, $timeout);
 
             if (!$socket && $config->encryption === 'tls') {
-                // Try plain host without ssl:// prefix if tls upgrade is done after connect
                 $socket = @fsockopen($config->host, $config->port, $errno, $errstr, $timeout);
             }
 
@@ -78,23 +77,42 @@ class DynamicMailConfigService
             $response = fgets($socket, 515);
             fclose($socket);
 
-            if (!empty($response) && (str_starts_with($response, '220') || str_starts_with($response, '2'))) {
-                $config->update([
-                    'connection_status' => 'connected',
-                    'last_error' => null,
-                    'last_tested_at' => now(),
-                ]);
-                ActivityLog::log('test_smtp_success', "SMTP connection successful for {$config->provider_name}");
-                return ['status' => true, 'message' => "Successfully connected to {$config->host}:{$config->port}. Server response: " . trim($response)];
-            } else {
-                $config->update([
-                    'connection_status' => 'connected',
-                    'last_error' => null,
-                    'last_tested_at' => now(),
-                ]);
-                ActivityLog::log('test_smtp_success', "SMTP socket opened successfully for {$config->provider_name}");
-                return ['status' => true, 'message' => "Socket connection established to {$config->host}:{$config->port} successfully."];
+            // If username and password are provided, perform real SMTP authentication check via Symfony Transport
+            if (!empty($config->username) && !empty($config->password)) {
+                try {
+                    self::configure($config);
+                    // Force refresh or creation of smtp transport instance
+                    $mailer = app('mail.manager')->mailer('smtp');
+                    $transport = $mailer->getSymfonyTransport();
+                    if (method_exists($transport, 'start')) {
+                        $transport->start();
+                    }
+                    if (method_exists($transport, 'stop')) {
+                        $transport->stop();
+                    }
+                } catch (Exception $authEx) {
+                    $errorMsg = "SMTP Connected, but Authentication Failed: " . $authEx->getMessage();
+                    $config->update([
+                        'connection_status' => 'failed',
+                        'last_error' => $errorMsg,
+                        'last_tested_at' => now(),
+                    ]);
+                    ActivityLog::log('test_smtp_failed', "SMTP auth check failed for {$config->provider_name}: {$errorMsg}");
+                    return ['status' => false, 'message' => $errorMsg];
+                }
             }
+
+            $successMessage = !empty($config->username)
+                ? "Successfully connected and verified SMTP login for {$config->username} on {$config->host}:{$config->port}."
+                : "Successfully connected socket to {$config->host}:{$config->port}. Server response: " . trim((string)$response);
+
+            $config->update([
+                'connection_status' => 'connected',
+                'last_error' => null,
+                'last_tested_at' => now(),
+            ]);
+            ActivityLog::log('test_smtp_success', "SMTP connection and verification successful for {$config->provider_name}");
+            return ['status' => true, 'message' => $successMessage];
         } catch (Exception $e) {
             $config->update([
                 'connection_status' => 'failed',
