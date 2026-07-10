@@ -372,9 +372,9 @@ class SystemSetting extends Model
         'auth_login_max_attempts' => 5,
         'auth_login_lockout_minutes' => 15,
         'auth_track_login_history' => true,
-        'auth_2fa_enabled' => true,
+        'auth_2fa_enabled' => false,
         'auth_2fa_remember_days' => 30,
-        'auth_2fa_enforce_roles' => 'admin',
+        'auth_2fa_enforce_roles' => '',
     ];
 
     public static function get(string $key, $default = null)

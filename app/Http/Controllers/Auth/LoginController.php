@@ -70,7 +70,7 @@ class LoginController extends Controller
         }
 
         // Two-Factor Authentication (2FA) Check
-        if ($user && SystemSetting::get('auth_2fa_enabled', true)) {
+        if ($user && SystemSetting::get('auth_2fa_enabled', false)) {
             $enforceRolesRaw = SystemSetting::get('auth_2fa_enforce_roles', '');
             $enforcedRoles = !empty(trim($enforceRolesRaw)) ? array_map('trim', explode(',', strtolower($enforceRolesRaw))) : [];
             $roleEnforced = in_array(strtolower($user->role), $enforcedRoles);

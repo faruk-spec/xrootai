@@ -18,8 +18,9 @@ Artisan::command('security:disable-2fa {--email= : Specific user email to disabl
 
     if ($all) {
         if (\Illuminate\Support\Facades\Schema::hasTable('system_settings')) {
-            \App\Models\SystemSetting::whereIn('key', ['auth_2fa_enabled', 'security_enable_2fa'])->update(['value' => '0']);
-            \App\Models\SystemSetting::where('key', 'auth_2fa_enforce_roles')->update(['value' => '']);
+            \App\Models\SystemSetting::set('auth_2fa_enabled', false, 'auth', 'boolean');
+            \App\Models\SystemSetting::set('security_enable_2fa', false, 'security', 'boolean');
+            \App\Models\SystemSetting::set('auth_2fa_enforce_roles', '', 'auth', 'string');
         }
         if (\Illuminate\Support\Facades\Schema::hasTable('users')) {
             \App\Models\User::query()->update(['two_factor_enabled' => false, 'two_factor_secret' => null]);
