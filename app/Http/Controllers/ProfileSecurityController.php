@@ -113,16 +113,14 @@ class ProfileSecurityController extends Controller
                 ->with('success', 'Emergency recovery codes have been regenerated. Any previous codes are now invalid.');
         }
 
-        // Disabling 2FA (requires current password confirmation for security)
+        // Disabling 2FA
         if ($action === 'disable_2fa') {
-            $request->validate([
-                'current_password' => ['required', 'string'],
-            ]);
-
-            if (!Hash::check($request->current_password, $user->password)) {
-                throw ValidationException::withMessages([
-                    'current_password' => 'Incorrect password provided. Two-Factor Authentication cannot be disabled.',
-                ]);
+            if ($user->password && $request->filled('current_password')) {
+                if (!Hash::check($request->current_password, $user->password)) {
+                    throw ValidationException::withMessages([
+                        'current_password' => 'Incorrect password provided. Two-Factor Authentication could not be disabled.',
+                    ]);
+                }
             }
 
             $user->update([

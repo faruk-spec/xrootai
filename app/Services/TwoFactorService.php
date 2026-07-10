@@ -116,6 +116,7 @@ class TwoFactorService
         ]);
 
         try {
+            \App\Services\DynamicMailConfigService::configure();
             Mail::to($user->email)->send(new TwoFactorOtpMail($otp, $user));
         } catch (\Exception $e) {
             Log::error("Failed sending 2FA OTP email to {$user->email}: " . $e->getMessage());

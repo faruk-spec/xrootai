@@ -130,8 +130,8 @@
                                 @foreach($emailTemplate->available_variables as $varKey => $varDesc)
                                     <div class="border rounded-3 p-2 bg-light d-flex justify-content-between align-items-center">
                                         <div>
-                                            <button type="button" class="btn btn-sm btn-outline-primary font-monospace fw-bold insert-var-btn" data-variable="{{ '{{'.$varKey.'}}' }}" title="Click to insert {{ '{{'.$varKey.'}}' }}">
-                                                {{ '{{'.$varKey.'}}' }}
+                                            <button type="button" class="btn btn-sm btn-outline-primary font-monospace fw-bold insert-var-btn" data-variable="@php echo '{{' . e($varKey) . '}}'; @endphp" title="Click to insert @php echo '{{' . e($varKey) . '}}'; @endphp">
+                                                @php echo '{{ ' . e($varKey) . ' }}'; @endphp
                                             </button>
                                             <div class="text-muted small mt-1">{{ $varDesc }}</div>
                                         </div>

@@ -93,14 +93,8 @@ class PasswordResetService
     protected static function sendResetEmail(User $user, PasswordResetCode $resetCode): void
     {
         try {
-            $activeConfig = EmailConfiguration::getActive();
-
-            if ($activeConfig) {
-                $mailable = new PasswordResetMail($user, $resetCode);
-                $activeConfig->sendMailable($mailable, $user->email, $user->name);
-            } else {
-                Mail::to($user->email)->send(new PasswordResetMail($user, $resetCode));
-            }
+            \App\Services\DynamicMailConfigService::configure();
+            Mail::to($user->email)->send(new PasswordResetMail($user, $resetCode));
         } catch (\Exception $e) {
             Log::error("Failed to send PasswordResetMail to {$user->email}: " . $e->getMessage());
         }
@@ -177,13 +171,8 @@ class PasswordResetService
 
         // Send security notification email
         try {
-            $activeConfig = EmailConfiguration::getActive();
-            if ($activeConfig) {
-                $mailable = new PasswordResetSuccessMail($user, $ipAddress);
-                $activeConfig->sendMailable($mailable, $user->email, $user->name);
-            } else {
-                Mail::to($user->email)->send(new PasswordResetSuccessMail($user, $ipAddress));
-            }
+            \App\Services\DynamicMailConfigService::configure();
+            Mail::to($user->email)->send(new PasswordResetSuccessMail($user, $ipAddress));
         } catch (\Exception $e) {
             Log::error("Failed to send PasswordResetSuccessMail to {$user->email}: " . $e->getMessage());
         }

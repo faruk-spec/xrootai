@@ -413,9 +413,11 @@
                         </div>
                     </form>
                 </div>
+            </div>
 
-                <!-- TAB 5: TWO-FACTOR AUTHENTICATION (2FA) -->
-                <div class="tab-pane fade {{ $activeTab === 'twofactor' ? 'show active' : '' }}" id="panel-twofactor" role="tabpanel" aria-labelledby="tab-twofactor">
+            <!-- PANEL 5: TWO-FACTOR AUTHENTICATION (2FA) -->
+            <div class="tab-pane fade {{ $activeTab === 'twofactor' ? 'show active' : '' }}" id="panel-twofactor" role="tabpanel" aria-labelledby="tab-twofactor">
+                <div class="card border-0 shadow-sm p-4" style="border-radius: 16px;">
                     <form method="POST" action="{{ route('admin.auth-settings.update') }}">
                         @csrf
                         <input type="hidden" name="_section" value="twofactor">

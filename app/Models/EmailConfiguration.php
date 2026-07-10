@@ -85,41 +85,54 @@ class EmailConfiguration extends Model
      */
     public static function getActiveDefault()
     {
-        if (!class_exists(self::class, false)) {
-            class_exists(self::class, true);
-        }
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('email_configurations')) {
+                return null;
+            }
 
-        $config = Cache::rememberForever('active_default_email_config', function () {
-            try {
-                if (!\Illuminate\Support\Facades\Schema::hasTable('email_configurations')) {
-                    return null;
-                }
+            // Fetch directly or check cached ID to prevent __PHP_Incomplete_Class serialization bugs
+            $configId = Cache::rememberForever('active_default_email_config_id', function () {
+                $item = self::where('is_active', true)
+                    ->where('is_default', true)
+                    ->first() ?: self::where('is_active', true)->first();
+                return $item ? $item->id : null;
+            });
+
+            if (!$configId) {
                 return self::where('is_active', true)
                     ->where('is_default', true)
                     ->first() ?: self::where('is_active', true)->first();
-            } catch (\Exception $e) {
-                return null;
             }
-        });
 
-        if ($config instanceof \__PHP_Incomplete_Class || ($config !== null && !($config instanceof self))) {
-            Cache::forget('active_default_email_config');
-            try {
-                if (!\Illuminate\Support\Facades\Schema::hasTable('email_configurations')) {
-                    return null;
-                }
-                $config = self::where('is_active', true)
+            $config = self::find($configId);
+            if (!$config || !$config->is_active) {
+                Cache::forget('active_default_email_config_id');
+                Cache::forget('active_default_email_config');
+                return self::where('is_active', true)
                     ->where('is_default', true)
                     ->first() ?: self::where('is_active', true)->first();
-                if ($config) {
-                    Cache::put('active_default_email_config', $config);
-                }
-            } catch (\Exception $e) {
-                return null;
             }
-        }
 
-        return $config;
+            return $config;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Alias for getActiveDefault().
+     */
+    public static function getActive()
+    {
+        return self::getActiveDefault();
+    }
+
+    /**
+     * Apply this mail configuration dynamically to runtime.
+     */
+    public function applyToRuntime()
+    {
+        return \App\Services\DynamicMailConfigService::configure($this);
     }
 
     /**

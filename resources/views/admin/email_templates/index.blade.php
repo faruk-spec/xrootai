@@ -79,7 +79,7 @@
                                     <div class="d-flex flex-wrap gap-1">
                                         @if(is_array($template->available_variables))
                                             @foreach(array_keys($template->available_variables) as $varKey)
-                                                <span class="badge bg-light text-dark border font-monospace" style="font-size: 0.72rem;">{{ '{{'.$varKey.'}}' }}</span>
+                                                <span class="badge bg-light text-dark border font-monospace" style="font-size: 0.72rem;">@php echo '{{ ' . e($varKey) . ' }}'; @endphp</span>
                                             @endforeach
                                         @else
                                             <span class="text-muted small">Standard variables</span>

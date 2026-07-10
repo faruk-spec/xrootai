@@ -35,6 +35,16 @@ class TwoFactorController extends Controller
             return redirect()->route('login')->with('error', 'Session expired. Please log in again.');
         }
 
+        if ($user->two_factor_type === 'email') {
+            $hasActiveChallenge = \App\Models\TwoFactorChallenge::where('user_id', $user->id)
+                ->whereNull('used_at')
+                ->where('expires_at', '>', now())
+                ->exists();
+            if (!$hasActiveChallenge) {
+                $this->twoFactorService->createEmailChallenge($user);
+            }
+        }
+
         return view('auth.two-factor-challenge', compact('user'));
     }
 
@@ -117,5 +127,14 @@ class TwoFactorController extends Controller
         $this->twoFactorService->createEmailChallenge($user);
 
         return back()->with('status', 'A fresh verification code has been sent to your registered email address.');
+    }
+
+    /**
+     * Cancel pending 2FA challenge and return to login.
+     */
+    public function cancelChallenge(Request $request)
+    {
+        session()->forget(['2fa_user_id', '2fa_remember']);
+        return redirect()->route('login');
     }
 }

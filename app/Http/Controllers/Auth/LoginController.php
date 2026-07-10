@@ -17,6 +17,9 @@ class LoginController extends Controller
         if (Auth::check()) {
             return redirect()->route('chat');
         }
+        if (session()->has('2fa_user_id')) {
+            return redirect()->route('two-factor.challenge');
+        }
         return view('auth.login');
     }
 
@@ -42,7 +45,7 @@ class LoginController extends Controller
             }
         }
 
-        if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
+        if (!$user || !\Illuminate\Support\Facades\Hash::check($request->password, $user->password)) {
             if ($user) {
                 $user->increment('login_attempts');
                 if (SystemSetting::get('auth_track_login_history', true)) {
@@ -54,14 +57,8 @@ class LoginController extends Controller
             ]);
         }
 
-        $user = Auth::user();
-
         // Check if user account is approved by admin / not suspended
-        if ($user && !$user->isApproved()) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
+        if (!$user->isApproved()) {
             throw ValidationException::withMessages([
                 'email' => $user->status === 'suspended'
                     ? 'Your account has been suspended by an administrator.'
@@ -70,31 +67,32 @@ class LoginController extends Controller
         }
 
         // Two-Factor Authentication (2FA) Check
-        if ($user && SystemSetting::get('auth_2fa_enabled', false)) {
-            $enforceRolesRaw = SystemSetting::get('auth_2fa_enforce_roles', '');
-            $enforcedRoles = !empty(trim($enforceRolesRaw)) ? array_map('trim', explode(',', strtolower($enforceRolesRaw))) : [];
-            $roleEnforced = in_array(strtolower($user->role), $enforcedRoles);
+        $enforceRolesRaw = SystemSetting::get('auth_2fa_enforce_roles', '');
+        $enforcedRoles = !empty(trim($enforceRolesRaw)) ? array_map('trim', explode(',', strtolower($enforceRolesRaw))) : [];
+        $roleEnforced = SystemSetting::get('auth_2fa_enabled', false) && in_array(strtolower($user->role), $enforcedRoles);
 
-            if ($user->hasTwoFactorEnabled() || $roleEnforced) {
-                if ($roleEnforced && !$user->hasTwoFactorEnabled()) {
-                    $user->update(['two_factor_enabled' => true, 'two_factor_type' => 'email']);
+        if ($user->hasTwoFactorEnabled() || $roleEnforced) {
+            if ($roleEnforced && !$user->hasTwoFactorEnabled()) {
+                $user->update(['two_factor_enabled' => true, 'two_factor_type' => 'email']);
+            }
+
+            $trustedCookie = $request->cookie('2fa_trusted_' . $user->id);
+            $expectedHash = hash_hmac('sha256', $user->id . '|' . $user->password, config('app.key'));
+
+            if (!$trustedCookie || !hash_equals($expectedHash, (string) $trustedCookie)) {
+                // User requires 2FA! We DO NOT call Auth::login($user) here.
+                // Thus Auth::check() remains false and any attempt to visit dashboard/admin/back will redirect to login or challenge.
+                session(['2fa_user_id' => $user->id, '2fa_remember' => $request->boolean('remember')]);
+
+                if ($user->two_factor_type === 'email') {
+                    app(\App\Services\TwoFactorService::class)->createEmailChallenge($user);
                 }
 
-                $trustedCookie = $request->cookie('2fa_trusted_' . $user->id);
-                $expectedHash = hash_hmac('sha256', $user->id . '|' . $user->password, config('app.key'));
-
-                if (!$trustedCookie || !hash_equals($expectedHash, (string) $trustedCookie)) {
-                    Auth::logout();
-                    session(['2fa_user_id' => $user->id, '2fa_remember' => $request->boolean('remember')]);
-
-                    if ($user->two_factor_type === 'email') {
-                        app(\App\Services\TwoFactorService::class)->createEmailChallenge($user);
-                    }
-
-                    return redirect()->route('two-factor.challenge');
-                }
+                return redirect()->route('two-factor.challenge');
             }
         }
+
+        Auth::login($user, $request->boolean('remember'));
 
         // Record last login info & activity log
         if ($user) {

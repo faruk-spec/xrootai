@@ -95,9 +95,12 @@
                 </div>
 
                 <div style="margin-top: 8px;">
-                    <a href="{{ route('login') }}" style="color: #94a3b8; font-size: 0.82rem; text-decoration: none;">
-                        ⬅ Cancel and Back to Login
-                    </a>
+                    <form method="POST" action="{{ route('two-factor.cancel') }}">
+                        @csrf
+                        <button type="submit" style="background: none; border: none; color: #94a3b8; font-size: 0.82rem; cursor: pointer; text-decoration: underline;">
+                            ⬅ Cancel and Back to Login
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

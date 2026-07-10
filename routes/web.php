@@ -38,6 +38,7 @@ Route::middleware('guest')->group(function () {
 Route::get('/two-factor-challenge', [TwoFactorController::class, 'showChallengeForm'])->name('two-factor.challenge');
 Route::post('/two-factor-challenge', [TwoFactorController::class, 'verifyChallenge'])->name('two-factor.verify');
 Route::post('/two-factor-challenge/resend', [TwoFactorController::class, 'resendOtp'])->name('two-factor.resend');
+Route::post('/two-factor-challenge/cancel', [TwoFactorController::class, 'cancelChallenge'])->name('two-factor.cancel');
 
 
 // Authenticated-only routes

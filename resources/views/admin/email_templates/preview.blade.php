@@ -79,7 +79,7 @@
                 <span class="fw-bold text-light me-2"><i class="bi bi-sliders me-1"></i>Active Mock Data Substitution:</span>
                 @foreach($dummyData as $k => $v)
                     @if(!in_array($k, ['app_url', 'current_year']))
-                        <span class="badge bg-dark border border-secondary text-light font-monospace me-1 mb-1">{{ '{{'.$k.'}}' }} = "{{ Str::limit($v, 20) }}"</span>
+                        <span class="badge bg-dark border border-secondary text-light font-monospace me-1 mb-1">@php echo '{{ ' . e($k) . ' }}'; @endphp = "{{ Str::limit($v, 20) }}"</span>
                     @endif
                 @endforeach
             </div>
