@@ -15,6 +15,13 @@ class ActivityLog extends Model
         'description',
         'ip_address',
         'user_agent',
+        'old_values',
+        'new_values',
+    ];
+
+    protected $casts = [
+        'old_values' => 'array',
+        'new_values' => 'array',
     ];
 
     /**
@@ -26,9 +33,36 @@ class ActivityLog extends Model
     }
 
     /**
+     * Mask sensitive fields from data array before logging.
+     */
+    public static function maskSensitiveData(?array $data): ?array
+    {
+        if (empty($data)) {
+            return $data;
+        }
+
+        $sensitiveKeys = [
+            'password', 'password_confirmation', 'api_key', 'client_secret',
+            'two_factor_secret', 'two_factor_recovery_codes', 'token', 'secret',
+            'encrypted_key', 'authorization'
+        ];
+
+        foreach ($data as $key => $value) {
+            foreach ($sensitiveKeys as $sensitiveKey) {
+                if (stripos($key, $sensitiveKey) !== false) {
+                    $data[$key] = '******** (MASKED BY AUDIT LOG)';
+                    break;
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    /**
      * Helper to write a log entry.
      */
-    public static function log(string $action, string $description, ?int $userId = null): self
+    public static function log(string $action, string $description, ?int $userId = null, ?array $oldValues = null, ?array $newValues = null): self
     {
         return self::create([
             'user_id' => $userId ?: (auth()->check() ? auth()->id() : null),
@@ -36,6 +70,8 @@ class ActivityLog extends Model
             'description' => $description,
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(),
+            'old_values' => self::maskSensitiveData($oldValues),
+            'new_values' => self::maskSensitiveData($newValues),
         ]);
     }
 }

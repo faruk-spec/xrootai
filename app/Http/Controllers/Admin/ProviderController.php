@@ -38,9 +38,11 @@ class ProviderController extends Controller
             unset($validated['api_key']);
         }
 
+        $oldValues = $provider->toArray();
         $provider->update($validated);
+        $newValues = $provider->fresh()->toArray();
 
-        ActivityLog::log('update_provider', "Updated AI Provider: {$provider->name}");
+        ActivityLog::log('update_provider', "Updated AI Provider: {$provider->name}", $request->user()->id, $oldValues, $newValues);
 
         return redirect()->route('admin.providers.index')->with('success', "Provider {$provider->name} updated successfully.");
     }

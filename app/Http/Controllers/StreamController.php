@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Models\Attachment;
 use App\Models\User;
 use App\Services\AI\AIProviderManager;
+use App\Services\AIQuotaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -23,10 +24,11 @@ class StreamController extends Controller
     public function stream(Request $request, Conversation $conversation)
     {
         $user = $request->user();
+        $isAdminOrSuper = $user && ($user->isSuperAdmin() || in_array(strtolower($user->role), ['admin', 'super admin']));
 
         // Check availability
         if (\App\Models\SystemSetting::get('general_maintenance_mode', false)) {
-            if (!$user || $user->role !== 'admin') {
+            if (!$isAdminOrSuper) {
                 $response = new StreamedResponse(function() {
                     echo 'data: ' . json_encode(['text' => "\n\n⚠️ **System under maintenance.** " . \App\Models\SystemSetting::get('general_maintenance_message', 'XrootAI is currently undergoing scheduled maintenance. Please check back later.')]) . "\n\n";
                     echo "data: [DONE]\n\n";
@@ -38,7 +40,7 @@ class StreamController extends Controller
         }
 
         if (!\App\Models\SystemSetting::get('general_enable_chatbot', true)) {
-            if (!$user || $user->role !== 'admin') {
+            if (!$isAdminOrSuper) {
                 $response = new StreamedResponse(function() {
                     echo 'data: ' . json_encode(['text' => "\n\n⚠️ " . \App\Models\SystemSetting::get('general_error_message', 'Chatbot is currently disabled.')]) . "\n\n";
                     echo "data: [DONE]\n\n";
@@ -77,6 +79,23 @@ class StreamController extends Controller
             return $response;
         }
 
+        // Check concurrent stream lock
+        $concurrentCheck = AIQuotaService::acquireConcurrentStreamLock($user, $conversation->session_token);
+        if (!$concurrentCheck['allowed']) {
+            $msg = $concurrentCheck['message'];
+            $response = new StreamedResponse(function() use ($msg) {
+                if (!app()->environment('testing')) {
+                    while (ob_get_level() > 0) { ob_end_clean(); }
+                }
+                echo 'data: ' . json_encode(['text' => "\n\n" . $msg]) . "\n\n";
+                echo "data: [DONE]\n\n";
+                if (!app()->environment('testing') && ob_get_length()) { ob_flush(); }
+                flush();
+            });
+            $response->headers->set('Content-Type', 'text/event-stream');
+            return $response;
+        }
+
         // 2. Enforce Guest Limit (Dynamic)
         $userRole = $user ? $user->role : 'guest';
         if (\Illuminate\Support\Facades\Schema::hasTable('ai_models')) {
@@ -91,6 +110,7 @@ class StreamController extends Controller
             if ($dbModel && !empty($dbModel->allowed_roles) && !in_array(strtolower($userRole), ['admin', 'super admin'])) {
                 $rolesList = array_map('strtolower', $dbModel->allowed_roles);
                 if (!in_array(strtolower($userRole), $rolesList)) {
+                    AIQuotaService::releaseConcurrentStreamLock($user, $conversation->session_token);
                     $response = new StreamedResponse(function() {
                         echo 'data: ' . json_encode(['text' => "\n\n⚠️ **Model access denied.** You do not have access to this model under your plan."]) . "\n\n";
                         echo "data: [DONE]\n\n";
@@ -111,6 +131,7 @@ class StreamController extends Controller
             if ($userRole === 'guest') {
                 $maxPromptChars = (int) \App\Models\SystemSetting::get('ai_guest_max_prompt_chars', 1000);
                 if ($promptLength > $maxPromptChars) {
+                    AIQuotaService::releaseConcurrentStreamLock($user, $conversation->session_token);
                     $response = new StreamedResponse(function() use ($maxPromptChars, $promptLength) {
                         if (!app()->environment('testing')) {
                             while (ob_get_level() > 0) { ob_end_clean(); }
@@ -126,6 +147,7 @@ class StreamController extends Controller
             } elseif ($userRole === 'user') {
                 $maxPromptChars = (int) \App\Models\SystemSetting::get('ai_user_max_prompt_chars', 4000);
                 if ($promptLength > $maxPromptChars) {
+                    AIQuotaService::releaseConcurrentStreamLock($user, $conversation->session_token);
                     $response = new StreamedResponse(function() use ($maxPromptChars, $promptLength) {
                         if (!app()->environment('testing')) {
                             while (ob_get_level() > 0) { ob_end_clean(); }
@@ -141,75 +163,40 @@ class StreamController extends Controller
             }
         }
 
-        if (!$user) {
-            $sessionToken = app()->environment('testing') ? $conversation->session_token : session()->getId();
-            $sessionConversations = Conversation::where('session_token', $sessionToken)->pluck('id');
-            $guestMessagesCount = Message::whereIn('conversation_id', $sessionConversations)
-                ->where('role', 'user')
-                ->count();
-
-            $guestLimit = (int) \App\Models\SystemSetting::get('plans_guest_messages_per_session', 5);
-            if ($guestMessagesCount >= $guestLimit) {
-                $response = new StreamedResponse(function () use ($guestLimit) {
-                    // Disable PHP output buffering if not in testing
-                    if (!app()->environment('testing')) {
-                        while (ob_get_level() > 0) {
-                            ob_end_clean();
-                        }
+        // 3. Enforce Daily / Session Quota (Dynamic via AIQuotaService)
+        $sessionTokenToUse = app()->environment('testing') ? $conversation->session_token : session()->getId();
+        $quotaCheck = AIQuotaService::checkCanStream($user, $sessionTokenToUse);
+        if (!$quotaCheck['allowed']) {
+            AIQuotaService::releaseConcurrentStreamLock($user, $sessionTokenToUse);
+            $msg = $quotaCheck['message'];
+            $response = new StreamedResponse(function () use ($msg) {
+                if (!app()->environment('testing')) {
+                    while (ob_get_level() > 0) {
+                        ob_end_clean();
                     }
-                    echo 'data: ' . json_encode(['text' => "\n\n⚠️ **Guest limit reached!** You have sent {$guestLimit} free messages. Please [Register](/register) or [Login](/login) to continue chatting."]) . "\n\n";
-                    echo "data: [DONE]\n\n";
-                    if (!app()->environment('testing') && ob_get_length()) {
-                        ob_flush();
-                    }
-                    flush();
-                });
-                $response->headers->set('Content-Type', 'text/event-stream');
-                $response->headers->set('Cache-Control', 'no-cache, must-revalidate');
-                $response->headers->set('Connection', 'keep-alive');
-                $response->headers->set('X-Accel-Buffering', 'no');
-                return $response;
-            }
-        } else if ($user->role === 'user') {
-            // Free user daily message limit check
-            $freeLimit = (int) \App\Models\SystemSetting::get('plans_free_message_limit', 50);
-            if ($freeLimit > 0) {
-                $userMessagesCount = Message::whereHas('conversation', function ($query) use ($user) {
-                        $query->where('user_id', $user->id);
-                    })
-                    ->where('role', 'user')
-                    ->where('created_at', '>=', now()->startOfDay())
-                    ->count();
-
-                if ($userMessagesCount >= $freeLimit) {
-                    $response = new StreamedResponse(function () use ($freeLimit) {
-                        if (!app()->environment('testing')) {
-                            while (ob_get_level() > 0) {
-                                ob_end_clean();
-                            }
-                        }
-                        echo 'data: ' . json_encode(['text' => "\n\n⚠️ **Daily message limit reached!** You have sent {$freeLimit} messages today on your Free plan. Please upgrade to Pro for unlimited usage."]) . "\n\n";
-                        echo "data: [DONE]\n\n";
-                        if (!app()->environment('testing') && ob_get_length()) {
-                            ob_flush();
-                        }
-                        flush();
-                    });
-                    $response->headers->set('Content-Type', 'text/event-stream');
-                    $response->headers->set('Cache-Control', 'no-cache, must-revalidate');
-                    $response->headers->set('Connection', 'keep-alive');
-                    $response->headers->set('X-Accel-Buffering', 'no');
-                    return $response;
                 }
-            }
+                echo 'data: ' . json_encode(['text' => "\n\n" . $msg]) . "\n\n";
+                echo "data: [DONE]\n\n";
+                if (!app()->environment('testing') && ob_get_length()) {
+                    ob_flush();
+                }
+                flush();
+            });
+            $response->headers->set('Content-Type', 'text/event-stream');
+            $response->headers->set('Cache-Control', 'no-cache, must-revalidate');
+            $response->headers->set('Connection', 'keep-alive');
+            $response->headers->set('X-Accel-Buffering', 'no');
+            return $response;
         }
 
-        // 3. Save user message to database
+        // 4. Save user message to database
         $userMessage = Message::create([
             'conversation_id' => $conversation->id,
             'role' => 'user',
             'content' => $prompt ?? '',
         ]);
+        
+        AIQuotaService::recordUsage($user, $sessionTokenToUse, 0);
 
         // Process attachments and link them to user message
         $attachmentsContext = "";
@@ -231,8 +218,9 @@ class StreamController extends Controller
                     // If it is a text-based file, read it and add to system/user context
                     if (str_starts_with($attachData['mime_type'], 'text/') || 
                         in_array($attachData['mime_type'], ['application/json', 'application/javascript', 'text/markdown'])) {
-                        if (Storage::disk('public')->exists($attachData['file_path'])) {
-                            $fileContent = Storage::disk('public')->get($attachData['file_path']);
+                        $disk = Storage::disk('local')->exists($attachData['file_path']) ? Storage::disk('local') : (Storage::disk('public')->exists($attachData['file_path']) ? Storage::disk('public') : null);
+                        if ($disk) {
+                            $fileContent = $disk->get($attachData['file_path']);
                             $attachmentsContext .= "\n\n[File Attachment: {$attachData['file_name']}]\n```\n{$fileContent}\n```\n";
                         }
                     } else {
@@ -334,8 +322,11 @@ class StreamController extends Controller
 
         // 6. Return SSE Streamed Response
         $response = new StreamedResponse(function () use ($conversation, $history, $assistantMessage, $user) {
+            $sessionTokenToUse = app()->environment('testing') ? $conversation->session_token : session()->getId();
+
             // Disable PHP output buffering
             if (connection_aborted()) {
+                AIQuotaService::releaseConcurrentStreamLock($user, $sessionTokenToUse);
                 return;
             }
 
@@ -414,6 +405,10 @@ class StreamController extends Controller
                     ob_flush();
                 }
                 flush();
+            } finally {
+                $tokensUsed = (int) (mb_strlen($assistantContent) / 4);
+                AIQuotaService::recordUsage($user, $sessionTokenToUse, $tokensUsed);
+                AIQuotaService::releaseConcurrentStreamLock($user, $sessionTokenToUse);
             }
 
             // Save final content to message

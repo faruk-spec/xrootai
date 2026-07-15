@@ -148,6 +148,7 @@ class ChatTest extends TestCase
 
     public function test_user_can_upload_attachment(): void
     {
+        Storage::fake('local');
         Storage::fake('public');
 
         $file = UploadedFile::fake()->create('document.txt', 100, 'text/plain');
@@ -164,7 +165,7 @@ class ChatTest extends TestCase
         ]);
 
         $filePath = $response->json('file_path');
-        Storage::disk('public')->assertExists($filePath);
+        Storage::disk('local')->assertExists($filePath);
     }
 
     public function test_user_can_stream_completions(): void

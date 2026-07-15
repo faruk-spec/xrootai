@@ -51,7 +51,7 @@ class PromptController extends Controller
 
         $prompt = PromptTemplate::create($validated);
 
-        ActivityLog::log('create_prompt_template', "Created Prompt Template: {$prompt->name}");
+        ActivityLog::log('create_prompt_template', "Created Prompt Template: {$prompt->name}", $request->user()->id, null, $prompt->toArray());
 
         return redirect()->route('admin.prompts.index')->with('success', "Prompt Template {$prompt->name} created successfully.");
     }
@@ -79,19 +79,22 @@ class PromptController extends Controller
             $validated['variables'] = [];
         }
 
+        $oldValues = $prompt->toArray();
         $prompt->update($validated);
+        $newValues = $prompt->fresh()->toArray();
 
-        ActivityLog::log('update_prompt_template', "Updated Prompt Template: {$prompt->name}");
+        ActivityLog::log('update_prompt_template', "Updated Prompt Template: {$prompt->name}", $request->user()->id, $oldValues, $newValues);
 
         return redirect()->route('admin.prompts.index')->with('success', "Prompt Template {$prompt->name} updated successfully.");
     }
 
-    public function destroy(PromptTemplate $prompt)
+    public function destroy(Request $request, PromptTemplate $prompt)
     {
         $name = $prompt->name;
+        $oldValues = $prompt->toArray();
         $prompt->delete();
 
-        ActivityLog::log('delete_prompt_template', "Deleted Prompt Template: {$name}");
+        ActivityLog::log('delete_prompt_template', "Deleted Prompt Template: {$name}", $request->user()?->id, $oldValues, null);
 
         return redirect()->route('admin.prompts.index')->with('success', "Prompt Template {$name} deleted successfully.");
     }

@@ -67,7 +67,7 @@ class ModelController extends Controller
 
         $model = AIModel::create($validated);
 
-        ActivityLog::log('create_model', "Created new AI Model: {$model->name} ({$model->model_identifier})");
+        ActivityLog::log('create_model', "Created new AI Model: {$model->name} ({$model->model_identifier})", $request->user()->id, null, $model->toArray());
 
         return redirect()->route('admin.models.index')->with('success', "Model {$model->name} created successfully.");
     }
@@ -108,19 +108,22 @@ class ModelController extends Controller
         ];
         $validated['allowed_roles'] = array_values(array_unique(array_map('strtolower', $request->input('allowed_roles', []))));
 
+        $oldValues = $model->toArray();
         $model->update($validated);
+        $newValues = $model->fresh()->toArray();
 
-        ActivityLog::log('update_model', "Updated AI Model: {$model->name}");
+        ActivityLog::log('update_model', "Updated AI Model: {$model->name}", $request->user()->id, $oldValues, $newValues);
 
         return redirect()->route('admin.models.index')->with('success', "Model {$model->name} updated successfully.");
     }
 
-    public function destroy(AIModel $model)
+    public function destroy(Request $request, AIModel $model)
     {
         $name = $model->name;
+        $oldValues = $model->toArray();
         $model->delete();
 
-        ActivityLog::log('delete_model', "Deleted AI Model: {$name}");
+        ActivityLog::log('delete_model', "Deleted AI Model: {$name}", $request->user()?->id, $oldValues, null);
 
         return redirect()->route('admin.models.index')->with('success', "Model {$name} deleted successfully.");
     }

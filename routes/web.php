@@ -66,115 +66,114 @@ Route::middleware('auth')->group(function () {
 
 // Admin Panel Routes (protected by auth and admin role check middleware)
 Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->group(function () {
-    // Dashboard
+    // Dashboard (accessible by authorized staff/admin roles passing AdminMiddleware)
     Route::get('/', [App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
-    
-    // User Directory CRUD
-    Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users');
-    Route::get('/users/create', [App\Http\Controllers\Admin\UserController::class, 'create'])->name('admin.users.create');
-    Route::post('/users', [App\Http\Controllers\Admin\UserController::class, 'store'])->name('admin.users.store');
-    Route::get('/users/{user}/edit', [App\Http\Controllers\Admin\UserController::class, 'edit'])->name('admin.users.edit');
-    Route::put('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('admin.users.update');
-    Route::post('/users/{user}/role', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('admin.users.role'); // Mapping to update for edit form submission
-    Route::delete('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('admin.users.delete');
 
-    // Role Management (RBAC)
-    Route::get('/roles', [RoleController::class, 'index'])->name('admin.roles.index');
-    Route::get('/roles/create', [RoleController::class, 'create'])->name('admin.roles.create');
-    Route::post('/roles', [RoleController::class, 'store'])->name('admin.roles.store');
-    Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('admin.roles.edit');
-    Route::put('/roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');
-    Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('admin.roles.destroy');
+    // User Directory & RBAC CRUD -> manage-users
+    Route::middleware('permission:manage-users')->group(function () {
+        Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users');
+        Route::get('/users/create', [App\Http\Controllers\Admin\UserController::class, 'create'])->name('admin.users.create');
+        Route::post('/users', [App\Http\Controllers\Admin\UserController::class, 'store'])->name('admin.users.store');
+        Route::get('/users/{user}/edit', [App\Http\Controllers\Admin\UserController::class, 'edit'])->name('admin.users.edit');
+        Route::put('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('admin.users.update');
+        Route::post('/users/{user}/role', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('admin.users.role');
+        Route::delete('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('admin.users.delete');
 
-    // Permission Management
-    Route::get('/permissions', [PermissionController::class, 'index'])->name('admin.permissions.index');
-    Route::post('/permissions', [PermissionController::class, 'store'])->name('admin.permissions.store');
-    Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->name('admin.permissions.update');
-    Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->name('admin.permissions.destroy');
-    
-    // Admin User Verification & Approval Overrides
-    Route::post('/users/{user}/verify-manually', [App\Http\Controllers\Admin\UserController::class, 'verifyManually'])->name('admin.users.verify-manually');
-    Route::post('/users/{user}/resend-verification', [App\Http\Controllers\Admin\UserController::class, 'resendVerification'])->name('admin.users.resend-verification');
-    Route::post('/users/{user}/approve', [App\Http\Controllers\Admin\UserController::class, 'approveUser'])->name('admin.users.approve');
-    Route::post('/users/{user}/suspend', [App\Http\Controllers\Admin\UserController::class, 'suspendUser'])->name('admin.users.suspend');
-    
-    // System Settings
-    Route::get('/settings', [App\Http\Controllers\Admin\SettingController::class, 'index'])->name('admin.settings');
-    Route::post('/settings', [App\Http\Controllers\Admin\SettingController::class, 'update'])->name('admin.settings.update');
-    Route::post('/settings/permissions', [App\Http\Controllers\Admin\SettingController::class, 'updatePermissions'])->name('admin.settings.permissions');
+        Route::get('/roles', [RoleController::class, 'index'])->name('admin.roles.index');
+        Route::get('/roles/create', [RoleController::class, 'create'])->name('admin.roles.create');
+        Route::post('/roles', [RoleController::class, 'store'])->name('admin.roles.store');
+        Route::get('/roles/{role}/edit', [RoleController::class, 'edit'])->name('admin.roles.edit');
+        Route::put('/roles/{role}', [RoleController::class, 'update'])->name('admin.roles.update');
+        Route::delete('/roles/{role}', [RoleController::class, 'destroy'])->name('admin.roles.destroy');
 
-    // AI Providers CRUD
-    Route::get('/providers', [App\Http\Controllers\Admin\ProviderController::class, 'index'])->name('admin.providers.index');
-    Route::get('/providers/{provider}/edit', [App\Http\Controllers\Admin\ProviderController::class, 'edit'])->name('admin.providers.edit');
-    Route::put('/providers/{provider}', [App\Http\Controllers\Admin\ProviderController::class, 'update'])->name('admin.providers.update');
-    Route::post('/providers/{provider}/test', [App\Http\Controllers\Admin\ProviderController::class, 'testConnection'])->name('admin.providers.test');
+        Route::get('/permissions', [PermissionController::class, 'index'])->name('admin.permissions.index');
+        Route::post('/permissions', [PermissionController::class, 'store'])->name('admin.permissions.store');
+        Route::put('/permissions/{permission}', [PermissionController::class, 'update'])->name('admin.permissions.update');
+        Route::delete('/permissions/{permission}', [PermissionController::class, 'destroy'])->name('admin.permissions.destroy');
 
-    // AI Models CRUD
-    Route::get('/models', [App\Http\Controllers\Admin\ModelController::class, 'index'])->name('admin.models.index');
-    Route::get('/models/create', [App\Http\Controllers\Admin\ModelController::class, 'create'])->name('admin.models.create');
-    Route::post('/models', [App\Http\Controllers\Admin\ModelController::class, 'store'])->name('admin.models.store');
-    Route::get('/models/{model}/edit', [App\Http\Controllers\Admin\ModelController::class, 'edit'])->name('admin.models.edit');
-    Route::put('/models/{model}', [App\Http\Controllers\Admin\ModelController::class, 'update'])->name('admin.models.update');
-    Route::delete('/models/{model}', [App\Http\Controllers\Admin\ModelController::class, 'destroy'])->name('admin.models.delete');
+        Route::post('/users/{user}/verify-manually', [App\Http\Controllers\Admin\UserController::class, 'verifyManually'])->name('admin.users.verify-manually');
+        Route::post('/users/{user}/resend-verification', [App\Http\Controllers\Admin\UserController::class, 'resendVerification'])->name('admin.users.resend-verification');
+        Route::post('/users/{user}/approve', [App\Http\Controllers\Admin\UserController::class, 'approveUser'])->name('admin.users.approve');
+        Route::post('/users/{user}/suspend', [App\Http\Controllers\Admin\UserController::class, 'suspendUser'])->name('admin.users.suspend');
+    });
 
-    // AI Routing CRUD
-    Route::get('/routing', [App\Http\Controllers\Admin\RoutingController::class, 'index'])->name('admin.routing.index');
-    Route::get('/routing/create', [App\Http\Controllers\Admin\RoutingController::class, 'create'])->name('admin.routing.create');
-    Route::post('/routing', [App\Http\Controllers\Admin\RoutingController::class, 'store'])->name('admin.routing.store');
-    Route::get('/routing/{routing}/edit', [App\Http\Controllers\Admin\RoutingController::class, 'edit'])->name('admin.routing.edit');
-    Route::put('/routing/{routing}', [App\Http\Controllers\Admin\RoutingController::class, 'update'])->name('admin.routing.update');
-    Route::delete('/routing/{routing}', [App\Http\Controllers\Admin\RoutingController::class, 'destroy'])->name('admin.routing.delete');
+    // System Settings & Email/OAuth/Auth -> manage-settings
+    Route::middleware('permission:manage-settings')->group(function () {
+        Route::get('/settings', [App\Http\Controllers\Admin\SettingController::class, 'index'])->name('admin.settings');
+        Route::post('/settings', [App\Http\Controllers\Admin\SettingController::class, 'update'])->name('admin.settings.update');
+        Route::post('/settings/permissions', [App\Http\Controllers\Admin\SettingController::class, 'updatePermissions'])->name('admin.settings.permissions');
 
-    // Prompt Templates CRUD
-    Route::get('/prompts', [App\Http\Controllers\Admin\PromptController::class, 'index'])->name('admin.prompts.index');
-    Route::get('/prompts/create', [App\Http\Controllers\Admin\PromptController::class, 'create'])->name('admin.prompts.create');
-    Route::post('/prompts', [App\Http\Controllers\Admin\PromptController::class, 'store'])->name('admin.prompts.store');
-    Route::get('/prompts/{prompt}/edit', [App\Http\Controllers\Admin\PromptController::class, 'edit'])->name('admin.prompts.edit');
-    Route::put('/prompts/{prompt}', [App\Http\Controllers\Admin\PromptController::class, 'update'])->name('admin.prompts.update');
-    Route::delete('/prompts/{prompt}', [App\Http\Controllers\Admin\PromptController::class, 'destroy'])->name('admin.prompts.delete');
+        Route::get('/oauth', [App\Http\Controllers\Admin\OAuthProviderController::class, 'index'])->name('admin.oauth.index');
+        Route::put('/oauth/{provider}', [App\Http\Controllers\Admin\OAuthProviderController::class, 'update'])->name('admin.oauth.update');
+        Route::post('/oauth/{provider}/reset', [App\Http\Controllers\Admin\OAuthProviderController::class, 'reset'])->name('admin.oauth.reset');
+        Route::post('/oauth/{provider}/test', [App\Http\Controllers\Admin\OAuthProviderController::class, 'testConnection'])->name('admin.oauth.test');
 
-    // Knowledge Base (RAG) CRUD
-    Route::get('/kb', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'index'])->name('admin.kb.index');
-    Route::get('/kb/create', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'create'])->name('admin.kb.create');
-    Route::post('/kb', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'store'])->name('admin.kb.store');
-    Route::post('/kb/{kb}/sync', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'sync'])->name('admin.kb.sync');
-    Route::delete('/kb/{kb}', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'destroy'])->name('admin.kb.delete');
+        Route::get('/email-config', [EmailConfigurationController::class, 'index'])->name('admin.email-config.index');
+        Route::get('/email-config/{email_configuration}/edit', [EmailConfigurationController::class, 'edit'])->name('admin.email-config.edit');
+        Route::put('/email-config/{email_configuration}', [EmailConfigurationController::class, 'update'])->name('admin.email-config.update');
+        Route::post('/email-config/{email_configuration}/test', [EmailConfigurationController::class, 'testConnection'])->name('admin.email-config.test');
+        Route::post('/email-config/{email_configuration}/send-test', [EmailConfigurationController::class, 'sendTestEmail'])->name('admin.email-config.send-test');
+        Route::post('/email-config/{email_configuration}/reset', [EmailConfigurationController::class, 'reset'])->name('admin.email-config.reset');
 
-    // Conversations Log Audit
-    Route::get('/conversations', [App\Http\Controllers\Admin\ConversationController::class, 'index'])->name('admin.conversations.index');
-    Route::get('/conversations/{conversation}', [App\Http\Controllers\Admin\ConversationController::class, 'show'])->name('admin.conversations.show');
-    Route::delete('/conversations/{conversation}', [App\Http\Controllers\Admin\ConversationController::class, 'destroy'])->name('admin.conversations.delete');
+        Route::get('/auth-settings', [AuthSettingController::class, 'index'])->name('admin.auth-settings.index');
+        Route::post('/auth-settings', [AuthSettingController::class, 'update'])->name('admin.auth-settings.update');
 
-    // OAuth Configurations CRUD
-    Route::get('/oauth', [App\Http\Controllers\Admin\OAuthProviderController::class, 'index'])->name('admin.oauth.index');
-    Route::put('/oauth/{provider}', [App\Http\Controllers\Admin\OAuthProviderController::class, 'update'])->name('admin.oauth.update');
-    Route::post('/oauth/{provider}/reset', [App\Http\Controllers\Admin\OAuthProviderController::class, 'reset'])->name('admin.oauth.reset');
-    Route::post('/oauth/{provider}/test', [App\Http\Controllers\Admin\OAuthProviderController::class, 'testConnection'])->name('admin.oauth.test');
+        Route::get('/email-templates', [EmailTemplateController::class, 'index'])->name('admin.email-templates.index');
+        Route::post('/email-templates/seed', [EmailTemplateController::class, 'seedDefaults'])->name('admin.email-templates.seed');
+        Route::get('/email-templates/{email_template}/edit', [EmailTemplateController::class, 'edit'])->name('admin.email-templates.edit');
+        Route::put('/email-templates/{email_template}', [EmailTemplateController::class, 'update'])->name('admin.email-templates.update');
+        Route::post('/email-templates/{email_template}/toggle', [EmailTemplateController::class, 'toggle'])->name('admin.email-templates.toggle');
+        Route::get('/email-templates/{email_template}/preview', [EmailTemplateController::class, 'preview'])->name('admin.email-templates.preview');
+        Route::post('/email-templates/{email_template}/test', [EmailTemplateController::class, 'sendTest'])->name('admin.email-templates.test');
+    });
 
-    // Audit Logs
-    Route::get('/logs', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('admin.logs.index');
+    // AI Providers, Models, Routing, Prompts, Knowledge Base -> manage-ai
+    Route::middleware('permission:manage-ai')->group(function () {
+        Route::get('/providers', [App\Http\Controllers\Admin\ProviderController::class, 'index'])->name('admin.providers.index');
+        Route::get('/providers/{provider}/edit', [App\Http\Controllers\Admin\ProviderController::class, 'edit'])->name('admin.providers.edit');
+        Route::put('/providers/{provider}', [App\Http\Controllers\Admin\ProviderController::class, 'update'])->name('admin.providers.update');
+        Route::post('/providers/{provider}/test', [App\Http\Controllers\Admin\ProviderController::class, 'testConnection'])->name('admin.providers.test');
 
-    // Email Configuration Module
-    Route::get('/email-config', [EmailConfigurationController::class, 'index'])->name('admin.email-config.index');
-    Route::get('/email-config/{email_configuration}/edit', [EmailConfigurationController::class, 'edit'])->name('admin.email-config.edit');
-    Route::put('/email-config/{email_configuration}', [EmailConfigurationController::class, 'update'])->name('admin.email-config.update');
-    Route::post('/email-config/{email_configuration}/test', [EmailConfigurationController::class, 'testConnection'])->name('admin.email-config.test');
-    Route::post('/email-config/{email_configuration}/send-test', [EmailConfigurationController::class, 'sendTestEmail'])->name('admin.email-config.send-test');
-    Route::post('/email-config/{email_configuration}/reset', [EmailConfigurationController::class, 'reset'])->name('admin.email-config.reset');
+        Route::get('/models', [App\Http\Controllers\Admin\ModelController::class, 'index'])->name('admin.models.index');
+        Route::get('/models/create', [App\Http\Controllers\Admin\ModelController::class, 'create'])->name('admin.models.create');
+        Route::post('/models', [App\Http\Controllers\Admin\ModelController::class, 'store'])->name('admin.models.store');
+        Route::get('/models/{model}/edit', [App\Http\Controllers\Admin\ModelController::class, 'edit'])->name('admin.models.edit');
+        Route::put('/models/{model}', [App\Http\Controllers\Admin\ModelController::class, 'update'])->name('admin.models.update');
+        Route::delete('/models/{model}', [App\Http\Controllers\Admin\ModelController::class, 'destroy'])->name('admin.models.delete');
 
-    // Authentication & Security Settings Module
-    Route::get('/auth-settings', [AuthSettingController::class, 'index'])->name('admin.auth-settings.index');
-    Route::post('/auth-settings', [AuthSettingController::class, 'update'])->name('admin.auth-settings.update');
+        Route::get('/routing', [App\Http\Controllers\Admin\RoutingController::class, 'index'])->name('admin.routing.index');
+        Route::get('/routing/create', [App\Http\Controllers\Admin\RoutingController::class, 'create'])->name('admin.routing.create');
+        Route::post('/routing', [App\Http\Controllers\Admin\RoutingController::class, 'store'])->name('admin.routing.store');
+        Route::get('/routing/{routing}/edit', [App\Http\Controllers\Admin\RoutingController::class, 'edit'])->name('admin.routing.edit');
+        Route::put('/routing/{routing}', [App\Http\Controllers\Admin\RoutingController::class, 'update'])->name('admin.routing.update');
+        Route::delete('/routing/{routing}', [App\Http\Controllers\Admin\RoutingController::class, 'destroy'])->name('admin.routing.delete');
 
-    // Email Template Management Module
-    Route::get('/email-templates', [EmailTemplateController::class, 'index'])->name('admin.email-templates.index');
-    Route::post('/email-templates/seed', [EmailTemplateController::class, 'seedDefaults'])->name('admin.email-templates.seed');
-    Route::get('/email-templates/{email_template}/edit', [EmailTemplateController::class, 'edit'])->name('admin.email-templates.edit');
-    Route::put('/email-templates/{email_template}', [EmailTemplateController::class, 'update'])->name('admin.email-templates.update');
-    Route::post('/email-templates/{email_template}/toggle', [EmailTemplateController::class, 'toggle'])->name('admin.email-templates.toggle');
-    Route::get('/email-templates/{email_template}/preview', [EmailTemplateController::class, 'preview'])->name('admin.email-templates.preview');
-    Route::post('/email-templates/{email_template}/test', [EmailTemplateController::class, 'sendTest'])->name('admin.email-templates.test');
+        Route::get('/prompts', [App\Http\Controllers\Admin\PromptController::class, 'index'])->name('admin.prompts.index');
+        Route::get('/prompts/create', [App\Http\Controllers\Admin\PromptController::class, 'create'])->name('admin.prompts.create');
+        Route::post('/prompts', [App\Http\Controllers\Admin\PromptController::class, 'store'])->name('admin.prompts.store');
+        Route::get('/prompts/{prompt}/edit', [App\Http\Controllers\Admin\PromptController::class, 'edit'])->name('admin.prompts.edit');
+        Route::put('/prompts/{prompt}', [App\Http\Controllers\Admin\PromptController::class, 'update'])->name('admin.prompts.update');
+        Route::delete('/prompts/{prompt}', [App\Http\Controllers\Admin\PromptController::class, 'destroy'])->name('admin.prompts.delete');
+
+        Route::get('/kb', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'index'])->name('admin.kb.index');
+        Route::get('/kb/create', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'create'])->name('admin.kb.create');
+        Route::post('/kb', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'store'])->name('admin.kb.store');
+        Route::post('/kb/{kb}/sync', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'sync'])->name('admin.kb.sync');
+        Route::delete('/kb/{kb}', [App\Http\Controllers\Admin\KnowledgeBaseController::class, 'destroy'])->name('admin.kb.delete');
+    });
+
+    // Conversations Log & Activity Audit -> view-logs
+    Route::middleware('permission:view-logs')->group(function () {
+        Route::get('/conversations', [App\Http\Controllers\Admin\ConversationController::class, 'index'])->name('admin.conversations.index');
+        Route::get('/conversations/{conversation}', [App\Http\Controllers\Admin\ConversationController::class, 'show'])->name('admin.conversations.show');
+        Route::delete('/conversations/{conversation}', [App\Http\Controllers\Admin\ConversationController::class, 'destroy'])->name('admin.conversations.delete');
+
+        Route::get('/logs', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('admin.logs.index');
+    });
 });
+
+// Secure Attachment Download Route
+Route::get('/attachments/download/{attachment}', [App\Http\Controllers\ChatController::class, 'downloadAttachment'])->name('attachments.download');
 
 // Legal & Privacy Pages
 Route::view('/privacy', 'privacy')->name('privacy');

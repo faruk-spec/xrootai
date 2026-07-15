@@ -14,6 +14,13 @@ class Role extends Model
         'description',
     ];
 
+    public const WEIGHT_SUPER_ADMIN = 100;
+    public const WEIGHT_ADMIN = 80;
+    public const WEIGHT_MANAGER = 60;
+    public const WEIGHT_DEVELOPER = 40;
+    public const WEIGHT_SUPPORT = 20;
+    public const WEIGHT_USER = 10;
+
     /**
      * Get permissions associated with this role.
      */
@@ -28,5 +35,23 @@ class Role extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'role_user', 'role_id', 'user_id');
+    }
+
+    public static function getWeightByName(string $roleName): int
+    {
+        switch (strtolower($roleName)) {
+            case 'super admin':
+                return self::WEIGHT_SUPER_ADMIN;
+            case 'admin':
+                return self::WEIGHT_ADMIN;
+            case 'manager':
+                return self::WEIGHT_MANAGER;
+            case 'developer':
+                return self::WEIGHT_DEVELOPER;
+            case 'support agent':
+                return self::WEIGHT_SUPPORT;
+            default:
+                return self::WEIGHT_USER;
+        }
     }
 }

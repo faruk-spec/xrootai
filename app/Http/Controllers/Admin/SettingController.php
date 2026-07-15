@@ -156,7 +156,7 @@ class SettingController extends Controller
             }
         }
 
-        ActivityLog::log('update_settings', "Updated settings group: {$group}");
+        ActivityLog::log('update_settings', "Updated settings group: {$group}", $request->user()->id);
 
         return redirect()->route('admin.settings', ['tab' => $group])->with('success', 'Settings updated successfully.');
     }
@@ -170,14 +170,24 @@ class SettingController extends Controller
             'roles' => 'required|array',
         ]);
 
+        $oldPermissions = [];
+        $newPermissions = [];
+
         foreach ($validated['roles'] as $roleId => $permissionIds) {
             $role = Role::find($roleId);
             if ($role) {
-                $role->permissions()->sync($permissionIds);
+                $oldPermissions[$role->name] = $role->permissions()->pluck('permissions.id')->toArray();
+                if ($role->name === 'Super Admin') {
+                    $allPermIds = Permission::pluck('id')->toArray();
+                    $role->permissions()->sync($allPermIds);
+                } else {
+                    $role->permissions()->sync($permissionIds);
+                }
+                $newPermissions[$role->name] = $role->permissions()->pluck('permissions.id')->toArray();
             }
         }
 
-        ActivityLog::log('update_roles_permissions', 'Modified role and permission mappings.');
+        ActivityLog::log('update_roles_permissions', 'Modified role and permission mappings.', $request->user()->id, $oldPermissions, $newPermissions);
 
         return redirect()->route('admin.settings', ['tab' => 'roles'])->with('success', 'Roles and Permissions mapping updated successfully.');
     }

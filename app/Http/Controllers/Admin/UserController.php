@@ -71,7 +71,7 @@ class UserController extends Controller
             }
         }
 
-        ActivityLog::log('create_user', "Created User: {$user->name} ({$user->email})");
+        ActivityLog::log('create_user', "Created User: {$user->name} ({$user->email})", $request->user()->id, null, $user->toArray());
 
         return redirect()->route('admin.users')->with('success', "User {$user->name} created successfully.");
     }
@@ -85,6 +85,10 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        if ($user->isSuperAdmin() && !$request->user()->isSuperAdmin()) {
+            return redirect()->back()->with('error', 'Only Super Admins can modify a Super Admin account.');
+        }
+
         // For backwards compatibility with the legacy role-only endpoint tests:
         if (!$request->has('name') && !$request->has('email') && $request->has('role')) {
             if ($user->id === $request->user()->id && $request->role !== $user->role) {
@@ -95,6 +99,7 @@ class UserController extends Controller
                 'role' => 'required|string',
             ]);
 
+            $oldValues = ['role' => $user->role];
             $user->update(['role' => $request->role]);
 
             $roleRecord = Role::where('name', $request->role)->first();
@@ -102,7 +107,7 @@ class UserController extends Controller
                 $user->roles()->sync([$roleRecord->id]);
             }
 
-            ActivityLog::log('update_user_role', "Updated role for user {$user->name} to {$request->role}");
+            ActivityLog::log('update_user_role', "Updated role for user {$user->name} to {$request->role}", $request->user()->id, $oldValues, ['role' => $request->role]);
 
             return redirect()->back()->with('success', 'User role updated successfully.');
         }
@@ -115,6 +120,12 @@ class UserController extends Controller
             'roles' => 'nullable|array',
             'roles.*' => 'exists:roles,id',
         ]);
+
+        if ($user->id === $request->user()->id && $validated['role'] !== $user->role) {
+            return redirect()->back()->with('error', 'You cannot change your own role.');
+        }
+
+        $oldValues = $user->only(['name', 'email', 'role']);
 
         $updateData = [
             'name' => $validated['name'],
@@ -138,7 +149,8 @@ class UserController extends Controller
             }
         }
 
-        ActivityLog::log('update_user', "Updated User settings: {$user->name}");
+        $newValues = $user->only(['name', 'email', 'role']);
+        ActivityLog::log('update_user', "Updated User settings: {$user->name}", $request->user()->id, $oldValues, $newValues);
 
         return redirect()->route('admin.users')->with('success', "User {$user->name} updated successfully.");
     }
@@ -149,10 +161,15 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'You cannot delete yourself.');
         }
 
+        if ($user->isSuperAdmin()) {
+            return redirect()->back()->with('error', 'Super Admin accounts cannot be deleted.');
+        }
+
         $name = $user->name;
+        $oldValues = $user->toArray();
         $user->delete();
 
-        ActivityLog::log('delete_user', "Deleted User: {$name}");
+        ActivityLog::log('delete_user', "Deleted User: {$name}", $request->user()->id, $oldValues, null);
 
         return redirect()->route('admin.users')->with('success', "User {$name} deleted successfully.");
     }
@@ -174,14 +191,16 @@ class UserController extends Controller
 
     public function approveUser(Request $request, User $user)
     {
+        $oldValues = ['is_approved' => $user->is_approved, 'status' => $user->status];
         $user->update([
             'is_approved' => true,
             'approved_at' => now(),
             'approved_by' => $request->user()->id,
             'status' => 'active',
         ]);
+        $newValues = ['is_approved' => true, 'status' => 'active'];
 
-        ActivityLog::log('approve_user', "Admin approved account for user {$user->name} ({$user->email})", $request->user()->id);
+        ActivityLog::log('approve_user', "Admin approved account for user {$user->name} ({$user->email})", $request->user()->id, $oldValues, $newValues);
 
         return redirect()->back()->with('success', "User {$user->name} has been approved and activated.");
     }
@@ -192,12 +211,18 @@ class UserController extends Controller
             return redirect()->back()->with('error', 'You cannot suspend your own account.');
         }
 
+        if ($user->isSuperAdmin()) {
+            return redirect()->back()->with('error', 'Super Admin accounts cannot be suspended.');
+        }
+
+        $oldValues = ['is_approved' => $user->is_approved, 'status' => $user->status];
         $user->update([
             'status' => 'suspended',
             'is_approved' => false,
         ]);
+        $newValues = ['is_approved' => false, 'status' => 'suspended'];
 
-        ActivityLog::log('suspend_user', "Admin suspended account for user {$user->name} ({$user->email})", $request->user()->id);
+        ActivityLog::log('suspend_user', "Admin suspended account for user {$user->name} ({$user->email})", $request->user()->id, $oldValues, $newValues);
 
         return redirect()->back()->with('success', "User {$user->name} has been suspended.");
     }

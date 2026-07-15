@@ -74,7 +74,9 @@ class RoleController extends Controller
         ActivityLog::log(
             'create_role',
             "Created Role: {$role->name} with " . count($validated['permissions'] ?? []) . " permissions",
-            Auth::id()
+            Auth::id(),
+            null,
+            ['name' => $role->name, 'permissions' => $validated['permissions'] ?? []]
         );
 
         return redirect()->route('admin.roles.index')
@@ -110,6 +112,12 @@ class RoleController extends Controller
 
         $validated = $request->validate($rules);
 
+        $oldValues = [
+            'name' => $role->name,
+            'description' => $role->description,
+            'permissions' => $role->permissions()->pluck('permissions.id')->toArray()
+        ];
+
         if (isset($validated['name']) && $role->name !== 'Super Admin') {
             $role->name = $validated['name'];
         }
@@ -124,10 +132,18 @@ class RoleController extends Controller
             $role->permissions()->sync($validated['permissions'] ?? []);
         }
 
+        $newValues = [
+            'name' => $role->name,
+            'description' => $role->description,
+            'permissions' => $role->permissions()->pluck('permissions.id')->toArray()
+        ];
+
         ActivityLog::log(
             'update_role',
             "Updated Role: {$role->name} permissions (" . count($validated['permissions'] ?? []) . " active)",
-            Auth::id()
+            Auth::id(),
+            $oldValues,
+            $newValues
         );
 
         return redirect()->route('admin.roles.index')
@@ -157,12 +173,19 @@ class RoleController extends Controller
         }
 
         $name = $role->name;
+        $oldValues = [
+            'name' => $role->name,
+            'description' => $role->description,
+            'permissions' => $role->permissions()->pluck('permissions.id')->toArray()
+        ];
         $role->delete();
 
         ActivityLog::log(
             'delete_role',
             "Deleted custom Role: {$name}",
-            Auth::id()
+            Auth::id(),
+            $oldValues,
+            null
         );
 
         return redirect()->route('admin.roles.index')

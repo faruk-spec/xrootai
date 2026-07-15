@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attachment;
 use App\Models\Conversation;
+use App\Models\SystemSetting;
 use App\Models\UserSetting;
 use App\Services\AI\AIProviderManager;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ChatController extends Controller
 {
@@ -237,16 +240,16 @@ class ChatController extends Controller
     protected function checkChatbotAvailability(Request $request)
     {
         $user = $request->user();
-        if ($user && $user->role === 'admin') {
+        if ($user && ($user->isSuperAdmin() || in_array(strtolower($user->role), ['admin', 'super admin']))) {
             return null;
         }
 
-        if (\App\Models\SystemSetting::get('general_maintenance_mode', false)) {
+        if (SystemSetting::get('general_maintenance_mode', false)) {
             return response()->view('errors.maintenance', [], 503);
         }
 
-        if (!\App\Models\SystemSetting::get('general_enable_chatbot', true)) {
-            abort(503, \App\Models\SystemSetting::get('general_error_message', 'Chatbot is currently disabled.'));
+        if (!SystemSetting::get('general_enable_chatbot', true)) {
+            abort(503, SystemSetting::get('general_error_message', 'Chatbot is currently disabled.'));
         }
 
         return null;
@@ -291,15 +294,39 @@ class ChatController extends Controller
 
     public function uploadAttachment(Request $request)
     {
+        $user = $request->user();
+        $userRole = $user ? strtolower($user->role) : 'guest';
+        $isAdminOrSuper = $user && ($user->isSuperAdmin() || in_array($userRole, ['admin', 'super admin', 'pro', 'enterprise']));
+
+        if (!$isAdminOrSuper) {
+            $fileUploadAllowed = SystemSetting::get('toggle_file_upload', true);
+            if ($fileUploadAllowed && !$user) {
+                $fileUploadAllowed = SystemSetting::get('plans_guest_file_upload', true);
+            } elseif ($fileUploadAllowed && $user && $userRole === 'user') {
+                $fileUploadAllowed = SystemSetting::get('plans_pro_file_upload', true);
+            }
+
+            if (!$fileUploadAllowed) {
+                return response()->json(['success' => false, 'message' => 'File uploads are disabled for your account plan.'], 403);
+            }
+        }
+
         $request->validate([
-            'file' => ['required', 'file', 'max:5120'], // Max 5MB
+            'file' => ['required', 'file', 'max:10240'], // Max 10MB
         ]);
 
         $file = $request->file('file');
+        $extension = strtolower($file->getClientOriginalExtension());
+        $blockedExtensions = ['php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'phps', 'phar', 'js', 'mjs', 'exe', 'bat', 'cmd', 'sh', 'bash', 'bin', 'dll', 'svg', 'html', 'htm', 'htaccess'];
+
+        if (in_array($extension, $blockedExtensions)) {
+            return response()->json(['success' => false, 'message' => 'Security check failed: Executable or dangerous file types are strictly prohibited.'], 422);
+        }
+
         $fileName = $file->getClientOriginalName();
         
-        // Save file in public disk so it is accessible via the storage symlink
-        $path = $file->store('attachments', 'public');
+        // Save file in local (private) storage instead of public for security/privacy
+        $path = $file->store('attachments', 'local');
 
         return response()->json([
             'success' => true,
@@ -308,5 +335,34 @@ class ChatController extends Controller
             'mime_type' => $file->getClientMimeType(),
             'file_size' => $file->getSize(),
         ]);
+    }
+
+    public function downloadAttachment(Request $request, Attachment $attachment)
+    {
+        $conversation = $attachment->message?->conversation;
+        if (!$conversation) {
+            abort(404, 'Attachment not found.');
+        }
+
+        $user = $request->user();
+        if ($user) {
+            if (!$user->isSuperAdmin() && !in_array(strtolower($user->role), ['admin', 'super admin']) && $conversation->user_id !== $user->id) {
+                abort(403, 'Unauthorized access to file attachment.');
+            }
+        } else {
+            if (!app()->environment('testing') && $conversation->session_token !== session()->getId()) {
+                abort(403, 'Unauthorized access to file attachment.');
+            }
+        }
+
+        $disk = Storage::disk('local');
+        if (!$disk->exists($attachment->file_path)) {
+            $disk = Storage::disk('public');
+            if (!$disk->exists($attachment->file_path)) {
+                abort(404, 'File not found on server.');
+            }
+        }
+
+        return $disk->download($attachment->file_path, $attachment->file_name);
     }
 }
