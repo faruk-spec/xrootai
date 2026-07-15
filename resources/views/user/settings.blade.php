@@ -31,101 +31,65 @@
         .bubble-1 { top: 3%; left: 8%; width: 420px; height: 420px; background: rgba(74,136,255,.35); }
         .bubble-2 { bottom: 8%; right: 6%; width: 460px; height: 460px; background: rgba(34,197,94,.22); }
 
-        /* ─── Page Wrapper ──────────────────────────────────────────── */
+        /* ─── Layout Shell (Full Extreme Leftbar + Scrollable Main) ─── */
         .page-shell {
+            display: flex; width: 100%; height: 100vh; overflow: hidden;
             position: relative; z-index: 1;
-            max-width: 1200px; margin: 0 auto;
-            padding: 32px 20px 60px;
-        }
-        @media (max-width: 640px) {
-            .page-shell { padding: 16px 14px 40px; }
         }
 
-        /* ─── Top Bar ───────────────────────────────────────────────── */
-        .top-bar {
-            display: flex; align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap; gap: 16px;
-            margin-bottom: 32px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid var(--clay-card-border);
-        }
-        .top-bar-left { display: flex; align-items: center; gap: 14px; }
-        .app-logo-badge {
-            width: 50px; height: 50px; border-radius: 16px; flex-shrink: 0;
-            background: linear-gradient(135deg, #4a88ff, #56ab2f);
-            color: #fff; font-weight: 800; font-size: 1.4rem;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 6px 20px rgba(74,136,255,.35);
-        }
-        .top-bar-title { font-size: 1.22rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
-        .top-bar-sub   { font-size: .85rem; color: var(--text-muted); margin-top: 2px; }
-        @media (max-width: 640px) {
-            .top-bar { flex-direction: column; align-items: flex-start; gap: 16px; margin-bottom: 20px; padding-bottom: 16px; }
-            .top-bar .clay-btn { width: 100%; justify-content: center; }
-        }
-
-        /* ─── Layout Grid ───────────────────────────────────────────── */
-        .settings-grid {
-            display: grid;
-            grid-template-columns: 256px 1fr;
-            gap: 24px;
-            align-items: start;
-        }
-        @media (max-width: 900px) {
-            .settings-grid { grid-template-columns: 1fr; gap: 16px; }
-            .settings-sidebar { position: static !important; padding: 16px; border-radius: 20px; }
-            .settings-nav {
-                display: flex; flex-direction: row; flex-wrap: nowrap;
-                overflow-x: auto; -webkit-overflow-scrolling: touch;
-                gap: 8px; padding-bottom: 4px;
-            }
-            .settings-nav::-webkit-scrollbar { height: 4px; }
-            .settings-nav::-webkit-scrollbar-thumb { background: rgba(100,116,139,.3); border-radius: 4px; }
-            .nav-item { flex: 0 0 auto; justify-content: center; padding: 10px 16px; border-radius: 50px; font-size: 0.88rem; }
-            .nav-section-label { display: none; }
-            .nav-divider { display: none; }
-        }
-
-        /* ─── Sidebar ───────────────────────────────────────────────── */
+        /* ─── Extreme Left Sidebar ──────────────────────────────────── */
         .settings-sidebar {
+            width: 264px; height: 100vh; flex-shrink: 0;
             background: var(--clay-card-bg);
             backdrop-filter: blur(20px);
-            border: 1px solid var(--clay-card-border);
-            border-radius: 24px;
-            padding: 20px;
-            box-shadow: var(--clay-outer-shadow);
-            position: sticky; top: 24px;
+            border-right: 1px solid var(--clay-card-border);
+            padding: 24px 18px;
+            display: flex; flex-direction: column;
+            overflow-y: auto; z-index: 50;
+            transition: transform .25s cubic-bezier(.2,0,0,1);
         }
 
-        /* User chip */
+        /* Sidebar Header Logo */
+        .sidebar-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px; padding: 0 4px;
+        }
+        .sidebar-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+        .app-logo-badge {
+            width: 42px; height: 42px; border-radius: 14px; flex-shrink: 0;
+            background: linear-gradient(135deg, #4a88ff, #56ab2f);
+            color: #fff; font-weight: 800; font-size: 1.25rem;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 14px rgba(74,136,255,.3);
+        }
+        .sidebar-brand-text { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+
+        /* User chip inside sidebar */
         .user-chip {
             display: flex; align-items: center; gap: 12px;
-            padding: 12px 14px; border-radius: 16px;
+            padding: 12px; border-radius: 16px;
             background: var(--clay-input-bg);
             border: 1px solid var(--clay-card-border);
             box-shadow: var(--clay-input-shadow);
-            margin-bottom: 22px;
+            margin-bottom: 24px;
         }
         .user-avatar {
-            width: 42px; height: 42px; border-radius: 50%;
+            width: 38px; height: 38px; border-radius: 50%;
             background: linear-gradient(135deg, #4a88ff, #3b5bdb);
-            color: #fff; font-weight: 700; font-size: 1.1rem;
+            color: #fff; font-weight: 700; font-size: 1rem;
             display: flex; align-items: center; justify-content: center;
             flex-shrink: 0;
         }
-        .user-name  { font-size: .93rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .user-email { font-size: .78rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-name  { font-size: .9rem; font-weight: 700; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-email { font-size: .76rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Nav section label */
         .nav-section-label {
             font-size: .68rem; font-weight: 700; letter-spacing: .08em;
             text-transform: uppercase; color: var(--text-muted);
             padding: 0 8px; margin-bottom: 8px;
         }
 
-        /* Nav items */
-        .settings-nav { display: flex; flex-direction: column; gap: 4px; }
+        .settings-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
         .nav-item {
             display: flex; align-items: center; gap: 12px;
             width: 100%; padding: 11px 14px;
@@ -137,14 +101,48 @@
         }
         .nav-item:hover  { color: var(--text-primary); background: rgba(126,182,255,.12); }
         .nav-item.active {
-            color: #fff;
+            color: #ffffff !important;
             background: linear-gradient(135deg, #4a88ff 0%, #3b5bdb 100%);
             box-shadow: 0 6px 18px rgba(74,136,255,.38);
         }
         .nav-item svg { flex-shrink: 0; }
 
-        /* Divider */
-        .nav-divider { border: none; border-top: 1px solid var(--clay-card-border); margin: 14px 0; }
+        .nav-divider { border: none; border-top: 1px solid var(--clay-card-border); margin: 16px 0; }
+
+        /* ─── Main Scrollable Area ──────────────────────────────────── */
+        .settings-main {
+            flex: 1; height: 100vh; overflow-y: auto;
+            padding: 36px 48px 80px; position: relative;
+        }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none; align-items: center; justify-content: space-between;
+            padding: 16px 20px; margin-bottom: 24px;
+            background: var(--clay-card-bg);
+            border: 1px solid var(--clay-card-border);
+            border-radius: 18px; box-shadow: var(--clay-outer-shadow);
+        }
+
+        /* Sidebar Backdrop on Mobile */
+        .sidebar-backdrop {
+            display: none; position: fixed; inset: 0;
+            background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px);
+            z-index: 45;
+        }
+
+        /* ─── Mobile Responsiveness (< 900px) ───────────────────────── */
+        @media (max-width: 900px) {
+            .settings-main { padding: 20px 18px 60px; }
+            .mobile-header { display: flex; }
+            .settings-sidebar {
+                position: fixed; top: 0; left: 0; height: 100vh;
+                transform: translateX(-100%); z-index: 50;
+                box-shadow: 20px 0 40px rgba(0,0,0,.15);
+            }
+            .settings-sidebar.open { transform: translateX(0); }
+            .sidebar-backdrop.open { display: block; }
+        }
 
         /* ─── Content Panel ─────────────────────────────────────────── */
         .settings-panel {
@@ -154,9 +152,9 @@
             border-radius: 24px;
             padding: 36px;
             box-shadow: var(--clay-outer-shadow);
-            min-height: 500px;
+            max-width: 1000px; margin: 0 auto;
         }
-        @media (max-width: 640px) { .settings-panel { padding: 22px 16px; border-radius: 20px; min-height: auto; } }
+        @media (max-width: 640px) { .settings-panel { padding: 22px 16px; border-radius: 20px; } }
 
         /* Panel section header */
         .section-header {
@@ -229,14 +227,17 @@
             border-top: 1px solid var(--clay-card-border);
         }
 
-        /* ─── Alerts ────────────────────────────────────────────────── */
+        /* ─── Alerts (#2 Fix - High contrast readability in light/dark) */
         .alert {
             display: flex; align-items: flex-start; gap: 12px;
             padding: 14px 18px; border-radius: 16px;
             font-size: .88rem; margin-bottom: 20px;
+            font-weight: 600;
         }
-        .alert-success { background: rgba(16,185,129,.14); color: #34d399; border: 1px solid rgba(16,185,129,.28); }
-        .alert-danger  { background: rgba(239, 68, 68,.14); color: var(--danger); border: 1px solid rgba(239,68,68,.28); }
+        .alert-success { background: rgba(16,185,129,.16); color: #065f46; border: 1px solid rgba(16,185,129,.35); }
+        .dark-mode .alert-success { color: #34d399; }
+        .alert-danger  { background: rgba(239, 68, 68,.16); color: #991b1b; border: 1px solid rgba(239,68,68,.35); }
+        .dark-mode .alert-danger  { color: #f87171; }
         .alert svg     { flex-shrink: 0; margin-top: 1px; }
         .alert ul      { margin: 0; padding-left: 18px; }
 
@@ -352,41 +353,43 @@
             background: var(--clay-input-bg);
         }
 
-        /* ─── Btn helpers ───────────────────────────────────────────── */
+        /* ─── High Contrast Buttons (#2 Fix) ────────────────────────── */
         .btn {
-            display: inline-flex; align-items: center; gap: 8px;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
             padding: 10px 20px; border-radius: 14px;
-            font-size: .87rem; font-weight: 600; cursor: pointer;
+            font-size: .88rem; font-weight: 700; cursor: pointer;
             border: 1px solid transparent; transition: all .2s ease;
             text-decoration: none;
         }
         .btn-danger-outline {
-            color: var(--danger);
+            color: #b91c1c !important;
             border-color: rgba(239,68,68,.4);
-            background: rgba(239,68,68,.08);
+            background: rgba(239,68,68,.1);
         }
-        .btn-danger-outline:hover { background: rgba(239,68,68,.16); }
+        .dark-mode .btn-danger-outline { color: #f87171 !important; }
+        .btn-danger-outline:hover { background: rgba(239,68,68,.18); }
         .btn-danger {
-            background: var(--danger); color: #fff;
+            background: #dc2626 !important; color: #ffffff !important;
             box-shadow: 0 4px 12px rgba(239,68,68,.3);
         }
-        .btn-danger:hover { background: #e53e3e; }
+        .btn-danger:hover { background: #b91c1c !important; }
         .btn-secondary {
-            color: var(--text-primary);
+            color: #0f172a !important;
             background: var(--clay-input-bg);
             border-color: var(--clay-card-border);
         }
+        .dark-mode .btn-secondary { color: #f1f5f9 !important; }
         .btn-secondary:hover { background: var(--clay-card-bg); }
         .btn-success {
-            background: var(--success); color: #fff;
+            background: #059669 !important; color: #ffffff !important;
             box-shadow: 0 4px 12px rgba(16,185,129,.3);
         }
-        .btn-success:hover { opacity: .9; }
+        .btn-success:hover { background: #047857 !important; }
         .btn-primary {
-            background: var(--accent); color: #fff;
+            background: var(--accent) !important; color: #ffffff !important;
             box-shadow: 0 4px 12px rgba(74,136,255,.3);
         }
-        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-primary:hover { background: var(--accent-hover) !important; }
 
         /* ─── Key grid & Inner Grids Responsiveness ─────────────────── */
         .keys-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 20px; margin-bottom: 28px; }
@@ -394,11 +397,11 @@
             .keys-grid { grid-template-columns: 1fr; gap: 14px; }
             .theme-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
             .security-status-card { flex-direction: column; align-items: flex-start; gap: 14px; padding: 18px 16px; }
-            .security-status-card .clay-btn { width: 100%; justify-content: center; }
+            .security-status-card .clay-btn, .security-status-card .btn { width: 100%; justify-content: center; }
             .recovery-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
             .qr-panel { padding: 18px 14px; }
             .qr-panel .field-group { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
-            .qr-panel .clay-btn { width: 100%; justify-content: center; }
+            .qr-panel .clay-btn, .qr-panel .btn { width: 100%; justify-content: center; }
         }
         @media (max-width: 400px) {
             .theme-grid { grid-template-columns: 1fr !important; }
@@ -414,110 +417,132 @@
     x-data="{
         darkMode: localStorage.getItem('darkMode') === 'true',
         activeTab: '{{ $activeTab }}',
-        showDisableModal: false
+        showDisableModal: false,
+        showLogoutModal: false,
+        sidebarOpen: false
     }"
     :class="{ 'dark-mode': darkMode }"
 >
     <div class="ambient-bubble bubble-1"></div>
     <div class="ambient-bubble bubble-2"></div>
 
+    {{-- Sidebar Backdrop for Mobile --}}
+    <div class="sidebar-backdrop" :class="{ 'open': sidebarOpen }" @click="sidebarOpen = false"></div>
+
     <div class="page-shell">
 
-        {{-- ─── TOP BAR ──────────────────────────────────────────────── --}}
-        <header class="top-bar">
-            <div class="top-bar-left">
-                @php 
-                    $lightLogo = \App\Models\SystemSetting::get('general_logo_light') ?: \App\Models\SystemSetting::get('general_chatbot_logo'); 
-                    $darkLogo = \App\Models\SystemSetting::get('general_logo_dark') ?: \App\Models\SystemSetting::get('general_chatbot_logo'); 
-                @endphp
-                @if($lightLogo || $darkLogo)
-                    <img :src="darkMode ? '{{ $darkLogo ?: $lightLogo }}' : '{{ $lightLogo ?: $darkLogo }}'" alt="Logo" class="app-logo-img" style="width:50px; height:50px; border-radius:16px; object-fit:contain; flex-shrink:0;">
-                @else
-                    <div class="app-logo-badge">
-                        {{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'App'), 0, 1) }}
-                    </div>
-                @endif
+        {{-- ─── EXTREME LEFT SIDEBAR ─────────────────────────────────── --}}
+        <aside class="settings-sidebar" :class="{ 'open': sidebarOpen }">
+            <div class="sidebar-header">
+                <a href="{{ route('chat') }}" class="sidebar-brand">
+                    @php 
+                        $lightLogo = \App\Models\SystemSetting::get('general_logo_light') ?: \App\Models\SystemSetting::get('general_chatbot_logo'); 
+                        $darkLogo = \App\Models\SystemSetting::get('general_logo_dark') ?: \App\Models\SystemSetting::get('general_chatbot_logo'); 
+                    @endphp
+                    @if($lightLogo || $darkLogo)
+                        <img :src="darkMode ? '{{ $darkLogo ?: $lightLogo }}' : '{{ $lightLogo ?: $darkLogo }}'" alt="Logo" style="width:42px; height:42px; border-radius:14px; object-fit:contain; flex-shrink:0;">
+                    @else
+                        <div class="app-logo-badge">
+                            {{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'App'), 0, 1) }}
+                        </div>
+                    @endif
+                    <span class="sidebar-brand-text">{{ \App\Models\SystemSetting::get('general_chatbot_name', 'App') }}</span>
+                </a>
+                <button type="button" class="clay-btn clay-btn-secondary" @click="sidebarOpen = false" style="padding: 6px; border-radius: 10px; display: none;" :style="window.innerWidth <= 900 ? 'display: inline-flex;' : ''">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            {{-- User chip --}}
+            <div class="user-chip">
+                <div class="user-avatar">{{ substr(Auth::user()->name, 0, 1) }}</div>
+                <div style="overflow:hidden;">
+                    <div class="user-name">{{ Auth::user()->name }}</div>
+                    <div class="user-email">{{ Auth::user()->email }}</div>
+                </div>
+            </div>
+
+            <div class="nav-section-label">Navigation</div>
+
+            <nav class="settings-nav">
+                <button type="button" id="nav-general" class="nav-item" :class="{ active: activeTab === 'general' }" @click="activeTab = 'general'; sidebarOpen = false;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    General &amp; AI
+                </button>
+
+                <button type="button" id="nav-theme" class="nav-item" :class="{ active: activeTab === 'theme' }" @click="activeTab = 'theme'; sidebarOpen = false;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
+                    Appearance
+                </button>
+
+                <button type="button" id="nav-keys" class="nav-item" :class="{ active: activeTab === 'keys' }" @click="activeTab = 'keys'; sidebarOpen = false;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                    API Keys (BYOK)
+                </button>
+
+                <button type="button" id="nav-security" class="nav-item" :class="{ active: activeTab === 'security' }" @click="activeTab = 'security'; sidebarOpen = false;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    Security &amp; 2FA
+                </button>
+            </nav>
+
+            <hr class="nav-divider">
+
+            {{-- Sign Out with Confirmation Modal Trigger (#3 Fix) --}}
+            <button type="button" @click="showLogoutModal = true" class="nav-item" style="color: #dc2626 !important; width:100%;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                Sign Out
+            </button>
+        </aside>
+
+        {{-- ─── MAIN SCROLLABLE AREA ─────────────────────────────────── --}}
+        <div class="settings-main">
+
+            {{-- Mobile Header with Hamburger --}}
+            <div class="mobile-header">
+                <button type="button" class="btn btn-secondary" @click="sidebarOpen = true" style="padding: 8px 12px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    Menu
+                </button>
+                <span style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">Account Settings</span>
+                <a href="{{ route('chat') }}" class="btn btn-secondary" style="padding: 8px 12px;">
+                    Back
+                </a>
+            </div>
+
+            {{-- Top Bar for Desktop --}}
+            <header class="top-bar">
                 <div>
-                    <div class="top-bar-title">Account & Settings</div>
+                    <div class="top-bar-title">Account &amp; Settings</div>
                     <div class="top-bar-sub">Manage your AI preferences, appearance, API keys &amp; security.</div>
                 </div>
-            </div>
-            <a href="{{ route('chat') }}" class="clay-btn clay-btn-secondary" style="padding: 10px 20px; font-size: .87rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                Back to Chat
-            </a>
-        </header>
+                <a href="{{ route('chat') }}" class="btn btn-secondary" style="padding: 10px 20px; font-size: .88rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    Back to Chat
+                </a>
+            </header>
 
-        {{-- ─── GLOBAL ALERTS ────────────────────────────────────────── --}}
-        @if(session('success'))
-            <div class="alert alert-success">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                <div>{{ session('success') }}</div>
-            </div>
-        @endif
-        @if(session('error'))
-            <div class="alert alert-danger">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                <div>{{ session('error') }}</div>
-            </div>
-        @endif
-        @if($errors->any())
-            <div class="alert alert-danger">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                <div><ul>@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul></div>
-            </div>
-        @endif
-
-        {{-- ─── SETTINGS GRID ────────────────────────────────────────── --}}
-        <div class="settings-grid">
-
-            {{-- SIDEBAR --}}
-            <aside class="settings-sidebar">
-                {{-- User chip --}}
-                <div class="user-chip">
-                    <div class="user-avatar">{{ substr(Auth::user()->name, 0, 1) }}</div>
-                    <div style="overflow:hidden;">
-                        <div class="user-name">{{ Auth::user()->name }}</div>
-                        <div class="user-email">{{ Auth::user()->email }}</div>
-                    </div>
+            {{-- ─── GLOBAL ALERTS ────────────────────────────────────── --}}
+            @if(session('success'))
+                <div class="alert alert-success">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <div>{{ session('success') }}</div>
                 </div>
+            @endif
+            @if(session('error'))
+                <div class="alert alert-danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <div>{{ session('error') }}</div>
+                </div>
+            @endif
+            @if($errors->any())
+                <div class="alert alert-danger">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <div><ul>@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul></div>
+                </div>
+            @endif
 
-                <div class="nav-section-label">Navigation</div>
-
-                <nav class="settings-nav">
-                    <button type="button" id="nav-general" class="nav-item" :class="{ active: activeTab === 'general' }" @click="activeTab = 'general'">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                        General &amp; AI
-                    </button>
-
-                    <button type="button" id="nav-theme" class="nav-item" :class="{ active: activeTab === 'theme' }" @click="activeTab = 'theme'">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
-                        Appearance
-                    </button>
-
-                    <button type="button" id="nav-keys" class="nav-item" :class="{ active: activeTab === 'keys' }" @click="activeTab = 'keys'">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                        API Keys (BYOK)
-                    </button>
-
-                    <button type="button" id="nav-security" class="nav-item" :class="{ active: activeTab === 'security' }" @click="activeTab = 'security'">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                        Security &amp; 2FA
-                    </button>
-                </nav>
-
-                <hr class="nav-divider">
-
-                <form action="{{ route('logout') }}" method="POST" style="margin:0;">
-                    @csrf
-                    <button type="submit" class="nav-item" style="color: var(--danger); width:100%;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                        Sign Out
-                    </button>
-                </form>
-            </aside>
-
-            {{-- MAIN CONTENT --}}
+            {{-- MAIN CONTENT PANEL --}}
             <main class="settings-panel">
 
                 {{-- ── TAB 1: GENERAL & AI ──────────────────────────────── --}}
@@ -759,6 +784,37 @@
                         </div>
                     </div>
 
+                    {{-- Email OTP Verification Panel (#4 Fix - Require OTP code entry to activate Email 2FA) --}}
+                    @if(request()->query('setup') === 'email' || session('email_otp_pending_setup'))
+                        <div class="qr-panel" style="border-color: rgba(74,136,255,.35); background: rgba(74,136,255,.07);">
+                            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:14px;">
+                                <span style="display:inline-flex; align-items:center; gap:8px; font-size:.82rem; font-weight:700; color:var(--accent); background:rgba(74,136,255,.12); padding:6px 14px; border-radius:50px; border:1px solid rgba(74,136,255,.25);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                    Email OTP Verification Required
+                                </span>
+                                <a href="{{ route('user.settings', ['tab' => 'security']) }}" style="font-size:.82rem; color:var(--text-muted); text-decoration:none; display:flex; align-items:center; gap:4px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    Close
+                                </a>
+                            </div>
+                            <h5 style="font-size:.98rem; font-weight:700; color:var(--text-primary); margin-bottom:6px;">Verify Email One-Time Password (OTP)</h5>
+                            <p style="font-size:.82rem; color:var(--text-muted); margin-bottom:20px;">We have sent a 6-digit verification code to <strong style="color:var(--text-primary);">{{ Auth::user()->email }}</strong>. Please enter the code below to verify your email and activate Two-Factor Authentication.</p>
+                            
+                            <form method="POST" action="{{ route('profile.security.email-confirm') }}">
+                                @csrf
+                                <label class="field-label" style="display:block; margin-bottom:12px;">Enter the 6-digit code sent to your email:</label>
+                                <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                                    <input type="text" id="email-otp-input" name="otp_code" class="field-input" style="max-width:180px; text-align:center; font-size:1.4rem; font-weight:700; letter-spacing:8px;" placeholder="000000" maxlength="6" required autofocus autocomplete="one-time-code">
+                                    <button type="submit" id="confirm-email-otp-btn" class="btn btn-primary">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        Verify &amp; Activate Email OTP
+                                    </button>
+                                    <a href="{{ route('user.settings', ['tab' => 'security']) }}" class="btn btn-secondary">Cancel</a>
+                                </div>
+                            </form>
+                        </div>
+                    @endif
+
                     {{-- TOTP Setup Panel --}}
                     @if($qrCodeUrl)
                         <div class="qr-panel">
@@ -871,6 +927,33 @@
                 <div class="modal-footer">
                     <button type="button" id="cancel-disable-2fa" class="btn btn-secondary" @click="showDisableModal = false">Cancel</button>
                     <button type="submit" id="confirm-disable-2fa" class="btn btn-danger">Turn Off 2FA</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- ─── LOGOUT CONFIRMATION MODAL (#3 Fix) ─────────────────────────── --}}
+    <div class="modal-overlay" x-show="showLogoutModal" x-cloak @click.self="showLogoutModal = false"
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        <div class="modal-box" @click.stop x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    Confirm Sign Out
+                </div>
+                <button type="button" class="modal-close" @click="showLogoutModal = false" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <form action="{{ route('logout') }}" method="POST" style="margin:0;">
+                @csrf
+                <div class="modal-body">
+                    <p style="font-size:.9rem; color:var(--text-primary); margin-bottom:0;">Are you sure you want to sign out of your account on this device?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @click="showLogoutModal = false">Cancel</button>
+                    <button type="submit" class="btn btn-danger" style="background:#dc2626 !important; color:#fff !important;">Yes, Sign Out</button>
                 </div>
             </form>
         </div>

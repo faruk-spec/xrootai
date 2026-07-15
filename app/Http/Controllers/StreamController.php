@@ -245,7 +245,7 @@ class StreamController extends Controller
         // 4. Fetch full conversation history
         $history = [];
         
-        // Add system prompt from user settings and enforce dynamic identity
+        // Add system prompt from user settings and enforce dynamic identity & admin instructions
         $botName = \App\Models\SystemSetting::get('general_chatbot_name', 'XrootAI');
         $botDesc = \App\Models\SystemSetting::get('general_chatbot_description', 'Your advanced AI coding and conversation assistant.');
         
@@ -254,8 +254,39 @@ class StreamController extends Controller
             "If asked who you are, your name, who created/built/developed/trained you, or about your identity, origin, and underlying technology/model, you MUST strictly and solely answer that you are {$botName}, an artificial intelligence assistant created and developed by the {$botName} Team.\n" .
             "You MUST NEVER mention OpenAI, Anthropic, Google, Meta, DeepSeek, Mistral, or any underlying API models, companies, or training datasets under any circumstances.\n\n";
 
+        // Build Admin Custom System Instructions
+        $adminPrompt = \App\Models\SystemSetting::get('prompt_default', "You are {$botName}, a helpful, advanced AI assistant.");
+        if ($roleDef = \App\Models\SystemSetting::get('prompt_role_definition')) {
+            $adminPrompt .= "\n\n[Role & Definition]\n" . $roleDef;
+        }
+        if ($bizRules = \App\Models\SystemSetting::get('prompt_business_rules')) {
+            $adminPrompt .= "\n\n[Business Rules & Constraints]\n" . $bizRules;
+        }
+        if ($allowed = \App\Models\SystemSetting::get('prompt_allowed_behaviors')) {
+            $adminPrompt .= "\n\n[Allowed Behaviors]\n" . $allowed;
+        }
+        if ($restricted = \App\Models\SystemSetting::get('prompt_restricted_behaviors')) {
+            $adminPrompt .= "\n\n[Restricted Behaviors]\n" . $restricted;
+        }
+        if ($brandVoice = \App\Models\SystemSetting::get('prompt_brand_voice')) {
+            $adminPrompt .= "\n\n[Brand Voice & Tone]\n" . $brandVoice;
+        }
+        if ($customInst = \App\Models\SystemSetting::get('prompt_custom_instructions')) {
+            $adminPrompt .= "\n\n[Custom System Instructions]\n" . $customInst;
+        }
+
+        // Check if user has explicit custom prompt beyond the initial default
         $settings = $user ? $user->settings : null;
-        $basePrompt = $settings && !empty($settings->system_prompt) ? $settings->system_prompt : \App\Models\SystemSetting::get('prompt_default', "You are {$botName}, a helpful, advanced AI assistant.");
+        $userPrompt = $settings ? trim($settings->system_prompt ?? '') : '';
+        $oldDefault = 'You are XrootAI, a helpful, advanced AI coding and conversation assistant.';
+        $currentDefault = trim(\App\Models\SystemSetting::get('prompt_default', ''));
+        
+        if (!empty($userPrompt) && $userPrompt !== $oldDefault && $userPrompt !== $currentDefault && $userPrompt !== trim($adminPrompt)) {
+            $basePrompt = $adminPrompt . "\n\n[User Custom Preferences]\n" . $userPrompt;
+        } else {
+            $basePrompt = $adminPrompt;
+        }
+
         // Ensure any static occurrences of XrootAI inside prompt_default or custom instructions are replaced with the custom botName
         if ($botName !== 'XrootAI') {
             $basePrompt = str_ireplace('XrootAI', $botName, $basePrompt);

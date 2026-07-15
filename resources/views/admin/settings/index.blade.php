@@ -231,6 +231,11 @@
                         <textarea name="prompt_business_rules" class="form-control" rows="3">{{ $settings['prompt_business_rules'] }}</textarea>
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Custom System Instructions</label>
+                        <textarea name="prompt_custom_instructions" class="form-control" rows="4">{{ $settings['prompt_custom_instructions'] ?? '' }}</textarea>
+                    </div>
+
                     <button type="submit" class="btn btn-primary d-flex align-items-center gap-2">
                         <i class="bi bi-save2-fill"></i> Save Prompt Rules
                     </button>

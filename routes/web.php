@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/security', [ProfileSecurityController::class, 'index'])->name('profile.security');
     Route::post('/profile/security', [ProfileSecurityController::class, 'update'])->name('profile.security.update');
     Route::post('/profile/security/totp-confirm', [ProfileSecurityController::class, 'confirmTotp'])->name('profile.security.totp-confirm');
+    Route::post('/profile/security/email-confirm', [ProfileSecurityController::class, 'confirmEmailOtp'])->name('profile.security.email-confirm');
 
     // Email Verification Routes
     Route::get('/email/verify', [EmailVerificationController::class, 'show'])->name('verification.notice');

@@ -73,18 +73,13 @@ class ProfileSecurityController extends Controller
         $user = Auth::user();
         $action = $request->input('action');
 
-        // Enabling Email OTP 2FA
+        // Enabling Email OTP 2FA (Start challenge)
         if ($action === 'enable_email') {
-            $user->update([
-                'two_factor_enabled' => true,
-                'two_factor_type' => 'email',
-                'two_factor_confirmed_at' => now(),
-            ]);
-            $this->twoFactorService->generateRecoveryCodes($user, 8);
-            ActivityLog::log('2fa_enabled_email', "User enabled Email OTP 2FA: {$user->email}", $user->id);
+            $this->twoFactorService->createEmailChallenge($user);
+            session(['email_otp_pending_setup' => true]);
 
-            return redirect()->route('user.settings', ['tab' => 'security'])
-                ->with('success', 'Email OTP Two-Factor Authentication has been activated.');
+            return redirect()->route('user.settings', ['tab' => 'security', 'setup' => 'email'])
+                ->with('success', 'We have sent a 6-digit verification code to your email. Please enter it below to confirm activation.');
         }
 
         // Regenerating Recovery Codes
@@ -121,5 +116,42 @@ class ProfileSecurityController extends Controller
         }
 
         return redirect()->route('user.settings', ['tab' => 'security']);
+    }
+
+    /**
+     * Confirm 6-digit Email OTP before activating Email 2FA.
+     */
+    public function confirmEmailOtp(Request $request)
+    {
+        $request->validate([
+            'otp_code' => ['required', 'string', 'max:6'],
+        ]);
+
+        $user = Auth::user();
+
+        $challenge = \App\Models\TwoFactorChallenge::where('user_id', $user->id)
+            ->whereNull('used_at')
+            ->where('expires_at', '>', now())
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if (!$challenge || !hash_equals((string) $challenge->code, trim($request->otp_code))) {
+            if ($challenge) $challenge->increment('attempts');
+            return back()->withErrors(['otp_code' => 'The verification OTP code is incorrect or has expired. Please check your email and try again.']);
+        }
+
+        $challenge->update(['used_at' => now()]);
+        session()->forget('email_otp_pending_setup');
+
+        $user->update([
+            'two_factor_enabled' => true,
+            'two_factor_type' => 'email',
+            'two_factor_confirmed_at' => now(),
+        ]);
+        $this->twoFactorService->generateRecoveryCodes($user, 8);
+        ActivityLog::log('2fa_enabled_email', "User enabled Email OTP 2FA: {$user->email}", $user->id);
+
+        return redirect()->route('user.settings', ['tab' => 'security'])
+            ->with('success', 'Email OTP Two-Factor Authentication has been successfully activated.');
     }
 }

@@ -814,6 +814,10 @@
                                 <input type="text" name="prompt_brand_voice" value="{{ $settings['prompt_brand_voice'] }}" class="clay-inset">
                             </div>
                             <div class="setting-row">
+                                <label class="clay-input-label">Custom System Instructions</label>
+                                <textarea name="prompt_custom_instructions" class="clay-inset" rows="4" style="width:100%; border:none; resize:none;">{{ $settings['prompt_custom_instructions'] ?? '' }}</textarea>
+                            </div>
+                            <div class="setting-row">
                                 <label class="clay-input-label">Variables (comma separated)</label>
                                 <input type="text" name="prompt_variables" value="{{ $settings['prompt_variables'] }}" class="clay-inset">
                             </div>
