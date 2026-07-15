@@ -37,6 +37,9 @@
             max-width: 1200px; margin: 0 auto;
             padding: 32px 20px 60px;
         }
+        @media (max-width: 640px) {
+            .page-shell { padding: 16px 14px 40px; }
+        }
 
         /* ─── Top Bar ───────────────────────────────────────────────── */
         .top-bar {
@@ -57,6 +60,10 @@
         }
         .top-bar-title { font-size: 1.22rem; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
         .top-bar-sub   { font-size: .85rem; color: var(--text-muted); margin-top: 2px; }
+        @media (max-width: 640px) {
+            .top-bar { flex-direction: column; align-items: flex-start; gap: 16px; margin-bottom: 20px; padding-bottom: 16px; }
+            .top-bar .clay-btn { width: 100%; justify-content: center; }
+        }
 
         /* ─── Layout Grid ───────────────────────────────────────────── */
         .settings-grid {
@@ -66,9 +73,18 @@
             align-items: start;
         }
         @media (max-width: 900px) {
-            .settings-grid { grid-template-columns: 1fr; }
-            .settings-nav  { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px; }
-            .nav-item      { flex: 1 1 140px; justify-content: center; }
+            .settings-grid { grid-template-columns: 1fr; gap: 16px; }
+            .settings-sidebar { position: static !important; padding: 16px; border-radius: 20px; }
+            .settings-nav {
+                display: flex; flex-direction: row; flex-wrap: nowrap;
+                overflow-x: auto; -webkit-overflow-scrolling: touch;
+                gap: 8px; padding-bottom: 4px;
+            }
+            .settings-nav::-webkit-scrollbar { height: 4px; }
+            .settings-nav::-webkit-scrollbar-thumb { background: rgba(100,116,139,.3); border-radius: 4px; }
+            .nav-item { flex: 0 0 auto; justify-content: center; padding: 10px 16px; border-radius: 50px; font-size: 0.88rem; }
+            .nav-section-label { display: none; }
+            .nav-divider { display: none; }
         }
 
         /* ─── Sidebar ───────────────────────────────────────────────── */
@@ -140,7 +156,7 @@
             box-shadow: var(--clay-outer-shadow);
             min-height: 500px;
         }
-        @media (max-width: 640px) { .settings-panel { padding: 22px 16px; } }
+        @media (max-width: 640px) { .settings-panel { padding: 22px 16px; border-radius: 20px; min-height: auto; } }
 
         /* Panel section header */
         .section-header {
@@ -372,8 +388,22 @@
         }
         .btn-primary:hover { background: var(--accent-hover); }
 
-        /* ─── Key grid ──────────────────────────────────────────────── */
+        /* ─── Key grid & Inner Grids Responsiveness ─────────────────── */
         .keys-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap: 20px; margin-bottom: 28px; }
+        @media (max-width: 640px) {
+            .keys-grid { grid-template-columns: 1fr; gap: 14px; }
+            .theme-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+            .security-status-card { flex-direction: column; align-items: flex-start; gap: 14px; padding: 18px 16px; }
+            .security-status-card .clay-btn { width: 100%; justify-content: center; }
+            .recovery-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .qr-panel { padding: 18px 14px; }
+            .qr-panel .field-group { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
+            .qr-panel .clay-btn { width: 100%; justify-content: center; }
+        }
+        @media (max-width: 400px) {
+            .theme-grid { grid-template-columns: 1fr !important; }
+            .recovery-grid { grid-template-columns: 1fr; }
+        }
 
         /* ─── Transitions ───────────────────────────────────────────── */
         [x-cloak] { display: none !important; }
@@ -396,9 +426,17 @@
         {{-- ─── TOP BAR ──────────────────────────────────────────────── --}}
         <header class="top-bar">
             <div class="top-bar-left">
-                <div class="app-logo-badge">
-                    {{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'App'), 0, 1) }}
-                </div>
+                @php 
+                    $lightLogo = \App\Models\SystemSetting::get('general_logo_light') ?: \App\Models\SystemSetting::get('general_chatbot_logo'); 
+                    $darkLogo = \App\Models\SystemSetting::get('general_logo_dark') ?: \App\Models\SystemSetting::get('general_chatbot_logo'); 
+                @endphp
+                @if($lightLogo || $darkLogo)
+                    <img :src="darkMode ? '{{ $darkLogo ?: $lightLogo }}' : '{{ $lightLogo ?: $darkLogo }}'" alt="Logo" class="app-logo-img" style="width:50px; height:50px; border-radius:16px; object-fit:contain; flex-shrink:0;">
+                @else
+                    <div class="app-logo-badge">
+                        {{ substr(\App\Models\SystemSetting::get('general_chatbot_name', 'App'), 0, 1) }}
+                    </div>
+                @endif
                 <div>
                     <div class="top-bar-title">Account & Settings</div>
                     <div class="top-bar-sub">Manage your AI preferences, appearance, API keys &amp; security.</div>

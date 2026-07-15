@@ -28,8 +28,17 @@ class TwoFactorService
      */
     public function getOtpAuthUrl(User $user, string $secret): string
     {
-        $appName = config('app.name', 'XrootAI');
-        $appNameClean = preg_replace('/[^a-zA-Z0-9_\-]/', '', $appName);
+        $appName = \App\Models\SystemSetting::get('general_chatbot_name');
+        if (empty($appName) || $appName === 'Laravel') {
+            $appName = config('app.name');
+            if (empty($appName) || $appName === 'Laravel') {
+                $appName = 'XrootAI';
+            }
+        }
+        $appNameClean = trim(preg_replace('/[^a-zA-Z0-9_\- ]/', '', $appName));
+        if (empty($appNameClean)) {
+            $appNameClean = 'XrootAI';
+        }
         $email = $user->email;
 
         return sprintf(
