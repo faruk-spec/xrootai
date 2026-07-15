@@ -33,9 +33,10 @@ class AuthTest extends TestCase
             'email' => 'john@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'terms_and_conditions' => '1',
         ]);
 
-        $response->assertRedirect('/');
+        $response->assertRedirect(route('verification.notice'));
         $this->assertDatabaseHas('users', [
             'email' => 'john@example.com',
             'name' => 'John Doe',
@@ -62,6 +63,7 @@ class AuthTest extends TestCase
             'email' => 'john@example.com',
             'password' => 'password123',
             'password_confirmation' => 'password123',
+            'terms_and_conditions' => '1',
         ]);
 
         $response->assertSessionHasErrors('email');

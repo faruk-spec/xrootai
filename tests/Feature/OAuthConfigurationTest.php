@@ -40,7 +40,7 @@ class OAuthConfigurationTest extends TestCase
     {
         $response = $this->actingAs($this->admin)->get(route('admin.oauth.index'));
         $response->assertStatus(200);
-        $response->assertSee('SSO Login Providers');
+        $response->assertSee('OAuth configurations');
         $response->assertSee('Google');
         $response->assertSee('GitHub');
     }

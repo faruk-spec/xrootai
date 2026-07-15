@@ -58,7 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/email/change', [EmailVerificationController::class, 'changeEmail'])->name('verification.change-email');
 
     // Settings & Profile (authenticated only)
-    Route::get('/settings', [SettingsController::class, 'index'])->name('user.settings');
+    Route::get('/settings', [SettingsController::class, 'show'])->name('user.settings');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::post('/settings/keys', [SettingsController::class, 'updateKeys'])->name('settings.keys');
 });

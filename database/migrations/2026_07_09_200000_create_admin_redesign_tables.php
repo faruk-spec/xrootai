@@ -308,6 +308,18 @@ return new class extends Migration
                 'capabilities' => json_encode(['vision' => false, 'function_calling' => false]),
                 'is_active' => true,
             ],
+            [
+                'provider_id' => $mock,
+                'name' => 'Mock local-model (Simulation)',
+                'model_identifier' => 'mock-default',
+                'type' => 'chat',
+                'context_window' => 4096,
+                'max_tokens' => 2048,
+                'cost_per_million_input' => 0.00,
+                'cost_per_million_output' => 0.00,
+                'capabilities' => json_encode(['vision' => false, 'function_calling' => false]),
+                'is_active' => true,
+            ],
         ];
 
         foreach ($models as $model) {

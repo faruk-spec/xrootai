@@ -6,16 +6,18 @@ use App\Models\ApiKey;
 use App\Models\UserSetting;
 use App\Services\AI\AIProviderManager;
 use Illuminate\Http\Request;
-
+use App\Services\TwoFactorService;
 class SettingsController extends Controller
 {
-    public function index(Request $request, \App\Services\TwoFactorService $twoFactorService, AIProviderManager $aiManager)
+    
+    // Display settings page
+    public function show(Request $request, TwoFactorService $twoFactorService, AIProviderManager $aiManager)
     {
         $user = $request->user();
         $settings = UserSetting::where('user_id', $user->id)->first() ?? new UserSetting([
             'theme' => 'system',
             'default_model' => 'mock',
-            'system_prompt' => ''
+            'system_prompt' => '',
         ]);
 
         $recoveryCodes = $user->getTwoFactorRecoveryCodesArray();
@@ -24,7 +26,7 @@ class SettingsController extends Controller
 
         if ($request->query('setup') === 'totp') {
             $secretKey = session('totp_pending_secret');
-            if (!$secretKey) {
+            if (! $secretKey) {
                 $secretKey = $twoFactorService->generateSecretKey(16);
                 session(['totp_pending_secret' => $secretKey]);
             }
@@ -32,7 +34,7 @@ class SettingsController extends Controller
             $qrCodeUrl = $twoFactorService->getQrCodeUrl($otpauthUrl);
         }
 
-        // Get available models
+        // Load available AI models
         $models = [];
         if (\Illuminate\Support\Facades\Schema::hasTable('ai_models')) {
             $dbModels = \App\Models\AIModel::with('provider')->where('is_active', true)->get();
@@ -49,29 +51,56 @@ class SettingsController extends Controller
 
         $activeTab = $request->query('tab', session('active_tab', 'general'));
 
-        return view('user.settings', compact('user', 'settings', 'recoveryCodes', 'qrCodeUrl', 'secretKey', 'models', 'activeTab'));
+        $apiKeys = ApiKey::where('user_id', $user->id)->get()->keyBy('provider');
+        $conversationsCount = $user->conversations()->count();
+        $tokenUsage = 48291; // placeholder
+        $storageUsed = '14.8 MB'; // placeholder
+
+        return view('user.settings', compact(
+            'user',
+            'settings',
+            'recoveryCodes',
+            'qrCodeUrl',
+            'secretKey',
+            'models',
+            'activeTab',
+            'apiKeys',
+            'conversationsCount',
+            'tokenUsage',
+            'storageUsed'
+        ));
     }
+
 
     public function update(Request $request)
     {
         $request->validate([
-            'theme' => ['required', 'string', 'in:light,dark,system'],
+            'theme' => ['nullable', 'string', 'in:light,dark,system,oled'],
             'default_model' => ['required', 'string'],
             'system_prompt' => ['nullable', 'string'],
+            'preferences' => ['nullable', 'array'],
         ]);
 
         $user = $request->user();
+        $setting = UserSetting::firstOrCreate(['user_id' => $user->id]);
 
-        UserSetting::updateOrCreate(
-            ['user_id' => $user->id],
-            [
-                'theme' => $request->theme,
-                'default_model' => $request->default_model,
-                'system_prompt' => $request->system_prompt,
-            ]
-        );
+        if ($request->has('theme') && !empty($request->theme)) {
+            $setting->theme = $request->theme;
+        }
+        if ($request->has('default_model') && !empty($request->default_model)) {
+            $setting->default_model = $request->default_model;
+        }
+        if ($request->has('system_prompt')) {
+            $setting->system_prompt = $request->system_prompt;
+        }
+        if ($request->has('preferences') && is_array($request->preferences)) {
+            $existingPrefs = is_array($setting->preferences) ? $setting->preferences : [];
+            $setting->preferences = array_merge($existingPrefs, $request->preferences);
+        }
+        $setting->save();
 
-        return redirect()->route('user.settings', ['tab' => 'general'])->with('success', 'Settings updated successfully.');
+        $redirectTab = $request->input('redirect_tab', $request->input('active_tab', 'general'));
+        return redirect()->route('user.settings', ['tab' => $redirectTab])->with('success', 'Settings updated successfully.');
     }
 
     public function updateKeys(Request $request)
@@ -103,6 +132,6 @@ class SettingsController extends Controller
             }
         }
 
-        return redirect()->route('user.settings', ['tab' => 'keys'])->with('success', 'API Keys saved successfully.');
+        return redirect()->route('user.settings', ['tab' => 'api-keys'])->with('success', 'API Keys saved successfully.');
     }
 }

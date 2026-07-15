@@ -10,6 +10,14 @@
     --bg-sidebar: #e6edf8;
     --text-primary: #2d3748;
     --text-muted: #718096;
+    --text-secondary: #64748b;
+    
+    /* Required Theme Variables */
+    --accent: #4a88ff;
+    --accent-hover: #3b76eb;
+    --success: #10b981;
+    --danger: #ef4444;
+    --warning: #f59e0b;
     
     /* Claymorphic Shadows - Light */
     --clay-card-bg: rgba(255, 255, 255, 0.85);
@@ -37,6 +45,14 @@
     --bg-sidebar: #151928;
     --text-primary: #e2e8f0;
     --text-muted: #94a3b8;
+    --text-secondary: #94a3b8;
+    
+    /* Required Theme Variables - Dark Mode */
+    --accent: #4d89ff;
+    --accent-hover: #5c94ff;
+    --success: #34d399;
+    --danger: #f87171;
+    --warning: #fbbf24;
     
     /* Claymorphic Shadows - Dark */
     --clay-card-bg: rgba(30, 37, 56, 0.7);
@@ -50,6 +66,25 @@
     /* Accent Gradients (Puffed Clay) - Dark */
     --accent-blue: linear-gradient(135deg, #4d89ff 0%, #205cff 100%);
     --accent-blue-shadow: 6px 6px 12px rgba(32, 92, 255, 0.4), inset 3px 3px 6px rgba(255, 255, 255, 0.3), inset -3px -3px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* OLED Mode Override */
+.oled-mode {
+    --bg-main: #000000;
+    --bg-sidebar: #060608;
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+    --text-secondary: #94a3b8;
+    --accent: #4d89ff;
+    --accent-hover: #5c94ff;
+    --success: #34d399;
+    --danger: #f87171;
+    --warning: #fbbf24;
+    --clay-card-bg: rgba(18, 18, 22, 0.85);
+    --clay-card-border: rgba(255, 255, 255, 0.08);
+    --clay-outer-shadow: 0 16px 32px rgba(0, 0, 0, 0.8);
+    --clay-input-bg: #0c0c0e;
+    --clay-input-shadow: inset 2px 2px 6px rgba(0, 0, 0, 0.8);
 }
 
 * {
