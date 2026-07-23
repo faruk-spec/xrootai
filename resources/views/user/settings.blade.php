@@ -167,7 +167,12 @@
             display: flex; align-items: center; gap: 10px;
             font-size: 1.08rem; font-weight: 700; color: var(--text-primary);
         }
-        .section-title svg { color: var(--accent); }
+        .section-title svg { 
+            color: var(--accent);
+            width: 24px !important;
+            height: 24px !important;
+            flex-shrink: 0;
+        }
         .section-desc { font-size: .84rem; color: var(--text-muted); margin-top: 4px; }
 
         /* ─── Form Primitives ───────────────────────────────────────── */
