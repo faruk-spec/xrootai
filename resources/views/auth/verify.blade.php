@@ -61,6 +61,7 @@
                 </div>
             @endif
 
+            @if(\App\Models\SystemSetting::get('auth_verification_by_otp', true))
             <!-- OTP Submission Form -->
             <form method="POST" action="{{ route('verification.verify-otp') }}" style="margin-bottom: 24px;">
                 @csrf
@@ -76,6 +77,11 @@
                     <span>Verify Account Now</span> <i class="bi bi-check-lg fs-5"></i>
                 </button>
             </form>
+            @else
+            <div style="text-align: center; margin-bottom: 24px; padding: 20px; background: rgba(74,136,255,0.05); border: 1px solid rgba(74,136,255,0.2); border-radius: 12px;">
+                <p style="color: var(--text-primary); font-size: 0.95rem; margin: 0;">Please check your inbox and click the verification link we sent to verify your account.</p>
+            </div>
+            @endif
 
             <!-- Actions row: Resend & Change Email -->
             <div style="border-top: 1px solid var(--clay-card-border); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">

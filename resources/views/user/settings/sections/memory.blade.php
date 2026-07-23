@@ -1,25 +1,37 @@
 <!-- Memory Section -->
 <div class="space-y-6 animate-fade-in" x-data="{
         searchQuery: '',
-        memories: [
-            { id: 1, category: 'Technical Stack', text: 'User prefers Laravel 11.x + Alpine.js + Tailwind CSS over heavy SPA frameworks.', date: '2 days ago', confidence: '99%' },
-            { id: 2, category: 'Project Context', text: 'User is building XrootAI, an enterprise AI gateway and pair-programming SaaS platform.', date: '5 days ago', confidence: '98%' },
-            { id: 3, category: 'Styling Rules', text: 'User demands Claymorphism (clay cards, soft drop shadows, OLED dark mode) without Bootstrap.', date: 'Yesterday', confidence: '99%' },
-            { id: 4, category: 'Coding Style', text: 'User requires clean, production-ready, modular Blade component extraction.', date: '1 week ago', confidence: '95%' },
-            { id: 5, category: 'Workflow Preference', text: 'User prefers GitHub Dark code blocks with explicit intermediate CoT reasoning.', date: '3 days ago', confidence: '92%' }
-        ],
+        memories: {!! json_encode($settings->preferences['memories'] ?? []) !!},
         get filteredMemories() {
             if (!this.searchQuery) return this.memories;
             const q = this.searchQuery.toLowerCase();
             return this.memories.filter(m => m.text.toLowerCase().includes(q) || m.category.toLowerCase().includes(q));
         },
+        async updateBackend() {
+            try {
+                await fetch('{{ route('settings.update') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        preferences: { memories: this.memories }
+                    })
+                });
+            } catch (e) {
+                console.error('Failed to sync memory');
+            }
+        },
         deleteMemory(id) {
             this.memories = this.memories.filter(m => m.id !== id);
+            this.updateBackend();
             $dispatch('notify', { message: 'Memory entry forgotten successfully.', type: 'warning' });
         },
         clearAllMemories() {
             if (confirm('Are you certain you want the AI assistant to permanently forget all learned facts and preferences about you?')) {
                 this.memories = [];
+                this.updateBackend();
                 $dispatch('notify', { message: 'All memory slots cleared.', type: 'danger' });
             }
         }
