@@ -30,9 +30,24 @@
             <i class="bi bi-shield-lock"></i>
             <span>Security &amp; 2FA</span>
         </button>
+        <button type="button" class="nav-tab-btn" :class="{ 'active': activeTab === 'memory' }" @click="activeTab = 'memory'">
+            <i class="bi bi-cpu"></i>
+            <span>Memory</span>
+        </button>
     </div>
 
     <hr class="border-secondary border-opacity-25 my-3">
+
+    <div class="px-3 mt-auto mb-3">
+        <div class="p-3 rounded-4 text-center" style="background: rgba(74,136,255,0.1); border: 1px solid rgba(74,136,255,0.2);">
+            <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">
+                Your plan's baseline quota will refresh on {{ now()->addMonth()->format('n/j/Y, g:i:s A') }}.
+            </div>
+            <a href="#" style="font-size: 0.75rem; color: var(--accent); text-decoration: none; font-weight: 600;">
+                You can upgrade plan to receive higher rate limits
+            </a>
+        </div>
+    </div>
 
     <!-- Sign Out -->
     <form action="{{ route('logout') }}" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to sign out?');">

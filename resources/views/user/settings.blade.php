@@ -484,6 +484,11 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                     Security &amp; 2FA
                 </button>
+
+                <button type="button" id="nav-memory" class="nav-item" :class="{ active: activeTab === 'memory' }" @click="activeTab = 'memory'; sidebarOpen = false;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" /></svg>
+                    Memory
+                </button>
             </nav>
 
             <hr class="nav-divider">
@@ -892,6 +897,11 @@
                             @endif
                         </div>
                     @endif
+                </div>
+
+                {{-- ── TAB 5: MEMORY ────────────────────────────── --}}
+                <div x-show="activeTab === 'memory'" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                    @include('user.settings.sections.memory')
                 </div>
 
             </main>

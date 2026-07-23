@@ -2,6 +2,9 @@
 
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
+use App\Models\Conversation;
+use Carbon\Carbon;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -42,3 +45,10 @@ Artisan::command('security:disable-2fa {--email= : Specific user email to disabl
     \Illuminate\Support\Facades\Cache::flush();
     $this->info("✔ Cache cleared. You can now log into the admin panel without 2FA!");
 })->purpose('Disable Two-Factor Authentication globally or for specific users');
+
+Schedule::call(function () {
+    // Soft delete guest conversations older than 24 hours
+    Conversation::whereNull('user_id')
+        ->where('created_at', '<', Carbon::now()->subDay())
+        ->delete();
+})->daily();
