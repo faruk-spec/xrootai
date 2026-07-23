@@ -76,7 +76,7 @@ class SettingsController extends Controller
     {
         $request->validate([
             'theme' => ['nullable', 'string', 'in:light,dark,system,oled'],
-            'default_model' => ['required', 'string'],
+            'default_model' => ['nullable', 'string'],
             'system_prompt' => ['nullable', 'string'],
             'preferences' => ['nullable', 'array'],
         ]);
@@ -98,6 +98,14 @@ class SettingsController extends Controller
             $setting->preferences = array_merge($existingPrefs, $request->preferences);
         }
         $setting->save();
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Settings updated successfully.',
+                'settings' => $setting
+            ]);
+        }
 
         $redirectTab = $request->input('redirect_tab', $request->input('active_tab', 'general'));
         return redirect()->route('user.settings', ['tab' => $redirectTab])->with('success', 'Settings updated successfully.');
@@ -130,6 +138,13 @@ class SettingsController extends Controller
                     ]
                 );
             }
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'API Keys updated successfully.'
+            ]);
         }
 
         return redirect()->route('user.settings', ['tab' => 'api-keys'])->with('success', 'API Keys saved successfully.');

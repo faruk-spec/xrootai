@@ -615,10 +615,115 @@
         activeTab: '{{ $activeTab }}',
         showDisableModal: false,
         showLogoutModal: false,
-        sidebarOpen: false
+        sidebarOpen: false,
+        toast: { show: false, message: '', type: 'success' },
+        
+        init() {
+            window.showToast = (message, type = 'success') => {
+                this.toast = { show: true, message, type };
+                setTimeout(() => { this.toast.show = false; }, 3500);
+            };
+        },
+
+        async submitGeneral(e) {
+            const form = e.target;
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    window.showToast('General settings saved successfully', 'success');
+                } else {
+                    window.showToast(result.message || 'Error saving settings', 'error');
+                }
+            } catch (err) {
+                window.showToast('Network error saving settings', 'error');
+            }
+        },
+
+        async submitKeys(e) {
+            const form = e.target;
+            const formData = new FormData(form);
+            const keysObj = {};
+            for (let [k, v] of formData.entries()) {
+                if (k.startsWith('keys[')) {
+                    const provider = k.substring(5, k.length - 1);
+                    keysObj[provider] = v;
+                }
+            }
+            try {
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ keys: keysObj })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    window.showToast('API Keys saved successfully', 'success');
+                } else {
+                    window.showToast(result.message || 'Error saving API keys', 'error');
+                }
+            } catch (err) {
+                window.showToast('Network error saving API keys', 'error');
+            }
+        },
+
+        async updateTheme(themeName) {
+            if (themeName === 'dark') {
+                this.darkMode = true;
+                localStorage.setItem('darkMode', 'true');
+            } else if (themeName === 'light') {
+                this.darkMode = false;
+                localStorage.setItem('darkMode', 'false');
+            } else {
+                this.darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                localStorage.setItem('darkMode', this.darkMode);
+            }
+            try {
+                await fetch('{{ route('settings.update') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ theme: themeName })
+                });
+                window.showToast('Theme updated to ' + themeName, 'success');
+            } catch (err) {
+                console.error(err);
+            }
+        }
     }"
     :class="{ 'dark-mode': darkMode }"
 >
+    <!-- Floating Toast Notification -->
+    <div x-show="toast.show" x-cloak 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-y-0"
+         x-transition:leave-end="opacity-0 transform translate-y-2"
+         class="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border text-sm font-semibold"
+         :class="toast.type === 'error' ? 'bg-red-500 text-white border-red-600' : 'bg-slate-900 text-white border-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-300'">
+        <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span x-text="toast.message"></span>
+    </div>
+
     <div class="ambient-bubble bubble-1"></div>
     <div class="ambient-bubble bubble-2"></div>
     <div class="ambient-bubble bubble-3"></div>
@@ -664,7 +769,7 @@
             <nav class="settings-nav">
                 <button type="button" id="nav-general" class="nav-item" :class="{ active: activeTab === 'general' }" @click="activeTab = 'general'; sidebarOpen = false;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                    General &amp; AI
+                    General
                 </button>
 
                 <button type="button" id="nav-theme" class="nav-item" :class="{ active: activeTab === 'theme' }" @click="activeTab = 'theme'; sidebarOpen = false;">
@@ -674,12 +779,12 @@
 
                 <button type="button" id="nav-keys" class="nav-item" :class="{ active: activeTab === 'keys' }" @click="activeTab = 'keys'; sidebarOpen = false;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                    API Keys (BYOK)
+                    API Keys
                 </button>
 
                 <button type="button" id="nav-security" class="nav-item" :class="{ active: activeTab === 'security' }" @click="activeTab = 'security'; sidebarOpen = false;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                    Security &amp; 2FA
+                    Security
                 </button>
 
                 <button type="button" id="nav-memory" class="nav-item" :class="{ active: activeTab === 'memory' }" @click="activeTab = 'memory'; sidebarOpen = false;">
@@ -690,7 +795,7 @@
 
             <hr class="nav-divider">
 
-            {{-- Sign Out with Confirmation Modal Trigger (#3 Fix) --}}
+            {{-- Sign Out with Confirmation Modal Trigger --}}
             <button type="button" @click="showLogoutModal = true" class="nav-item" style="color: #dc2626 !important; width:100%;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
                 Sign Out
@@ -706,7 +811,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     Menu
                 </button>
-                <span style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">Account Settings</span>
+                <span style="font-weight: 700; font-size: 1rem; color: var(--text-primary);">Settings</span>
                 <a href="{{ route('chat') }}" class="btn btn-secondary" style="padding: 8px 12px;">
                     Back
                 </a>
@@ -741,8 +846,8 @@
             {{-- Top Bar for Desktop --}}
             <header class="top-bar">
                 <div>
-                    <div class="top-bar-title">Account &amp; Settings</div>
-                    <div class="top-bar-sub">Manage your AI preferences, appearance, API keys &amp; security.</div>
+                    <div class="top-bar-title">Settings</div>
+                    <div class="top-bar-sub">Manage your preferences, appearance, API keys, and security settings.</div>
                 </div>
                 <a href="{{ route('chat') }}" class="btn btn-secondary" style="padding: 10px 20px; font-size: .88rem;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
@@ -775,23 +880,23 @@
 
                 {{-- ── TAB 1: GENERAL & AI ──────────────────────────────── --}}
                 <div x-show="activeTab === 'general'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0">
-                    <div class="security-status-card" style="display: block; padding: 30px;">
+                    <div class="security-status-card" style="display: block; padding: 28px;">
                         <div class="section-header">
                             <div>
                                 <div class="section-title">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                    General &amp; AI Preferences
+                                    General Preferences
                                 </div>
-                                <div class="section-desc">Configure default assistant behaviours, models, and personal instructions.</div>
+                                <div class="section-desc">Configure default assistant model and system instructions.</div>
                             </div>
                         </div>
 
-                        <form action="{{ route('settings.update') }}" method="POST">
+                        <form action="{{ route('settings.update') }}" method="POST" @submit.prevent="submitGeneral($event)">
                             @csrf
                             <input type="hidden" name="theme" value="{{ $settings->theme ?? 'system' }}">
 
                             <div class="field-group">
-                                <label class="field-label" for="default_model">Default AI Model</label>
+                                <label class="field-label" for="default_model">Default Model</label>
                                 <select id="default_model" name="default_model" class="field-select">
                                     @if(!empty($models))
                                         @foreach($models as $model)
@@ -803,17 +908,17 @@
                                         <option value="mock">Default Model</option>
                                     @endif
                                 </select>
-                                <div class="field-hint">Automatically selected when starting new conversations.</div>
+                                <div class="field-hint">Default AI model for new chat conversations.</div>
                             </div>
 
                             <div class="field-group">
-                                <label class="field-label" for="system_prompt">Custom System Instructions</label>
-                                <textarea id="system_prompt" name="system_prompt" class="field-textarea" placeholder="Example: Always answer concisely, format code blocks cleanly, and prefer Python for examples...">{{ $settings->system_prompt }}</textarea>
-                                <div class="field-hint">These instructions guide the AI's tone, formatting, and approach for every response.</div>
+                                <label class="field-label" for="system_prompt">Custom System Prompt</label>
+                                <textarea id="system_prompt" name="system_prompt" class="field-textarea" placeholder="Provide instructions for tone, response format, or preferred programming languages...">{{ $settings->system_prompt }}</textarea>
+                                <div class="field-hint">Instructions guiding the AI's behavior across all chat sessions.</div>
                             </div>
 
                             <div class="form-footer">
-                                <button type="submit" id="save-general-btn" class="clay-btn clay-btn-primary" style="padding: 11px 24px; font-size: .9rem;">
+                                <button type="submit" id="save-general-btn" class="btn btn-primary" style="padding: 11px 24px;">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
                                     Save Preferences
                                 </button>
@@ -828,63 +933,49 @@
                         <div>
                             <div class="section-title">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/></svg>
-                                Interface Appearance
+                                Appearance
                             </div>
-                            <div class="section-desc">Choose your preferred lighting theme for the chat workspace.</div>
+                            <div class="section-desc">Select your preferred visual theme for the application interface.</div>
                         </div>
                     </div>
 
-                    <form action="{{ route('settings.update') }}" method="POST" x-data="{ selectedTheme: '{{ $settings->theme ?? 'system' }}' }">
-                        @csrf
-                        <input type="hidden" name="default_model" value="{{ $settings->default_model ?? 'mock' }}">
-                        <input type="hidden" name="system_prompt" value="{{ $settings->system_prompt ?? '' }}">
-                        <input type="hidden" name="theme" :value="selectedTheme">
-
-                        <div class="theme-grid">
-                            {{-- Dark --}}
-                            <div id="theme-dark" class="theme-card" :class="{ selected: selectedTheme === 'dark' }"
-                                 @click="selectedTheme = 'dark'; darkMode = true; localStorage.setItem('darkMode','true')">
-                                <div class="theme-icon" style="background:#1e293b; color:#60a5fa; border:1px solid rgba(255,255,255,.1);">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                                </div>
-                                <div>
-                                    <div class="theme-name">Dark Mode</div>
-                                    <div class="theme-desc">Sleek, low-light interface.</div>
-                                </div>
+                    <div class="theme-grid" x-data="{ selectedTheme: '{{ $settings->theme ?? 'system' }}' }">
+                        {{-- Dark --}}
+                        <div id="theme-dark" class="theme-card" :class="{ selected: selectedTheme === 'dark' }"
+                             @click="selectedTheme = 'dark'; updateTheme('dark');">
+                            <div class="theme-icon" style="background:#1e293b; color:#60a5fa; border:1px solid rgba(255,255,255,.1);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                             </div>
-
-                            {{-- Light --}}
-                            <div id="theme-light" class="theme-card" :class="{ selected: selectedTheme === 'light' }"
-                                 @click="selectedTheme = 'light'; darkMode = false; localStorage.setItem('darkMode','false')">
-                                <div class="theme-icon" style="background:#f0f6ff; color:#f59e0b; border:1px solid rgba(0,0,0,.08);">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
-                                </div>
-                                <div>
-                                    <div class="theme-name">Light Mode</div>
-                                    <div class="theme-desc">Clean, bright &amp; readable.</div>
-                                </div>
-                            </div>
-
-                            {{-- System --}}
-                            <div id="theme-system" class="theme-card" :class="{ selected: selectedTheme === 'system' }"
-                                 @click="selectedTheme = 'system'; darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches; localStorage.setItem('darkMode', darkMode)">
-                                <div class="theme-icon" style="background:linear-gradient(135deg,#1e293b 50%,#f0f6ff 50%); color:#a855f7; border:1px solid rgba(255,255,255,.1);">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-                                </div>
-                                <div>
-                                    <div class="theme-name">System Default</div>
-                                    <div class="theme-desc">Follows your OS preference.</div>
-                                </div>
+                            <div>
+                                <div class="theme-name">Dark Mode</div>
+                                <div class="theme-desc">Low-light theme optimized for focus.</div>
                             </div>
                         </div>
 
-                        <div class="form-footer">
-                            <button type="submit" id="apply-theme-btn" class="clay-btn clay-btn-primary" style="padding: 11px 24px; font-size: .9rem;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                Apply Theme
-                            </button>
+                        {{-- Light --}}
+                        <div id="theme-light" class="theme-card" :class="{ selected: selectedTheme === 'light' }"
+                             @click="selectedTheme = 'light'; updateTheme('light');">
+                            <div class="theme-icon" style="background:#f0f6ff; color:#f59e0b; border:1px solid rgba(0,0,0,.08);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+                            </div>
+                            <div>
+                                <div class="theme-name">Light Mode</div>
+                                <div class="theme-desc">Clean and bright daylight theme.</div>
+                            </div>
                         </div>
-                    </form>
+
+                        {{-- System --}}
+                        <div id="theme-system" class="theme-card" :class="{ selected: selectedTheme === 'system' }"
+                             @click="selectedTheme = 'system'; updateTheme('system');">
+                            <div class="theme-icon" style="background:linear-gradient(135deg,#1e293b 50%,#f0f6ff 50%); color:#a855f7; border:1px solid rgba(255,255,255,.1);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            </div>
+                            <div>
+                                <div class="theme-name">System Default</div>
+                                <div class="theme-desc">Automatically match operating system.</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 {{-- ── TAB 3: API KEYS ──────────────────────────────────── --}}
@@ -893,20 +984,20 @@
                         <div>
                             <div class="section-title">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-                                API Keys <span style="font-size:.8rem; font-weight:500; color:var(--text-muted);">(Bring Your Own Key)</span>
+                                API Keys
                             </div>
-                            <div class="section-desc">Use your personal API keys to bypass rate limits or access restricted models.</div>
+                            <div class="section-desc">Manage custom API credentials for AI model providers.</div>
                         </div>
                     </div>
 
-                    <form action="{{ route('settings.keys') }}" method="POST">
+                    <form action="{{ route('settings.keys') }}" method="POST" @submit.prevent="submitKeys($event)">
                         @csrf
                         @php
                             $providers = [
-                                'openai'    => ['label' => 'OpenAI',           'placeholder' => 'sk-...'],
-                                'anthropic' => ['label' => 'Anthropic / Claude','placeholder' => 'sk-ant-...'],
-                                'gemini'    => ['label' => 'Google Gemini',    'placeholder' => 'AIza...'],
-                                'deepseek'  => ['label' => 'DeepSeek',         'placeholder' => 'sk-...'],
+                                'openai'    => ['label' => 'OpenAI Key',        'placeholder' => 'sk-...'],
+                                'anthropic' => ['label' => 'Anthropic Key',     'placeholder' => 'sk-ant-...'],
+                                'gemini'    => ['label' => 'Google Gemini Key', 'placeholder' => 'AIza...'],
+                                'deepseek'  => ['label' => 'DeepSeek Key',      'placeholder' => 'sk-...'],
                             ];
                         @endphp
 
@@ -926,16 +1017,16 @@
                                                    placeholder="{{ $meta['placeholder'] }}"
                                                    autocomplete="off">
                                         </div>
-                                        <div class="field-hint">Leave blank to keep your existing encrypted key.</div>
+                                        <div class="field-hint">Leave blank to retain existing key.</div>
                                     </div>
                                 </div>
                             @endforeach
                         </div>
 
                         <div class="form-footer">
-                            <button type="submit" id="save-keys-btn" class="clay-btn clay-btn-primary" style="padding: 11px 24px; font-size: .9rem;">
+                            <button type="submit" id="save-keys-btn" class="btn btn-primary" style="padding: 11px 24px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                                Save Encrypted Keys
+                                Save API Keys
                             </button>
                         </div>
                     </form>
