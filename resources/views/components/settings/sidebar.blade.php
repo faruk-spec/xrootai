@@ -35,7 +35,7 @@
     <hr class="border-secondary border-opacity-25 my-3">
 
     <!-- Sign Out -->
-    <form action="{{ route('logout') }}" method="POST" class="m-0">
+    <form action="{{ route('logout') }}" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to sign out?');">
         @csrf
         <button type="submit" class="nav-tab-btn text-danger">
             <i class="bi bi-box-arrow-right"></i>

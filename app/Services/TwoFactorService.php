@@ -29,10 +29,13 @@ class TwoFactorService
     public function getOtpAuthUrl(User $user, string $secret): string
     {
         $appName = \App\Models\SystemSetting::get('general_chatbot_name');
-        if (empty($appName) || $appName === 'Laravel') {
+        if (empty($appName) || stripos($appName, 'Laravel') !== false) {
             $appName = config('app.name');
-            if (empty($appName) || $appName === 'Laravel') {
-                $appName = 'XrootAI';
+            if (empty($appName) || stripos($appName, 'Laravel') !== false) {
+                $appName = request()->getHost() ?: 'XrootAI';
+                if ($appName === 'localhost' || $appName === '127.0.0.1') {
+                    $appName = 'XrootAI';
+                }
             }
         }
         $appNameClean = trim(preg_replace('/[^a-zA-Z0-9_\- ]/', '', $appName));
